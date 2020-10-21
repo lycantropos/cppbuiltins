@@ -305,7 +305,7 @@ class List {
 };
 
 static std::ostream& operator<<(std::ostream& stream, const List& list) {
-  stream << C_STR(MODULE_NAME) "." LIST_NAME "(";
+  stream << C_STR(MODULE_NAME) "." LIST_NAME "([";
   auto object = py::cast(list);
   if (Py_ReprEnter(object.ptr()) == 0) {
     if (list) {
@@ -317,7 +317,7 @@ static std::ostream& operator<<(std::ostream& stream, const List& list) {
   } else {
     stream << "...";
   }
-  return stream << ")";
+  return stream << "])";
 }
 
 PYBIND11_MODULE(MODULE_NAME, m) {
