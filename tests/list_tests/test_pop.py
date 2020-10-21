@@ -27,9 +27,9 @@ def test_full(pair_with_index: AlternativeNativeListsPair) -> None:
     assert are_alternative_native_lists_equal(alternative, native)
 
 
-@given(strategies.empty_lists_pairs, strategies.indices)
-def test_empty(pair: AlternativeNativeListsPair, index: int) -> None:
-    alternative, native = pair
+@given(strategies.lists_pairs_with_non_their_indices)
+def test_empty(pair_with_index: AlternativeNativeListsPair) -> None:
+    (alternative, native), index = pair_with_index
 
     with pytest.raises(IndexError):
         alternative.pop(index)
