@@ -66,6 +66,16 @@ void fill_from_iterable(RawList& raw, const py::iterable& values) {
     raw.emplace_back(*(position++), true);
 }
 
+void fill_indices(const py::slice& slice, Size size, Index& start, Index& stop,
+                  Index& step, Size& slice_length) {
+  std::size_t raw_start, raw_stop, raw_step;
+  if (!slice.compute(size, &raw_start, &raw_stop, &raw_step, &slice_length))
+    throw py::error_already_set();
+  start = static_cast<Index>(raw_start);
+  stop = static_cast<Index>(raw_stop);
+  step = static_cast<Index>(raw_step);
+}
+
 class ListIterator {
  public:
   ListIterator(Size index, const std::shared_ptr<RawList>& raw)
@@ -167,12 +177,9 @@ class List {
 
   void delete_items(py::slice slice) {
     auto size = _raw->size();
-    std::size_t raw_start, raw_stop, raw_step, slice_length;
-    if (!slice.compute(size, &raw_start, &raw_stop, &raw_step, &slice_length))
-      throw py::error_already_set();
-    auto start = static_cast<Index>(raw_start);
-    auto stop = static_cast<Index>(raw_stop);
-    auto step = static_cast<Index>(raw_step);
+    Index start, stop, step;
+    Size slice_length;
+    fill_indices(slice, size, start, stop, step, slice_length);
     if (step > 0 ? start >= stop : start <= stop) return;
     if (step == 1)
       _raw->erase(std::next(_raw->begin(), start),
@@ -223,13 +230,9 @@ class List {
   }
 
   List get_items(py::slice slice) const {
-    std::size_t raw_start, raw_stop, raw_step, slice_length;
-    if (!slice.compute(_raw->size(), &raw_start, &raw_stop, &raw_step,
-                       &slice_length))
-      throw py::error_already_set();
-    auto start = static_cast<Index>(raw_start);
-    auto stop = static_cast<Index>(raw_stop);
-    auto step = static_cast<Index>(raw_step);
+    Index start, stop, step;
+    Size slice_length;
+    fill_indices(slice, _raw->size(), start, stop, step, slice_length);
     RawList raw;
     raw.reserve(slice_length);
     if (step < 0)
@@ -308,12 +311,9 @@ class List {
 
   void set_items(py::slice slice, py::iterable values) {
     auto size = _raw->size();
-    std::size_t raw_start, raw_stop, raw_step, slice_length;
-    if (!slice.compute(size, &raw_start, &raw_stop, &raw_step, &slice_length))
-      throw py::error_already_set();
-    auto start = static_cast<Index>(raw_start);
-    auto stop = static_cast<Index>(raw_stop);
-    auto step = static_cast<Index>(raw_step);
+    Index start, stop, step;
+    Size slice_length;
+    fill_indices(slice, size, start, stop, step, slice_length);
     RawList raw;
     fill_from_iterable(raw, values);
     auto values_count = raw.size();
