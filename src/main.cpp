@@ -15,6 +15,7 @@ namespace py = pybind11;
 #define C_STR(a) C_STR_HELPER(a)
 #define LIST_ITERATOR_NAME "list_iterator"
 #define LIST_NAME "list"
+#define LIST_REVERSED_ITERATOR_NAME "list_reversed_iterator"
 #ifndef VERSION_INFO
 #define VERSION_INFO "dev"
 #endif
@@ -74,6 +75,26 @@ class ListIterator {
     if (_running) {
       if (auto ptr = _raw.lock())
         if (_index < ptr->size()) return (*ptr)[_index++];
+      _running = false;
+    }
+    throw py::stop_iteration();
+  }
+
+ private:
+  Size _index;
+  std::weak_ptr<RawList> _raw;
+  bool _running;
+};
+
+class ListReversedIterator {
+ public:
+  ListReversedIterator(Size index, const std::shared_ptr<RawList>& raw)
+      : _index(index), _raw(raw), _running(true) {}
+
+  Object next() {
+    if (_running) {
+      if (auto ptr = _raw.lock())
+        if (_index && _index <= ptr->size()) return (*ptr)[--_index];
       _running = false;
     }
     throw py::stop_iteration();
@@ -271,6 +292,8 @@ class List {
 
   void reverse() { std::reverse(_raw->begin(), _raw->end()); }
 
+  ListReversedIterator reversed() { return {_raw->size(), _raw}; }
+
   void set_item(Index index, Object value) {
     Index size = _raw->size();
     Index normalized_index = index >= 0 ? index : index + size;
@@ -383,6 +406,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__iter__", &List::iter)
       .def("__len__", &List::size)
       .def("__repr__", to_repr<List>)
+      .def("__reversed__", &List::reversed)
       .def("__setitem__", &List::set_item, py::arg("index"), py::arg("value"))
       .def("__setitem__", &List::set_items, py::arg("slice"), py::arg("values"))
       .def("append", &List::append, py::arg("value"))
@@ -399,4 +423,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   py::class_<ListIterator>(m, LIST_ITERATOR_NAME)
       .def("__iter__", &identity<const ListIterator&>)
       .def("__next__", &ListIterator::next);
+
+  py::class_<ListReversedIterator>(m, LIST_REVERSED_ITERATOR_NAME)
+      .def("__iter__", &identity<const ListReversedIterator&>)
+      .def("__next__", &ListReversedIterator::next);
 }
