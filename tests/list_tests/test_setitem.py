@@ -9,7 +9,7 @@ from tests.utils import (AlternativeNativeListsPair,
 from . import strategies
 
 
-@given(strategies.non_empty_lists_pairs_with_indices, strategies.objects)
+@given(strategies.non_empty_lists_pairs_with_their_indices, strategies.objects)
 def test_index(pair_with_index: Tuple[AlternativeNativeListsPair, int],
                value: Any) -> None:
     (alternative, native), index = pair_with_index

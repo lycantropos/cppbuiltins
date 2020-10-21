@@ -29,6 +29,19 @@ non_empty_lists_pairs = strategies.builds(to_alternative_native_lists_pair,
                                           non_empty_objects_lists)
 
 
+def to_non_empty_lists_pairs_with_their_indices(
+        pair: AlternativeNativeListsPair
+) -> Strategy[Tuple[AlternativeNativeListsPair, int]]:
+    alternative, _ = pair
+    size = len(alternative)
+    return strategies.tuples(strategies.just(pair),
+                             strategies.integers(-size, size - 1))
+
+
+non_empty_lists_pairs_with_their_indices = non_empty_lists_pairs.flatmap(
+        to_non_empty_lists_pairs_with_their_indices)
+
+
 def to_non_empty_lists_pairs_with_their_elements(
         values: List[Any]) -> Strategy[Tuple[AlternativeNativeListsPair, Any]]:
     pair = to_alternative_native_lists_pair(values)
@@ -92,19 +105,6 @@ def to_lists_pairs_with_starts_stops_and_non_their_elements(
 lists_pairs_with_starts_stops_and_non_their_elements = (
     (objects_lists
      .flatmap(to_lists_pairs_with_starts_stops_and_non_their_elements)))
-
-
-def to_non_empty_lists_pairs_with_indices(
-        pair: AlternativeNativeListsPair
-) -> Strategy[Tuple[AlternativeNativeListsPair, int]]:
-    alternative, _ = pair
-    size = len(alternative)
-    return strategies.tuples(strategies.just(pair),
-                             strategies.integers(-size, size - 1))
-
-
-non_empty_lists_pairs_with_indices = non_empty_lists_pairs.flatmap(
-        to_non_empty_lists_pairs_with_indices)
 
 
 def to_lists_pairs_with_invalid_indices(
