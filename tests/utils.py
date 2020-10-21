@@ -1,7 +1,9 @@
 import builtins
 import pickle
+from itertools import zip_longest
 from operator import eq
 from typing import (Any,
+                    Iterator,
                     List,
                     Tuple,
                     TypeVar)
@@ -22,6 +24,15 @@ def equivalence(left: bool, right: bool) -> bool:
 
 def pickle_round_trip(value: Domain) -> Domain:
     return pickle.loads(pickle.dumps(value))
+
+
+def are_iterators_equal(left: Iterator[Any],
+                        right: Iterator[Any],
+                        *,
+                        _sentinel: Any = object()) -> bool:
+    return all(left_value == right_value
+               for left_value, right_value in zip_longest(left, right,
+                                                          fillvalue=_sentinel))
 
 
 def are_alternative_native_lists_equal(alternative: AlternativeList,
