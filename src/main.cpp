@@ -231,11 +231,7 @@ class List {
     }
   }
 
-  void extend(py::iterable iterable) {
-    auto iterator = py::iter(iterable);
-    while (iterator != py::iterator::sentinel())
-      _raw->emplace_back(*(iterator++), true);
-  }
+  void extend(py::iterable iterable) { fill_from_iterable(*_raw, iterable); }
 
   Object get_item(Index index) const {
     Index size = _raw->size();
