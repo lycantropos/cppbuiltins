@@ -52,6 +52,12 @@ IterableState iterable_to_state(const Iterable& self) {
   return result;
 }
 
+void fill_from_iterable(RawList& raw, const py::iterable& values) {
+  auto position = py::iter(values);
+  while (position != py::iterator::sentinel())
+    raw.emplace_back(*(position++), true);
+}
+
 class List {
  public:
   static List from_state(IterableState state) {
@@ -248,7 +254,7 @@ class List {
     (*_raw)[normalized_index] = value;
   }
 
-  void set_items(py::slice slice, py::iterable iterable) {
+  void set_items(py::slice slice, py::iterable values) {
     auto size = _raw->size();
     std::size_t raw_start, raw_stop, raw_step, slice_length;
     if (!slice.compute(size, &raw_start, &raw_stop, &raw_step, &slice_length))
@@ -256,11 +262,9 @@ class List {
     auto start = static_cast<Index>(raw_start);
     auto stop = static_cast<Index>(raw_stop);
     auto step = static_cast<Index>(raw_step);
-    RawList values;
-    auto iterator = py::iter(iterable);
-    while (iterator != py::iterator::sentinel())
-      values.emplace_back(*(iterator++), true);
-    auto values_count = values.size();
+    RawList raw;
+    fill_from_iterable(raw, values);
+    auto values_count = raw.size();
     if (step == 1) {
       auto new_size = size - slice_length + values_count;
       if (new_size > size) {
@@ -279,7 +283,7 @@ class List {
           std::iter_swap(source, destination);
         _raw->erase(std::next(_raw->begin(), new_size), old_end);
       }
-      std::copy(values.begin(), values.end(), std::next(_raw->begin(), start));
+      std::copy(raw.begin(), raw.end(), std::next(_raw->begin(), start));
       return;
     }
     if (slice_length != values_count)
@@ -287,7 +291,7 @@ class List {
           std::string("Attempt to assign iterable with capacity") +
           std::to_string(values_count) + " to slice with size " +
           std::to_string(slice_length) + ".");
-    auto position = values.begin();
+    auto position = raw.begin();
     if (step < 0)
       for (; start > stop; start += step) (*_raw)[start] = *(position++);
     else
@@ -323,14 +327,12 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<List> PyList(m, LIST_NAME);
   PyList
-      .def(py::init([](py::iterable iterable) {
+      .def(py::init([](py::iterable values) {
              RawList raw;
-             auto iterator = py::iter(iterable);
-             while (iterator != py::iterator::sentinel())
-               raw.emplace_back(*(iterator++), true);
+             fill_from_iterable(raw, values);
              return List{raw};
            }),
-           py::arg("iterable"))
+           py::arg("values"))
       .def(py::self == py::self)
       .def(py::self < py::self)
       .def(py::self <= py::self)
