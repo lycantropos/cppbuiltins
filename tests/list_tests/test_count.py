@@ -6,7 +6,7 @@ from tests.utils import AlternativeNativeListsPair
 from . import strategies
 
 
-@given(strategies.non_empty_lists_pairs, strategies.objects)
+@given(strategies.lists_pairs, strategies.objects)
 def test_defaults(pair: AlternativeNativeListsPair, value: Any) -> None:
     alternative, native = pair
 

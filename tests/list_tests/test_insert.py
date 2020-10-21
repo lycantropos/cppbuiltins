@@ -7,8 +7,7 @@ from tests.utils import (AlternativeNativeListsPair,
 from . import strategies
 
 
-@given(strategies.non_empty_lists_pairs, strategies.indices,
-       strategies.objects)
+@given(strategies.lists_pairs, strategies.indices, strategies.objects)
 def test_basic(pair: AlternativeNativeListsPair,
                index: int,
                value: Any) -> None:
