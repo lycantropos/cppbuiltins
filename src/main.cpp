@@ -458,6 +458,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("sort", &List::sort, py::arg("key") = py::none(),
            py::arg("reverse") = false);
 
+  py::module collections_abc = py::module::import("collections.abc");
+  collections_abc.attr("MutableSequence").attr("register")(PyList);
+
   py::class_<ListIterator>(m, LIST_ITERATOR_NAME)
       .def("__iter__", &identity<const ListIterator&>)
       .def("__next__", &ListIterator::next);
