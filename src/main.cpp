@@ -116,6 +116,20 @@ class ListReversedIterator {
   bool _running;
 };
 
+void apply_permutation(RawList& raw, std::vector<Size>& indices) {
+  using std::swap;
+  for (Size index = 0; index < indices.size(); ++index) {
+    auto cursor = index;
+    while (index != indices[cursor]) {
+      auto next = indices[cursor];
+      swap(raw[cursor], raw[next]);
+      indices[cursor] = cursor;
+      cursor = next;
+    }
+    indices[cursor] = cursor;
+  }
+}
+
 class List {
  public:
   static List from_state(IterableState state) {
@@ -352,6 +366,27 @@ class List {
 
   std::size_t size() const { return _raw->size(); }
 
+  void sort(Object key, bool reverse) {
+    if (reverse) std::reverse(_raw->begin(), _raw->end());
+    if (key.is_none())
+      std::stable_sort(_raw->begin(), _raw->end());
+    else {
+      RawList& values = *_raw;
+      const Size size = values.size();
+      RawList keys;
+      keys.reserve(size);
+      for (const auto value : values) keys.push_back(key(value));
+      std::vector<Size> indices;
+      indices.reserve(size);
+      for (Size index = 0; index < size; ++index) indices.push_back(index);
+      std::stable_sort(
+          indices.begin(), indices.end(),
+          [&keys](Size left, Size right) { return keys[left] < keys[right]; });
+      apply_permutation(values, indices);
+    }
+    if (reverse) std::reverse(_raw->begin(), _raw->end());
+  }
+
  private:
   std::shared_ptr<RawList> _raw;
 };
@@ -418,7 +453,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("insert", &List::insert, py::arg("index"), py::arg("value"))
       .def("pop", &List::pop, py::arg("index") = -1)
       .def("remove", &List::remove, py::arg("value"))
-      .def("reverse", &List::reverse);
+      .def("reverse", &List::reverse)
+      .def("sort", &List::sort, py::arg("key") = py::none(),
+           py::arg("reverse") = false);
 
   py::class_<ListIterator>(m, LIST_ITERATOR_NAME)
       .def("__iter__", &identity<const ListIterator&>)
