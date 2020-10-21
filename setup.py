@@ -12,7 +12,7 @@ from setuptools import (Extension,
                         setup)
 from setuptools.command.build_ext import build_ext
 
-__version__ = '0.0.0'
+__version__ = '0.1.0-alpha'
 
 
 def has_flag(compiler: CCompiler, name: str) -> bool:
