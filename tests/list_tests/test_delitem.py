@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import pytest
 from hypothesis import given
 
 from tests.utils import (AlternativeNativeListsPair,
@@ -25,3 +26,13 @@ def test_slice(pair_with_slice: Tuple[AlternativeNativeListsPair, int]
     del alternative[slice_], native[slice_]
 
     assert are_alternative_native_lists_equal(alternative, native)
+
+
+@given(strategies.empty_lists_pairs, strategies.indices)
+def test_index_empty(pair: AlternativeNativeListsPair, index: int) -> None:
+    alternative, native = pair
+
+    with pytest.raises(IndexError):
+        del alternative[index]
+    with pytest.raises(IndexError):
+        del native[index]
