@@ -46,6 +46,7 @@ before_deploy:
 
 deploy:
   on:
+    branch: master
     tags: true
   provider: script
   script: twine upload --skip-existing dist/*
