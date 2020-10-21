@@ -13,6 +13,7 @@ from tests.utils import (AlternativeNativeListsPair,
 
 MAX_INDEX = sys.maxsize
 MIN_INDEX = -MAX_INDEX - 1
+booleans = strategies.booleans()
 indices = strategies.integers(MIN_INDEX, MAX_INDEX)
 sizes = strategies.integers(0, min(100, sys.maxsize))
 invalid_sizes = strategies.integers(MIN_INDEX, -1)
@@ -153,3 +154,4 @@ def to_lists_pairs_with_slices_and_iterables_pairs(
 
 lists_pairs_with_slices_and_objects_lists = lists_pairs.flatmap(
         to_lists_pairs_with_slices_and_iterables_pairs)
+keys = strategies.sampled_from([None, abs, str])

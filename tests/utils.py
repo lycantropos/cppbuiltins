@@ -12,6 +12,7 @@ import cppbuiltins
 from hypothesis.strategies import SearchStrategy as Strategy
 
 Domain = TypeVar('Domain')
+Range = TypeVar('Range')
 Strategy = Strategy
 AlternativeList = cppbuiltins.list
 NativeList = builtins.list
