@@ -173,6 +173,10 @@ class List {
     return std::find(_raw->begin(), _raw->end(), value) != _raw->end();
   }
 
+  List copy() const {
+    return {*this};
+  }
+
   std::size_t count(Object value) const {
     return std::count(_raw->begin(), _raw->end(), value);
   }
@@ -446,6 +450,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__setitem__", &List::set_items, py::arg("slice"), py::arg("values"))
       .def("append", &List::append, py::arg("value"))
       .def("clear", &List::clear)
+      .def("copy", &List::copy)
       .def("count", &List::count, py::arg("value"))
       .def("extend", &List::extend, py::arg("values"))
       .def("index", &List::index, py::arg("value"), py::arg("start") = 0,
