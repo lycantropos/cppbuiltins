@@ -16,7 +16,7 @@ def test_defaults(pair: AlternativeNativeListsPair) -> None:
     assert are_alternative_native_lists_equal(alternative, native)
 
 
-@given(strategies.non_empty_lists_pairs_with_their_indices)
+@given(strategies.non_empty_lists_pairs_with_indices)
 def test_full(pair_with_index: AlternativeNativeListsPair) -> None:
     (alternative, native), index = pair_with_index
 
@@ -27,8 +27,8 @@ def test_full(pair_with_index: AlternativeNativeListsPair) -> None:
     assert are_alternative_native_lists_equal(alternative, native)
 
 
-@given(strategies.lists_pairs_with_non_their_indices)
-def test_empty(pair_with_index: AlternativeNativeListsPair) -> None:
+@given(strategies.lists_pairs_with_invalid_indices)
+def test_invalid_index(pair_with_index: AlternativeNativeListsPair) -> None:
     (alternative, native), index = pair_with_index
 
     with pytest.raises(IndexError):

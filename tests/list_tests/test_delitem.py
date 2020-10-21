@@ -8,7 +8,7 @@ from tests.utils import (AlternativeNativeListsPair,
 from . import strategies
 
 
-@given(strategies.non_empty_lists_pairs_with_their_indices)
+@given(strategies.non_empty_lists_pairs_with_indices)
 def test_index(pair_with_index: Tuple[AlternativeNativeListsPair, int]
                ) -> None:
     (alternative, native), index = pair_with_index
@@ -28,9 +28,10 @@ def test_slice(pair_with_slice: Tuple[AlternativeNativeListsPair, int]
     assert are_alternative_native_lists_equal(alternative, native)
 
 
-@given(strategies.empty_lists_pairs, strategies.indices)
-def test_index_empty(pair: AlternativeNativeListsPair, index: int) -> None:
-    alternative, native = pair
+@given(strategies.lists_pairs_with_invalid_indices)
+def test_invalid_index(pair_with_index: Tuple[AlternativeNativeListsPair, int]
+                       ) -> None:
+    (alternative, native), index = pair_with_index
 
     with pytest.raises(IndexError):
         del alternative[index]
