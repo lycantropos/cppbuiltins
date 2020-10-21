@@ -23,9 +23,13 @@ using Object = py::object;
 using RawList = std::vector<Object>;
 using IterableState = py::list;
 
+static std::string object_to_repr(const Object& object) {
+  return {py::repr(object)};
+}
+
 namespace pybind11 {
 static std::ostream& operator<<(std::ostream& stream, const Object& object) {
-  return stream << std::string(py::repr(object));
+  return stream << ::object_to_repr(object);
 }
 
 static bool operator==(const Object& left, const Object& right) {
@@ -38,7 +42,7 @@ std::string to_repr(const Type& value) {
   std::ostringstream stream;
   stream.precision(std::numeric_limits<double>::digits10 + 2);
   stream << value;
-  return stream.str();
+  return {stream.str()};
 }
 
 template <class Iterable>
@@ -190,7 +194,7 @@ class List {
         std::min(stop >= 0 ? stop : stop + size, size), static_cast<Index>(0));
     for (Index index = normalized_start; index < normalized_stop; ++index)
       if ((*_raw)[index] == value) return index;
-    throw py::value_error(to_repr(value) + " is not found in slice(" +
+    throw py::value_error(object_to_repr(value) + " is not found in slice(" +
                           std::to_string(normalized_start) + ", " +
                           std::to_string(normalized_stop) + ").");
   }
@@ -226,7 +230,7 @@ class List {
     const auto& end = _raw->end();
     const auto& position = std::find(_raw->begin(), end, value);
     if (position == end)
-      throw py::value_error(to_repr(value) + " is not found.");
+      throw py::value_error(object_to_repr(value) + " is not found.");
     _raw->erase(position);
   }
 
