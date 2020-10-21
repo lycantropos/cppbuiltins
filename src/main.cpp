@@ -13,15 +13,22 @@ namespace py = pybind11;
 #define MODULE_NAME cppbuiltins
 #define C_STR_HELPER(a) #a
 #define C_STR(a) C_STR_HELPER(a)
+#define LIST_ITERATOR_NAME "list_iterator"
 #define LIST_NAME "list"
 #ifndef VERSION_INFO
 #define VERSION_INFO "dev"
 #endif
 
 using Index = Py_ssize_t;
+using IterableState = py::list;
 using Object = py::object;
 using RawList = std::vector<Object>;
-using IterableState = py::list;
+using Size = size_t;
+
+template <class T>
+T&& identity(T&& value) {
+  return std::forward<T>(value);
+}
 
 static std::string object_to_repr(const Object& object) {
   return {py::repr(object)};
@@ -57,6 +64,26 @@ void fill_from_iterable(RawList& raw, const py::iterable& values) {
   while (position != py::iterator::sentinel())
     raw.emplace_back(*(position++), true);
 }
+
+class ListIterator {
+ public:
+  ListIterator(Size index, const std::shared_ptr<RawList>& raw)
+      : _index(index), _raw(raw), _running(true) {}
+
+  Object next() {
+    if (_running) {
+      if (auto ptr = _raw.lock())
+        if (_index < ptr->size()) return (*ptr)[_index++];
+      _running = false;
+    }
+    throw py::stop_iteration();
+  }
+
+ private:
+  Size _index;
+  std::weak_ptr<RawList> _raw;
+  bool _running;
+};
 
 class List {
  public:
@@ -213,6 +240,8 @@ class List {
     _raw->insert(_raw->begin() + normalized_index, value);
   }
 
+  ListIterator iter() const { return {0, _raw}; }
+
   Object pop(Index index) {
     Index size = _raw->size();
     Index normalized_index = index >= 0 ? index : index + size;
@@ -351,6 +380,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
             return self;
           },
           py::arg("values"), py::is_operator{})
+      .def("__iter__", &List::iter)
       .def("__len__", &List::size)
       .def("__repr__", to_repr<List>)
       .def("__setitem__", &List::set_item, py::arg("index"), py::arg("value"))
@@ -365,4 +395,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("pop", &List::pop, py::arg("index") = -1)
       .def("remove", &List::remove, py::arg("value"))
       .def("reverse", &List::reverse);
+
+  py::class_<ListIterator>(m, LIST_ITERATOR_NAME)
+      .def("__iter__", &identity<const ListIterator&>)
+      .def("__next__", &ListIterator::next);
 }
