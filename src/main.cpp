@@ -286,8 +286,8 @@ class List {
     Index size = _raw->size();
     Index normalized_index = index >= 0 ? index : index + size;
     if (normalized_index < 0 || normalized_index >= size)
-      throw py::index_error(size ? (std::string("Index should be in range(" +
-                                                std::to_string(-size) + ", ") +
+      throw py::index_error(size ? (std::string("Index should be in range(") +
+                                    std::to_string(-size) + ", " +
                                     std::to_string(size) + "), but found " +
                                     std::to_string(index) + ".")
                                  : std::string("List is empty."));
