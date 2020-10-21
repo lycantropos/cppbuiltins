@@ -146,6 +146,10 @@ class List {
 
   List(const RawList& raw) : _raw(std::make_shared<RawList>(raw)) {}
 
+  List(py::iterable values) : _raw(std::make_shared<RawList>()) {
+    fill_from_iterable(*_raw, values);
+  }
+
   bool operator==(const List& other) const { return *_raw == *other._raw; }
 
   bool operator<(const List& other) const {
@@ -173,9 +177,7 @@ class List {
     return std::find(_raw->begin(), _raw->end(), value) != _raw->end();
   }
 
-  List copy() const {
-    return {*this};
-  }
+  List copy() const { return {*this}; }
 
   std::size_t count(Object value) const {
     return std::count(_raw->begin(), _raw->end(), value);
@@ -417,13 +419,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   m.attr("__version__") = VERSION_INFO;
 
   py::class_<List> PyList(m, LIST_NAME);
-  PyList
-      .def(py::init([](py::iterable values) {
-             RawList raw;
-             fill_from_iterable(raw, values);
-             return List{raw};
-           }),
-           py::arg("values"))
+  PyList.def(py::init<py::iterable>(), py::arg("values"))
       .def(py::self == py::self)
       .def(py::self < py::self)
       .def(py::self <= py::self)
