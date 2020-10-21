@@ -1,0 +1,52 @@
+dist: bionic
+
+language: python
+
+services:
+  - docker
+
+matrix:
+  include:
+    - python: 3.5
+    - python: 3.6
+    - python: 3.7
+    - python: 3.8
+
+env:
+  global:
+    - CPPFLAGS="-O0 --coverage"
+    - TWINE_USERNAME=__token__
+    - secure: OVyjqibZvEyZuFtTkUe91/+nXU5YtmkCdC3LU2BI4SzcExuogv6ghkvpT0F6AeOflRNUt1Pe1AHKm5h0SaamZ425YkW3DQBiqXJ1xURb6idnZ9iQdC2p6jaQxLqfQBE46Eb8yzlnUBcQ6FNEwXSxQrMnrvru8jOfEI/WtnSWiP/IJcMv2kpf6lYxgQCbx6YFWO81bqn+k4MYB35O5//Pa392H4Erbo83vfoddawEDnD8413On16U837BXRX8u7VxgxDTnvPQIb98XyeNvPzNdgOax3qR33fjP332jUMrvoVk2o4Kg5OfgLklWXNTYsxvm/2m4UYIEKiOqWU7Iew3uIidpghBTW4VX5lxSwBM7P7YSNmMC3NIJpZ6AXNtbeephaBf9IjFStVvrfN+DL/2HM0Jf348m1nyp/pnOslhAdE77CIG2NYf36kChiHnwsRaGlLPgo+X7TjOZewiSlur6SEBIVAE3qlTtL/2MTaKwCqUu1NrKxZ/TT5o0tMG6MUFN8h7+YStwYjxIvgpszY5rrMuk538m7G1zfZSj1xY1uNP+W/VRRjSXF3DJ4H3ccU7r0OGv/wEH9DjLOgSHCJAWQCdhXuV9kG/w7vusAXD1UPXZQi2hk+eIK0rNtWnMS3/pCwWgCUmSi3xVESX8Tfh+AIbPVFMH9r2Ed0d37ovJVQ=
+
+install:
+  - python -m pip install --upgrade pip setuptools
+  - python -m pip install --upgrade gcovr codecov
+  - python -m pip install --force-reinstall -r requirements-setup.txt
+  - python -m pip install --force-reinstall -r requirements-tests.txt
+  - python setup.py develop
+
+script:
+  - python -m doctest README.md
+  - pytest
+
+after_success:
+  - gcovr --filter src/ --filter include/ --xml -o coverage_cpp.xml -v
+  - python -m codecov -f coverage.xml -X gcov
+  - python -m codecov -f coverage_cpp.xml -X gcov
+
+before_deploy:
+  - rm -rf build
+  - rm *.so
+  - python setup.py sdist
+  - python -m pip install --upgrade cibuildwheel
+  - CIBW_BEFORE_BUILD='python -m pip install -r requirements-setup.txt' CIBW_BUILD=$(python
+    -c 'import sys; print("cp" + "".join(map(str, sys.version_info[:2])) + "-*")') cibuildwheel
+    --output-dir dist
+  - python -m pip install --upgrade twine
+
+deploy:
+  on:
+    tags: true
+  provider: script
+  script: twine upload --skip-existing dist/*
+  skip_cleanup: true
