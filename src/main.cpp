@@ -25,6 +25,7 @@ namespace py = pybind11;
 
 using Index = Py_ssize_t;
 using IterableState = py::list;
+using IteratorState = py::tuple;
 using Object = py::object;
 using RawList = std::vector<Object>;
 
@@ -148,8 +149,24 @@ class ListIterator {
 
 class ListReversedIterator {
  public:
-  ListReversedIterator(Size index, const std::shared_ptr<RawList>& raw)
-      : _index(index), _raw(raw), _running(true) {}
+  static ListReversedIterator from_state(IteratorState state) {
+    if (state.size() != 3) throw std::runtime_error("Invalid state.");
+    auto iterable_state = state[1].cast<IterableState>();
+    auto raw = std::make_shared<RawList>();
+    raw->reserve(iterable_state.size());
+    for (auto& element : iterable_state)
+      raw->push_back(py::reinterpret_borrow<Object>(element));
+    return {state[0].cast<Size>(), raw, state[2].cast<bool>()};
+  }
+
+  static IteratorState to_state(const ListReversedIterator& iterator) {
+    return py::make_tuple(iterator._index, iterable_to_state(*iterator._raw),
+                          iterator._running);
+  }
+
+  ListReversedIterator(Size index, std::shared_ptr<RawList> raw,
+                       bool running = true)
+      : _index(index), _raw(std::move(raw)), _running(running) {}
 
   Object next() {
     if (_running) {
@@ -591,6 +608,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__next__", &ListIterator::next);
 
   py::class_<ListReversedIterator>(m, LIST_REVERSED_ITERATOR_NAME)
+      .def(py::pickle(&ListReversedIterator::to_state,
+                      &ListReversedIterator::from_state))
       .def("__iter__", &identity<const ListReversedIterator&>)
       .def("__next__", &ListReversedIterator::next);
 
