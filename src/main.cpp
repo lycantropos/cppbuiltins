@@ -537,6 +537,8 @@ class Set {
 
   Set(const RawSet& raw) : _raw(std::make_shared<RawSet>(raw)), _tokenizer() {}
 
+  Set(const std::shared_ptr<RawSet>& raw) : _raw(raw), _tokenizer() {}
+
   Set(py::iterable values) : _raw(std::make_shared<RawSet>()), _tokenizer() {
     fill_from_iterable(*_raw, values);
   }
@@ -559,6 +561,10 @@ class Set {
 
   void add(const Object& value) {
     if (_raw->insert(value).second) _tokenizer.reset();
+  }
+
+  Set copy() const {
+    return {_raw};
   }
 
   void clear() {
@@ -680,6 +686,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__repr__", &to_repr<Set>)
       .def("add", &Set::add)
       .def("clear", &Set::clear)
+      .def("copy", &Set::copy)
       .def("discard", &Set::discard)
       .def("remove", &Set::remove);
 
