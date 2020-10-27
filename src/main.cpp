@@ -551,6 +551,14 @@ class Set {
     return true;
   }
 
+  bool operator<=(const Set& other) const {
+    if (_raw->size() > other._raw->size()) return false;
+    auto other_end = other._raw->cend();
+    for (const auto& element : *_raw)
+      if (other._raw->find(element) == other_end) return false;
+    return true;
+  }
+
   bool operator==(const Set& other) const { return *_raw == *other._raw; }
 
   Set operator|(const Set& other) const {
@@ -700,6 +708,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   py::class_<Set> PySet(m, SET_NAME);
   PySet.def(py::init<py::iterable>(), py::arg("values"))
       .def(py::self < py::self)
+      .def(py::self <= py::self)
       .def(py::self == py::self)
       .def(py::self | py::self)
       .def(py::pickle(&Set::to_state, &Set::from_state))
