@@ -582,6 +582,15 @@ class Set {
     return {_raw->cbegin(), _raw, _tokenizer.create()};
   }
 
+  Object pop() {
+    if (_raw->empty()) throw py::key_error("Pop from empty set.");
+    _tokenizer.reset();
+    auto position = _raw->begin();
+    Object result = *position;
+    _raw->erase(position);
+    return result;
+  }
+
   void remove(const Object& value) {
     if (_raw->erase(value))
       _tokenizer.reset();
@@ -694,6 +703,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("clear", &Set::clear)
       .def("copy", &Set::copy)
       .def("discard", &Set::discard)
+      .def("pop", &Set::pop)
       .def("remove", &Set::remove)
       .def("update", &Set::update);
 
