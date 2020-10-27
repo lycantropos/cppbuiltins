@@ -572,10 +572,10 @@ class Set {
   }
 
   void remove(const Object& value) {
-    if (!_raw->erase(value))
-      throw py::key_error(object_to_repr(value));
-    else
+    if (_raw->erase(value))
       _tokenizer.reset();
+    else
+      throw py::key_error(object_to_repr(value));
   }
 
   std::size_t size() const { return _raw->size(); }
