@@ -60,7 +60,9 @@ class Token {
 
 class Tokenizer {
  public:
-  Tokenizer() : _container(std::make_shared<WrappedTokenValue>()) {}
+  Tokenizer()
+      : _container(std::make_shared<WrappedTokenValue>(
+            std::make_shared<TokenValue>())) {}
 
   void reset() { _container->reset(new TokenValue()); }
 
