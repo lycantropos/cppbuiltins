@@ -494,6 +494,10 @@ class SetIterator {
  public:
   using Position = RawSet::const_iterator;
 
+  static IterableState to_state(const SetIterator& set) {
+    return iterable_to_state(*set._raw);
+  }
+
   SetIterator(Position position, std::shared_ptr<RawSet> raw, Token token)
       : _position(position),
         _raw(std::move(raw)),
@@ -652,6 +656,13 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("remove", &Set::remove);
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
+      .def(
+          "__reduce__",
+          [PyList = PyList, iter = py::module::import("builtins").attr("iter")](
+              const SetIterator& iterator) {
+            return py::make_tuple(iter, py::make_tuple(PyList(py::iter(
+                                            SetIterator::to_state(iterator)))));
+          })
       .def("__iter__", &identity<const SetIterator&>)
       .def("__next__", &SetIterator::next);
 }
