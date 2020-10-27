@@ -519,6 +519,18 @@ class SetIterator {
 
 class Set {
  public:
+  static Set from_state(IterableState state) {
+    RawSet raw;
+    raw.reserve(state.size());
+    for (auto& element : state)
+      raw.insert(py::reinterpret_borrow<Object>(element));
+    return {raw};
+  }
+
+  static IterableState to_state(const Set& set) {
+    return iterable_to_state(*set._raw);
+  }
+
   Set(const RawSet& raw) : _raw(std::make_shared<RawSet>(raw)), _tokenizer() {}
 
   Set(py::iterable values) : _raw(std::make_shared<RawSet>()), _tokenizer() {
@@ -631,6 +643,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<Set> PySet(m, SET_NAME);
   PySet.def(py::init<py::iterable>(), py::arg("values"))
+      .def(py::pickle(&Set::to_state, &Set::from_state))
       .def("__contains__", &Set::contains)
       .def("__iter__", &Set::iter)
       .def("__len__", &Set::size)
