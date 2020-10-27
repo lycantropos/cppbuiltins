@@ -11,11 +11,10 @@ from tests.utils import (AlternativeNativeSetsPair,
 booleans = strategies.booleans()
 objects = strategies.integers()
 empty_lists = strategies.builds(list)
-objects_sets = strategies.sets(objects)
+objects_sets = strategies.lists(objects)
 non_empty_objects_lists = strategies.lists(objects,
                                            min_size=1)
-sets_pairs = strategies.builds(to_alternative_native_sets_pair,
-                               objects_sets)
+sets_pairs = strategies.builds(to_alternative_native_sets_pair, objects_sets)
 empty_sets_pairs = strategies.builds(to_alternative_native_sets_pair,
                                      empty_lists)
 non_empty_sets_pairs = strategies.builds(to_alternative_native_sets_pair,
