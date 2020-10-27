@@ -563,9 +563,7 @@ class Set {
     if (_raw->insert(value).second) _tokenizer.reset();
   }
 
-  Set copy() const {
-    return {_raw};
-  }
+  Set copy() const { return {_raw}; }
 
   void clear() {
     _tokenizer.reset();
