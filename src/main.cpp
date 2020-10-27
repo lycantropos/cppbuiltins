@@ -567,6 +567,11 @@ class Set {
     return _raw->find(value) != _raw->cend();
   }
 
+  void discard(const Object& value) {
+    if (_raw->erase(value))
+      _tokenizer.reset();
+  }
+
   SetIterator iter() const {
     return {_raw->cbegin(), _raw, _tokenizer.create()};
   }
@@ -672,6 +677,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__len__", &Set::size)
       .def("__repr__", &to_repr<Set>)
       .def("add", &Set::add)
+      .def("discard", &Set::discard)
       .def("remove", &Set::remove);
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
