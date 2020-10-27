@@ -561,6 +561,11 @@ class Set {
     if (_raw->insert(value).second) _tokenizer.reset();
   }
 
+  void clear() {
+    _tokenizer.reset();
+    _raw->clear();
+  }
+
   bool contains(const Object& value) const {
     return _raw->find(value) != _raw->cend();
   }
@@ -674,6 +679,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__len__", &Set::size)
       .def("__repr__", &to_repr<Set>)
       .def("add", &Set::add)
+      .def("clear", &Set::clear)
       .def("discard", &Set::discard)
       .def("remove", &Set::remove);
 
