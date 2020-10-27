@@ -102,8 +102,7 @@ class ListReversedIterator {
 
   Object next() {
     if (_running) {
-      if (auto ptr = _raw.lock())
-        if (_index && _index <= ptr->size()) return (*ptr)[--_index];
+      if (_index && _index <= _raw->size()) return (*_raw)[--_index];
       _running = false;
     }
     throw py::stop_iteration();
@@ -111,7 +110,7 @@ class ListReversedIterator {
 
  private:
   Size _index;
-  std::weak_ptr<RawList> _raw;
+  std::shared_ptr<RawList> _raw;
   bool _running;
 };
 
