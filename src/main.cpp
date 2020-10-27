@@ -571,11 +571,11 @@ class Set {
   Set operator|(const Set& other) const {
     if (_raw->size() < other._raw->size()) {
       RawSet raw{*other._raw};
-      for (const auto& element : *_raw) raw.insert(element);
+      raw.insert(_raw->cbegin(), _raw->cend());
       return {raw};
     } else {
       RawSet raw{*_raw};
-      for (const auto& element : *other._raw) raw.insert(element);
+      raw.insert(other._raw->cbegin(), other._raw->cend());
       return {raw};
     }
   }
