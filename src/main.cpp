@@ -728,25 +728,25 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<Set> PySet(m, SET_NAME);
   PySet.def(py::init<py::iterable>(), py::arg("values"))
-      .def(py::self & py::self)
-      .def(py::self < py::self)
-      .def(py::self <= py::self)
-      .def(py::self == py::self)
-      .def(py::self | py::self)
-      .def(py::self |= py::self)
+      .def(py::self & py::self, py::arg("other"))
+      .def(py::self < py::self, py::arg("other"))
+      .def(py::self <= py::self, py::arg("other"))
+      .def(py::self == py::self, py::arg("other"))
+      .def(py::self | py::self, py::arg("other"))
+      .def(py::self |= py::self, py::arg("other"))
       .def(py::pickle(&Set::to_state, &Set::from_state))
       .def("__bool__", &Set::operator bool)
-      .def("__contains__", &Set::contains)
+      .def("__contains__", &Set::contains, py::arg("value"))
       .def("__iter__", &Set::iter)
       .def("__len__", &Set::size)
       .def("__repr__", &to_repr<Set>)
-      .def("add", &Set::add)
+      .def("add", &Set::add, py::arg("value"))
       .def("clear", &Set::clear)
       .def("copy", &Set::copy)
-      .def("discard", &Set::discard)
+      .def("discard", &Set::discard, py::arg("value"))
       .def("pop", &Set::pop)
-      .def("remove", &Set::remove)
-      .def("update", &Set::update);
+      .def("remove", &Set::remove, py::arg("value"))
+      .def("update", &Set::update, py::arg("values"));
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
       .def(
