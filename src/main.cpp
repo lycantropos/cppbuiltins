@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_set>
 #include <vector>
 
 namespace py = pybind11;
@@ -16,6 +17,8 @@ namespace py = pybind11;
 #define LIST_ITERATOR_NAME "list_iterator"
 #define LIST_NAME "list"
 #define LIST_REVERSED_ITERATOR_NAME "list_reversed_iterator"
+#define SET_ITERATOR_NAME "set_iterator"
+#define SET_NAME "set"
 #ifndef VERSION_INFO
 #define VERSION_INFO "dev"
 #endif
@@ -24,7 +27,48 @@ using Index = Py_ssize_t;
 using IterableState = py::list;
 using Object = py::object;
 using RawList = std::vector<Object>;
+
+template <>
+struct std::hash<Object> {
+  std::size_t operator()(const Object& object) const {
+    auto result = PyObject_Hash(object.ptr());
+    if (result == -1) {
+      throw py::error_already_set();
+    }
+    return static_cast<std::size_t>(result);
+  }
+};
+
+using RawSet = std::unordered_set<Object>;
 using Size = size_t;
+using TokenValue = bool;
+using WrappedTokenValue = std::shared_ptr<TokenValue>;
+
+class Token {
+ public:
+  Token(std::shared_ptr<WrappedTokenValue> container)
+      : _value(*container), _container(std::move(container)) {}
+
+  bool expired() const {
+    return std::addressof(*_value) != std::addressof(**_container);
+  }
+
+ private:
+  WrappedTokenValue _value;
+  std::shared_ptr<WrappedTokenValue> _container;
+};
+
+class Tokenizer {
+ public:
+  Tokenizer() : _container(std::make_shared<WrappedTokenValue>()) {}
+
+  void reset() { _container->reset(new TokenValue()); }
+
+  Token create() const { return {_container}; }
+
+ private:
+  std::shared_ptr<WrappedTokenValue> _container;
+};
 
 template <class T>
 T&& identity(T&& value) {
@@ -64,6 +108,11 @@ void fill_from_iterable(RawList& raw, const py::iterable& values) {
   auto position = py::iter(values);
   while (position != py::iterator::sentinel())
     raw.emplace_back(*(position++), true);
+}
+
+void fill_from_iterable(RawSet& raw, const py::iterable& values) {
+  auto position = py::iter(values);
+  while (position != py::iterator::sentinel()) raw.emplace(*(position++), true);
 }
 
 void fill_indices(const py::slice& slice, Size size, Index& start, Index& stop,
@@ -407,6 +456,86 @@ static std::ostream& operator<<(std::ostream& stream, const List& list) {
   return stream << "])";
 }
 
+class SetIterator {
+ public:
+  using Position = RawSet::const_iterator;
+
+  SetIterator(Position position, std::shared_ptr<RawSet> raw, Token token)
+      : _position(position),
+        _raw(std::move(raw)),
+        _token(std::move(token)),
+        _running(true) {}
+
+  Object next() {
+    if (_running) {
+      if (_token.expired())
+        throw std::runtime_error("Set modified during iteration.");
+      if (_position != _raw->cend()) return *_position++;
+      _running = false;
+    }
+    throw py::stop_iteration();
+  }
+
+ private:
+  Position _position;
+  std::shared_ptr<RawSet> _raw;
+  Token _token;
+  bool _running;
+};
+
+class Set {
+ public:
+  Set(const RawSet& raw) : _raw(std::make_shared<RawSet>(raw)), _tokenizer() {}
+
+  Set(py::iterable values) : _raw(std::make_shared<RawSet>()), _tokenizer() {
+    fill_from_iterable(*_raw, values);
+  }
+
+  operator bool() const { return !_raw->empty(); }
+
+  void add(const Object& value) {
+    if (_raw->insert(value).second) _tokenizer.reset();
+  }
+
+  bool contains(const Object& value) const {
+    return _raw->find(value) != _raw->cend();
+  }
+
+  SetIterator iter() const {
+    return {_raw->cbegin(), _raw, _tokenizer.create()};
+  }
+
+  void remove(const Object& value) {
+    if (!_raw->erase(value))
+      throw py::key_error(object_to_repr(value));
+    else
+      _tokenizer.reset();
+  }
+
+  std::size_t size() const { return _raw->size(); }
+
+ private:
+  std::shared_ptr<RawSet> _raw;
+  Tokenizer _tokenizer;
+};
+
+static std::ostream& operator<<(std::ostream& stream, const Set& set) {
+  stream << C_STR(MODULE_NAME) "." SET_NAME "([";
+  auto object = py::cast(set);
+  if (Py_ReprEnter(object.ptr()) == 0) {
+    if (set) {
+      auto iterator = set.iter();
+      stream << iterator.next();
+      for (std::size_t index = 1; index < set.size(); ++index)
+        stream << ", " << iterator.next();
+    }
+    Py_ReprLeave(object.ptr());
+  } else {
+    stream << "...";
+  }
+  return stream << "])";
+}
+
 PYBIND11_MODULE(MODULE_NAME, m) {
   m.doc() =
       R"pbdoc(Alternative implementation of python builtins based on C++ `std` library.)pbdoc";
@@ -462,4 +591,17 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   py::class_<ListReversedIterator>(m, LIST_REVERSED_ITERATOR_NAME)
       .def("__iter__", &identity<const ListReversedIterator&>)
       .def("__next__", &ListReversedIterator::next);
+
+  py::class_<Set> PySet(m, SET_NAME);
+  PySet.def(py::init<py::iterable>(), py::arg("values"))
+      .def("__contains__", &Set::contains)
+      .def("__iter__", &Set::iter)
+      .def("__len__", &Set::size)
+      .def("__repr__", &to_repr<Set>)
+      .def("add", &Set::add)
+      .def("remove", &Set::remove);
+
+  py::class_<SetIterator>(m, SET_ITERATOR_NAME)
+      .def("__iter__", &identity<const SetIterator&>)
+      .def("__next__", &SetIterator::next);
 }
