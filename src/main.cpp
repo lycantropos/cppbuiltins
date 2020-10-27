@@ -666,6 +666,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self == py::self)
       .def(py::self | py::self)
       .def(py::pickle(&Set::to_state, &Set::from_state))
+      .def("__bool__", &Set::operator bool)
       .def("__contains__", &Set::contains)
       .def("__iter__", &Set::iter)
       .def("__len__", &Set::size)
