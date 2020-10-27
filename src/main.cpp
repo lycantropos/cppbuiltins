@@ -580,6 +580,20 @@ class Set {
     }
   }
 
+  Set operator&(const Set& other) const {
+    RawSet result;
+    if (_raw->size() < other._raw->size()) {
+      const auto& other_raw = *other._raw;
+      auto end = other_raw.cend();
+      for (const auto& element : *_raw) if (other_raw.find(element) != end) result.insert(element);
+    } else {
+      const auto& raw = *_raw;
+      auto end = raw.cend();
+      for (const auto& element : *other._raw) if (raw.find(element) != end) result.insert(element);
+    }
+    return {result};
+  }
+
   operator bool() const { return !_raw->empty(); }
 
   void add(const Object& value) {
@@ -714,6 +728,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<Set> PySet(m, SET_NAME);
   PySet.def(py::init<py::iterable>(), py::arg("values"))
+      .def(py::self & py::self)
       .def(py::self < py::self)
       .def(py::self <= py::self)
       .def(py::self == py::self)
