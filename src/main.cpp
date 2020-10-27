@@ -541,9 +541,7 @@ class Set {
     fill_from_iterable(*_raw, values);
   }
 
-  bool operator==(const Set& other) const {
-    return *_raw == *other._raw;
-  }
+  bool operator==(const Set& other) const { return *_raw == *other._raw; }
 
   Set operator|(const Set& other) const {
     if (_raw->size() < other._raw->size()) {
@@ -568,8 +566,7 @@ class Set {
   }
 
   void discard(const Object& value) {
-    if (_raw->erase(value))
-      _tokenizer.reset();
+    if (_raw->erase(value)) _tokenizer.reset();
   }
 
   SetIterator iter() const {
