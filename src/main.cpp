@@ -562,7 +562,9 @@ class Set {
   bool operator==(const Set& other) const { return *_raw == *other._raw; }
 
   Set& operator|=(const Set& other) {
-    for (const auto& element : *other._raw) _raw->insert(element);
+    auto size_before = _raw->size();
+    _raw->insert(other._raw->cbegin(), other._raw->cend());
+    if (_raw->size() != size_before) _tokenizer.reset();
     return *this;
   }
 
