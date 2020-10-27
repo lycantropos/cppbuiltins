@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pytest
 from hypothesis import given
 
@@ -17,7 +19,7 @@ def test_defaults(pair: AlternativeNativeListsPair) -> None:
 
 
 @given(strategies.non_empty_lists_pairs_with_indices)
-def test_full(pair_with_index: AlternativeNativeListsPair) -> None:
+def test_full(pair_with_index: Tuple[AlternativeNativeListsPair, int]) -> None:
     (alternative, native), index = pair_with_index
 
     alternative_result, native_result = (alternative.pop(index),
@@ -28,7 +30,8 @@ def test_full(pair_with_index: AlternativeNativeListsPair) -> None:
 
 
 @given(strategies.lists_pairs_with_invalid_indices)
-def test_invalid_index(pair_with_index: AlternativeNativeListsPair) -> None:
+def test_invalid_index(pair_with_index: Tuple[AlternativeNativeListsPair, int]
+                       ) -> None:
     (alternative, native), index = pair_with_index
 
     with pytest.raises(IndexError):
