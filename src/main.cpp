@@ -434,7 +434,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           py::arg("values"), py::is_operator{})
       .def("__iter__", &List::iter)
       .def("__len__", &List::size)
-      .def("__repr__", to_repr<List>)
+      .def("__repr__", &to_repr<List>)
       .def("__reversed__", &List::reversed)
       .def("__setitem__", &List::set_item, py::arg("index"), py::arg("value"))
       .def("__setitem__", &List::set_items, py::arg("slice"), py::arg("values"))
