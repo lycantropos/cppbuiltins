@@ -130,8 +130,23 @@ void fill_indices(const py::slice& slice, Size size, Index& start, Index& stop,
 
 class ListIterator {
  public:
-  ListIterator(Size index, const std::shared_ptr<RawList>& raw)
-      : _index(index), _raw(raw), _running(true) {}
+  static ListIterator from_state(IteratorState state) {
+    if (state.size() != 3) throw std::runtime_error("Invalid state.");
+    auto iterable_state = state[1].cast<IterableState>();
+    auto raw = std::make_shared<RawList>();
+    raw->reserve(iterable_state.size());
+    for (auto& element : iterable_state)
+      raw->push_back(py::reinterpret_borrow<Object>(element));
+    return {state[0].cast<Size>(), raw, state[2].cast<bool>()};
+  }
+
+  static IteratorState to_state(const ListIterator& iterator) {
+    return py::make_tuple(iterator._index, iterable_to_state(*iterator._raw),
+                          iterator._running);
+  }
+
+  ListIterator(Size index, std::shared_ptr<RawList> raw, bool running = true)
+      : _index(index), _raw(std::move(raw)), _running(running) {}
 
   Object next() {
     if (_running) {
@@ -604,6 +619,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   collections_abc.attr("MutableSequence").attr("register")(PyList);
 
   py::class_<ListIterator>(m, LIST_ITERATOR_NAME)
+      .def(py::pickle(&ListIterator::to_state, &ListIterator::from_state))
       .def("__iter__", &identity<const ListIterator&>)
       .def("__next__", &ListIterator::next);
 
