@@ -541,6 +541,10 @@ class Set {
     fill_from_iterable(*_raw, values);
   }
 
+  bool operator==(const Set& other) const {
+    return *_raw == *other._raw;
+  }
+
   Set operator|(const Set& other) const {
     if (_raw->size() < other._raw->size()) {
       RawSet raw{*other._raw};
@@ -659,6 +663,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<Set> PySet(m, SET_NAME);
   PySet.def(py::init<py::iterable>(), py::arg("values"))
+      .def(py::self == py::self)
       .def(py::self | py::self)
       .def(py::pickle(&Set::to_state, &Set::from_state))
       .def("__contains__", &Set::contains)
