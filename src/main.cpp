@@ -639,6 +639,20 @@ class Set {
                 : raw_sets_symmetric_difference(*other._raw, *_raw)};
   }
 
+  Set& operator^=(const Set& other) {
+    auto size_before = _raw->size();
+    auto& raw = *_raw;
+    for (const auto& element : *other._raw) {
+      const auto& position = raw.find(element);
+      if (position == raw.cend())
+        raw.insert(element);
+      else
+        raw.erase(position);
+    }
+    if (_raw->size() != size_before) _tokenizer.reset();
+    return *this;
+  }
+
   Set operator|(const Set& other) const {
     return {_raw->size() < other._raw->size()
                 ? raw_sets_union(*_raw, *other._raw)
@@ -794,6 +808,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self <= py::self, py::arg("other"))
       .def(py::self == py::self, py::arg("other"))
       .def(py::self ^ py::self, py::arg("other"))
+      .def(py::self ^= py::self, py::arg("other"))
       .def(py::self | py::self, py::arg("other"))
       .def(py::self |= py::self, py::arg("other"))
       .def(py::pickle(&Set::to_state, &Set::from_state))
