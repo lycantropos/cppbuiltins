@@ -949,6 +949,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("union", &Set::union_)
       .def("update", &Set::update);
 
+  collections_abc.attr("MutableSet").attr("register")(PySet);
+
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
       .def(
           "__reduce__",
