@@ -689,6 +689,17 @@ class Set {
     return _raw->find(value) != _raw->cend();
   }
 
+  void difference_update(py::args others) {
+    auto size_before = _raw->size();
+    auto& raw = *_raw;
+    for (const auto& other : others) {
+      RawSet values;
+      fill_from_iterable(values, other.cast<py::iterable>());
+      raw_sets_in_place_difference(raw, values);
+    }
+    if (_raw->size() != size_before) _tokenizer.reset();
+  }
+
   void discard(const Object& value) {
     if (_raw->erase(value)) _tokenizer.reset();
   }
@@ -839,6 +850,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("add", &Set::add, py::arg("value"))
       .def("clear", &Set::clear)
       .def("copy", &Set::copy)
+      .def("difference_update", &Set::difference_update)
       .def("discard", &Set::discard, py::arg("value"))
       .def("intersection_update", &Set::intersection_update)
       .def("pop", &Set::pop)
