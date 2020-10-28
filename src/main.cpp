@@ -534,6 +534,13 @@ static RawSet raw_sets_symmetric_difference(const RawSet& smaller_set,
   return result;
 }
 
+static RawSet raw_sets_union(const RawSet& smaller_set,
+                             const RawSet& bigger_set) {
+  RawSet result{bigger_set};
+  result.insert(smaller_set.cbegin(), smaller_set.cend());
+  return result;
+}
+
 class Set {
  public:
   static Set from_state(IterableState state) {
@@ -634,15 +641,9 @@ class Set {
   }
 
   Set operator|(const Set& other) const {
-    if (_raw->size() < other._raw->size()) {
-      RawSet raw{*other._raw};
-      raw.insert(_raw->cbegin(), _raw->cend());
-      return {raw};
-    } else {
-      RawSet raw{*_raw};
-      raw.insert(other._raw->cbegin(), other._raw->cend());
-      return {raw};
-    }
+    return {_raw->size() < other._raw->size()
+                ? raw_sets_union(*_raw, *other._raw)
+                : raw_sets_union(*other._raw, *_raw)};
   }
 
   Set& operator|=(const Set& other) {
