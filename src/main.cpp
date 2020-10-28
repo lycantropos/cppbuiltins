@@ -730,6 +730,12 @@ class Set {
     return is_raw_set_subset_of(*_raw, values);
   }
 
+  bool issuperset(py::iterable other) {
+    RawSet values;
+    fill_from_iterable(values, other);
+    return is_raw_set_subset_of(values, *_raw);
+  }
+
   SetIterator iter() const {
     return {_raw->cbegin(), _raw, _tokenizer.create()};
   }
@@ -877,6 +883,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("discard", &Set::discard, py::arg("value"))
       .def("intersection_update", &Set::intersection_update)
       .def("issubset", &Set::issubset, py::arg("other"))
+      .def("issuperset", &Set::issuperset, py::arg("other"))
       .def("pop", &Set::pop)
       .def("remove", &Set::remove, py::arg("value"))
       .def("symmetric_difference_update", &Set::symmetric_difference_update,
