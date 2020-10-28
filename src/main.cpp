@@ -521,6 +521,14 @@ class SetIterator {
   bool _running;
 };
 
+static bool is_raw_set_subset_of(const RawSet& left, const RawSet& right) {
+  if (left.size() > right.size()) return false;
+  const auto& right_end = right.cend();
+  for (const auto& element : left)
+    if (right.find(element) == right_end) return false;
+  return true;
+}
+
 static void raw_sets_in_place_difference(RawSet& left, const RawSet& right) {
   const auto& right_end = right.cend();
   for (auto position = left.cbegin(); position != left.cend();)
@@ -643,11 +651,7 @@ class Set {
   }
 
   bool operator<=(const Set& other) const {
-    if (_raw->size() > other._raw->size()) return false;
-    auto other_end = other._raw->cend();
-    for (const auto& element : *_raw)
-      if (other._raw->find(element) == other_end) return false;
-    return true;
+    return is_raw_set_subset_of(*_raw, *other._raw);
   }
 
   bool operator==(const Set& other) const { return *_raw == *other._raw; }
