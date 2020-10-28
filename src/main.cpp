@@ -698,6 +698,16 @@ class Set {
 
   Set copy() const { return {_raw}; }
 
+  Set difference(py::args others) const {
+    RawSet raw{*_raw};
+    for (const auto& other : others) {
+      RawSet values;
+      fill_from_iterable(values, other.cast<py::iterable>());
+      raw_sets_in_place_difference(raw, values);
+    }
+    return {raw};
+  }
+
   void difference_update(py::args others) {
     auto& raw = *_raw;
     auto size_before = raw.size();
@@ -899,6 +909,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("add", &Set::add, py::arg("value"))
       .def("clear", &Set::clear)
       .def("copy", &Set::copy)
+      .def("difference", &Set::difference)
       .def("difference_update", &Set::difference_update)
       .def("discard", &Set::discard, py::arg("value"))
       .def("intersection", &Set::intersection)
