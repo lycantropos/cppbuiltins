@@ -522,7 +522,7 @@ class SetIterator {
 };
 
 static void raw_sets_in_place_intersection(RawSet& left, const RawSet& right) {
-  const auto right_end = right.cend();
+  const auto& right_end = right.cend();
   for (auto position = left.cbegin(); position != left.cend();)
     if (right.find(*position) == right_end)
       position = left.erase(position);
