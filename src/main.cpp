@@ -543,52 +543,6 @@ class Set {
     fill_from_iterable(*_raw, values);
   }
 
-  bool operator<(const Set& other) const {
-    if (_raw->size() >= other._raw->size()) return false;
-    auto other_end = other._raw->cend();
-    for (const auto& element : *_raw)
-      if (other._raw->find(element) == other_end) return false;
-    return true;
-  }
-
-  bool operator<=(const Set& other) const {
-    if (_raw->size() > other._raw->size()) return false;
-    auto other_end = other._raw->cend();
-    for (const auto& element : *_raw)
-      if (other._raw->find(element) == other_end) return false;
-    return true;
-  }
-
-  bool operator==(const Set& other) const { return *_raw == *other._raw; }
-
-  Set& operator|=(const Set& other) {
-    auto size_before = _raw->size();
-    _raw->insert(other._raw->cbegin(), other._raw->cend());
-    if (_raw->size() != size_before) _tokenizer.reset();
-    return *this;
-  }
-
-  Set operator|(const Set& other) const {
-    if (_raw->size() < other._raw->size()) {
-      RawSet raw{*other._raw};
-      raw.insert(_raw->cbegin(), _raw->cend());
-      return {raw};
-    } else {
-      RawSet raw{*_raw};
-      raw.insert(other._raw->cbegin(), other._raw->cend());
-      return {raw};
-    }
-  }
-
-  Set operator-(const Set& other) const {
-    RawSet result;
-    const auto& other_raw = *other._raw;
-    auto end = other_raw.cend();
-    for (const auto& element : *_raw)
-      if (other_raw.find(element) == end) result.insert(element);
-    return {result};
-  }
-
   Set operator&(const Set& other) const {
     RawSet result;
     if (_raw->size() < other._raw->size()) {
@@ -616,6 +570,52 @@ class Set {
       else
         ++position;
     if (raw.size() != size_before) _tokenizer.reset();
+    return *this;
+  }
+
+  Set operator-(const Set& other) const {
+    RawSet result;
+    const auto& other_raw = *other._raw;
+    auto end = other_raw.cend();
+    for (const auto& element : *_raw)
+      if (other_raw.find(element) == end) result.insert(element);
+    return {result};
+  }
+
+  bool operator<(const Set& other) const {
+    if (_raw->size() >= other._raw->size()) return false;
+    auto other_end = other._raw->cend();
+    for (const auto& element : *_raw)
+      if (other._raw->find(element) == other_end) return false;
+    return true;
+  }
+
+  bool operator<=(const Set& other) const {
+    if (_raw->size() > other._raw->size()) return false;
+    auto other_end = other._raw->cend();
+    for (const auto& element : *_raw)
+      if (other._raw->find(element) == other_end) return false;
+    return true;
+  }
+
+  bool operator==(const Set& other) const { return *_raw == *other._raw; }
+
+  Set operator|(const Set& other) const {
+    if (_raw->size() < other._raw->size()) {
+      RawSet raw{*other._raw};
+      raw.insert(_raw->cbegin(), _raw->cend());
+      return {raw};
+    } else {
+      RawSet raw{*_raw};
+      raw.insert(other._raw->cbegin(), other._raw->cend());
+      return {raw};
+    }
+  }
+
+  Set& operator|=(const Set& other) {
+    auto size_before = _raw->size();
+    _raw->insert(other._raw->cbegin(), other._raw->cend());
+    if (_raw->size() != size_before) _tokenizer.reset();
     return *this;
   }
 
