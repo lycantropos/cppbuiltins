@@ -742,7 +742,7 @@ class Set {
 
   void symmetric_difference_update(py::iterable other) {
     RawSet values;
-    fill_from_iterable(values, other.cast<py::iterable>());
+    fill_from_iterable(values, other);
     if (!values.empty()) _tokenizer.reset();
     raw_sets_in_place_symmetric_difference(*_raw, values);
   }
