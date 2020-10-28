@@ -521,6 +521,15 @@ class SetIterator {
   bool _running;
 };
 
+static RawSet raw_sets_intersection(const RawSet& smaller_set,
+                                    const RawSet& bigger_set) {
+  RawSet result;
+  const auto& bigger_set_end = bigger_set.cend();
+  for (const auto& element : smaller_set)
+    if (bigger_set.find(element) != bigger_set_end) result.insert(element);
+  return result;
+}
+
 static RawSet raw_sets_symmetric_difference(const RawSet& smaller_set,
                                             const RawSet& bigger_set) {
   RawSet result{bigger_set};
@@ -564,19 +573,9 @@ class Set {
   }
 
   Set operator&(const Set& other) const {
-    RawSet result;
-    if (_raw->size() < other._raw->size()) {
-      const auto& other_raw = *other._raw;
-      auto end = other_raw.cend();
-      for (const auto& element : *_raw)
-        if (other_raw.find(element) != end) result.insert(element);
-    } else {
-      const auto& raw = *_raw;
-      auto end = raw.cend();
-      for (const auto& element : *other._raw)
-        if (raw.find(element) != end) result.insert(element);
-    }
-    return {result};
+    return {_raw->size() < other._raw->size()
+                ? raw_sets_intersection(*_raw, *other._raw)
+                : raw_sets_intersection(*other._raw, *_raw)};
   }
 
   Set& operator&=(const Set& other) {
