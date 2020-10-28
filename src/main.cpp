@@ -633,10 +633,12 @@ class Set {
   }
 
   bool operator<(const Set& other) const {
-    if (_raw->size() >= other._raw->size()) return false;
-    auto other_end = other._raw->cend();
-    for (const auto& element : *_raw)
-      if (other._raw->find(element) == other_end) return false;
+    const auto& raw = *_raw;
+    const auto& other_raw = *other._raw;
+    if (raw.size() >= other_raw.size()) return false;
+    const auto& other_end = other_raw.cend();
+    for (const auto& element : raw)
+      if (other_raw.find(element) == other_end) return false;
     return true;
   }
 
