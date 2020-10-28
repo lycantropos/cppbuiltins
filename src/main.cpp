@@ -606,13 +606,16 @@ class Set {
   }
 
   Set& operator&=(const Set& other) {
+    auto& raw = *_raw;
     const auto& other_raw = *other._raw;
+    auto size_before = raw.size();
     auto other_end = other_raw.cend();
-    for (auto position = _raw->cbegin(); position != _raw->cend();)
+    for (auto position = raw.cbegin(); position != raw.cend();)
       if (other_raw.find(*position) == other_end)
-        position = _raw->erase(position);
+        position = raw.erase(position);
       else
         ++position;
+    if (raw.size() != size_before) _tokenizer.reset();
     return *this;
   }
 
