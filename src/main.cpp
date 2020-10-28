@@ -539,6 +539,17 @@ static void raw_sets_in_place_intersection(RawSet& left, const RawSet& right) {
       ++position;
 }
 
+static void raw_sets_in_place_symmetric_difference(RawSet& left,
+                                                   const RawSet& right) {
+  for (const auto& element : right) {
+    const auto& position = left.find(element);
+    if (position == left.cend())
+      left.insert(element);
+    else
+      left.erase(position);
+  }
+}
+
 static RawSet raw_sets_intersection(const RawSet& smaller_set,
                                     const RawSet& bigger_set) {
   RawSet result;
@@ -646,16 +657,10 @@ class Set {
   }
 
   Set& operator^=(const Set& other) {
-    auto size_before = _raw->size();
     auto& raw = *_raw;
-    for (const auto& element : *other._raw) {
-      const auto& position = raw.find(element);
-      if (position == raw.cend())
-        raw.insert(element);
-      else
-        raw.erase(position);
-    }
-    if (_raw->size() != size_before) _tokenizer.reset();
+    auto size_before = raw.size();
+    raw_sets_in_place_symmetric_difference(raw, *other._raw);
+    if (raw.size() != size_before) _tokenizer.reset();
     return *this;
   }
 
