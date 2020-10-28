@@ -521,6 +521,19 @@ class SetIterator {
   bool _running;
 };
 
+static RawSet raw_sets_symmetric_difference(const RawSet& smaller_set,
+                                            const RawSet& bigger_set) {
+  RawSet result{bigger_set};
+  for (const auto& element : smaller_set) {
+    const auto& position = result.find(element);
+    if (position == result.cend())
+      result.insert(element);
+    else
+      result.erase(position);
+  }
+  return result;
+}
+
 class Set {
  public:
   static Set from_state(IterableState state) {
@@ -613,6 +626,12 @@ class Set {
   }
 
   bool operator==(const Set& other) const { return *_raw == *other._raw; }
+
+  Set operator^(const Set& other) const {
+    return {_raw->size() < other._raw->size()
+                ? raw_sets_symmetric_difference(*_raw, *other._raw)
+                : raw_sets_symmetric_difference(*other._raw, *_raw)};
+  }
 
   Set operator|(const Set& other) const {
     if (_raw->size() < other._raw->size()) {
@@ -774,6 +793,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self < py::self, py::arg("other"))
       .def(py::self <= py::self, py::arg("other"))
       .def(py::self == py::self, py::arg("other"))
+      .def(py::self ^ py::self, py::arg("other"))
       .def(py::self | py::self, py::arg("other"))
       .def(py::self |= py::self, py::arg("other"))
       .def(py::pickle(&Set::to_state, &Set::from_state))
