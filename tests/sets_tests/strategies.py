@@ -12,6 +12,7 @@ booleans = strategies.booleans()
 objects = strategies.integers()
 empty_lists = strategies.builds(list)
 objects_lists = strategies.lists(objects)
+objects_lists_lists = strategies.lists(objects_lists)
 non_empty_objects_lists = strategies.lists(objects,
                                            min_size=1)
 sets_pairs = strategies.builds(to_alternative_native_sets_pair, objects_lists)
