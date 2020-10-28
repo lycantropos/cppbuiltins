@@ -521,6 +521,14 @@ class SetIterator {
   bool _running;
 };
 
+static bool is_raw_set_disjoint_with(const RawSet& smaller_set,
+                                     const RawSet& bigger_set) {
+  const auto& bigger_set_end = bigger_set.cend();
+  for (const auto& element : smaller_set)
+    if (bigger_set.find(element) != bigger_set_end) return false;
+  return true;
+}
+
 static bool is_raw_set_subset_of(const RawSet& left, const RawSet& right) {
   if (left.size() > right.size()) return false;
   const auto& right_end = right.cend();
@@ -744,6 +752,14 @@ class Set {
     if (raw.size() != size_before) _tokenizer.reset();
   }
 
+  bool isdisjoint(py::iterable other) {
+    RawSet values;
+    fill_from_iterable(values, other);
+    const auto& raw = *_raw;
+    return raw.size() < values.size() ? is_raw_set_disjoint_with(raw, values)
+                                      : is_raw_set_disjoint_with(values, raw);
+  }
+
   bool issubset(py::iterable other) {
     RawSet values;
     fill_from_iterable(values, other);
@@ -922,6 +938,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("discard", &Set::discard, py::arg("value"))
       .def("intersection", &Set::intersection)
       .def("intersection_update", &Set::intersection_update)
+      .def("isdisjoint", &Set::isdisjoint, py::arg("other"))
       .def("issubset", &Set::issubset, py::arg("other"))
       .def("issuperset", &Set::issuperset, py::arg("other"))
       .def("pop", &Set::pop)
