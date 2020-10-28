@@ -742,15 +742,12 @@ class Set {
 
   std::size_t size() const { return _raw->size(); }
 
-  void symmetric_difference_update(py::args others) {
-    auto size_before = _raw->size();
-    auto& raw = *_raw;
-    for (const auto& other : others) {
-      RawSet values;
-      fill_from_iterable(values, other.cast<py::iterable>());
-      raw_sets_in_place_symmetric_difference(raw, values);
-    }
-    if (_raw->size() != size_before) _tokenizer.reset();
+  void symmetric_difference_update(py::iterable other) {
+    RawSet values;
+    fill_from_iterable(values, other.cast<py::iterable>());
+    if (!values.empty())
+      _tokenizer.reset();
+    raw_sets_in_place_symmetric_difference(*_raw, values);
   }
 
   void update(py::args others) {
