@@ -683,8 +683,6 @@ class Set {
     if (_raw->insert(value).second) _tokenizer.reset();
   }
 
-  Set copy() const { return {_raw}; }
-
   void clear() {
     _tokenizer.reset();
     _raw->clear();
@@ -693,6 +691,8 @@ class Set {
   bool contains(const Object& value) const {
     return _raw->find(value) != _raw->cend();
   }
+
+  Set copy() const { return {_raw}; }
 
   void difference_update(py::args others) {
     auto size_before = _raw->size();
