@@ -748,13 +748,14 @@ class Set {
   }
 
   void update(py::args others) {
-    auto size_before = _raw->size();
+    auto& raw = *_raw;
+    auto size_before = raw.size();
     for (const auto& other : others) {
       RawList values;
       fill_from_iterable(values, other.cast<py::iterable>());
-      _raw->insert(values.begin(), values.end());
+      raw.insert(values.begin(), values.end());
     }
-    if (_raw->size() != size_before) _tokenizer.reset();
+    if (raw.size() != size_before) _tokenizer.reset();
   }
 
  private:
