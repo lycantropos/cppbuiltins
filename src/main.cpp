@@ -521,6 +521,15 @@ class SetIterator {
   bool _running;
 };
 
+static void raw_sets_in_place_intersection(RawSet& left, const RawSet& right) {
+  const auto right_end = right.cend();
+  for (auto position = left.cbegin(); position != left.cend();)
+    if (right.find(*position) == right_end)
+      position = left.erase(position);
+    else
+      ++position;
+}
+
 static RawSet raw_sets_intersection(const RawSet& smaller_set,
                                     const RawSet& bigger_set) {
   RawSet result;
@@ -580,14 +589,8 @@ class Set {
 
   Set& operator&=(const Set& other) {
     auto& raw = *_raw;
-    const auto& other_raw = *other._raw;
     auto size_before = raw.size();
-    auto other_end = other_raw.cend();
-    for (auto position = raw.cbegin(); position != raw.cend();)
-      if (other_raw.find(*position) == other_end)
-        position = raw.erase(position);
-      else
-        ++position;
+    raw_sets_in_place_intersection(raw, *other._raw);
     if (raw.size() != size_before) _tokenizer.reset();
     return *this;
   }
