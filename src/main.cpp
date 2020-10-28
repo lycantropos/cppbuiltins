@@ -742,6 +742,17 @@ class Set {
 
   std::size_t size() const { return _raw->size(); }
 
+  void symmetric_difference_update(py::args others) {
+    auto size_before = _raw->size();
+    auto& raw = *_raw;
+    for (const auto& other : others) {
+      RawSet values;
+      fill_from_iterable(values, other.cast<py::iterable>());
+      raw_sets_in_place_symmetric_difference(raw, values);
+    }
+    if (_raw->size() != size_before) _tokenizer.reset();
+  }
+
   void update(py::args others) {
     auto size_before = _raw->size();
     for (const auto& other : others) {
@@ -860,6 +871,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("intersection_update", &Set::intersection_update)
       .def("pop", &Set::pop)
       .def("remove", &Set::remove, py::arg("value"))
+      .def("symmetric_difference_update", &Set::symmetric_difference_update)
       .def("update", &Set::update);
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
