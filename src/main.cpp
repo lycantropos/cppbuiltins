@@ -657,10 +657,8 @@ class Set {
   }
 
   Set& operator^=(const Set& other) {
-    auto& raw = *_raw;
-    auto size_before = raw.size();
-    raw_sets_in_place_symmetric_difference(raw, *other._raw);
-    if (raw.size() != size_before) _tokenizer.reset();
+    if (!other._raw->empty()) _tokenizer.reset();
+    raw_sets_in_place_symmetric_difference(*_raw, *other._raw);
     return *this;
   }
 
