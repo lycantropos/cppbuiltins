@@ -709,11 +709,13 @@ class Set {
 
   std::size_t size() const { return _raw->size(); }
 
-  void update(py::iterable iterable) {
-    RawList values;
-    fill_from_iterable(values, iterable);
+  void update(py::args others) {
     auto size_before = _raw->size();
-    _raw->insert(values.begin(), values.end());
+    for (const auto& other : others) {
+      RawList values;
+      fill_from_iterable(values, other.cast<py::iterable>());
+      _raw->insert(values.begin(), values.end());
+    }
     if (_raw->size() != size_before) _tokenizer.reset();
   }
 
@@ -823,7 +825,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("discard", &Set::discard, py::arg("value"))
       .def("pop", &Set::pop)
       .def("remove", &Set::remove, py::arg("value"))
-      .def("update", &Set::update, py::arg("values"));
+      .def("update", &Set::update);
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
       .def(
