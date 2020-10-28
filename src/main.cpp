@@ -775,6 +775,16 @@ class Set {
     raw_sets_in_place_symmetric_difference(*_raw, values);
   }
 
+  Set union_(py::args others) const {
+    RawSet raw{*_raw};
+    for (const auto& other : others) {
+      RawList values;
+      fill_from_iterable(values, other.cast<py::iterable>());
+      raw.insert(values.begin(), values.end());
+    }
+    return {raw};
+  }
+
   void update(py::args others) {
     auto& raw = *_raw;
     auto size_before = raw.size();
@@ -899,6 +909,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("remove", &Set::remove, py::arg("value"))
       .def("symmetric_difference_update", &Set::symmetric_difference_update,
            py::arg("other"))
+      .def("union", &Set::union_)
       .def("update", &Set::update);
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
