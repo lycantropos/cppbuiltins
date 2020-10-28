@@ -778,6 +778,14 @@ class Set {
 
   std::size_t size() const { return _raw->size(); }
 
+  Set symmetric_difference(py::iterable other) const {
+    RawSet values;
+    fill_from_iterable(values, other);
+    RawSet raw{*_raw};
+    raw_sets_in_place_symmetric_difference(raw, values);
+    return {raw};
+  }
+
   void symmetric_difference_update(py::iterable other) {
     RawSet values;
     fill_from_iterable(values, other);
@@ -918,6 +926,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("issuperset", &Set::issuperset, py::arg("other"))
       .def("pop", &Set::pop)
       .def("remove", &Set::remove, py::arg("value"))
+      .def("symmetric_difference", &Set::symmetric_difference, py::arg("other"))
       .def("symmetric_difference_update", &Set::symmetric_difference_update,
            py::arg("other"))
       .def("union", &Set::union_)
