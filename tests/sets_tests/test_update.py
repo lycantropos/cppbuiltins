@@ -8,7 +8,7 @@ from tests.utils import (AlternativeNativeSetsPair,
 from . import strategies
 
 
-@given(strategies.sets_pairs, strategies.objects_sets)
+@given(strategies.sets_pairs, strategies.objects_lists)
 def test_basic(pair: AlternativeNativeSetsPair, values: Set[Any]) -> None:
     alternative, native = pair
 
