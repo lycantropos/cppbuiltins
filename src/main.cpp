@@ -876,10 +876,11 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("difference_update", &Set::difference_update)
       .def("discard", &Set::discard, py::arg("value"))
       .def("intersection_update", &Set::intersection_update)
-      .def("issubset", &Set::issubset)
+      .def("issubset", &Set::issubset, py::arg("other"))
       .def("pop", &Set::pop)
       .def("remove", &Set::remove, py::arg("value"))
-      .def("symmetric_difference_update", &Set::symmetric_difference_update)
+      .def("symmetric_difference_update", &Set::symmetric_difference_update,
+           py::arg("other"))
       .def("update", &Set::update);
 
   py::class_<SetIterator>(m, SET_ITERATOR_NAME)
