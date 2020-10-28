@@ -713,6 +713,16 @@ class Set {
     if (_raw->erase(value)) _tokenizer.reset();
   }
 
+  Set intersection(py::args others) const {
+    RawSet raw{*_raw};
+    for (const auto& other : others) {
+      RawSet values;
+      fill_from_iterable(values, other.cast<py::iterable>());
+      raw_sets_in_place_intersection(raw, values);
+    }
+    return {raw};
+  }
+
   void intersection_update(py::args others) {
     auto& raw = *_raw;
     auto size_before = raw.size();
@@ -881,6 +891,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("copy", &Set::copy)
       .def("difference_update", &Set::difference_update)
       .def("discard", &Set::discard, py::arg("value"))
+      .def("intersection", &Set::intersection)
       .def("intersection_update", &Set::intersection_update)
       .def("issubset", &Set::issubset, py::arg("other"))
       .def("issuperset", &Set::issuperset, py::arg("other"))
