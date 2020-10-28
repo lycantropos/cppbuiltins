@@ -1,5 +1,5 @@
 from typing import (Any,
-                    Set)
+                    List)
 
 from hypothesis import given
 
@@ -9,7 +9,7 @@ from . import strategies
 
 
 @given(strategies.sets_pairs, strategies.objects_lists)
-def test_basic(pair: AlternativeNativeSetsPair, values: Set[Any]) -> None:
+def test_basic(pair: AlternativeNativeSetsPair, values: List[Any]) -> None:
     alternative, native = pair
 
     alternative_result, native_result = (alternative.update(values),
