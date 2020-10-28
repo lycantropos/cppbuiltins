@@ -695,14 +695,14 @@ class Set {
   Set copy() const { return {_raw}; }
 
   void difference_update(py::args others) {
-    auto size_before = _raw->size();
     auto& raw = *_raw;
+    auto size_before = raw.size();
     for (const auto& other : others) {
       RawSet values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw_sets_in_place_difference(raw, values);
     }
-    if (_raw->size() != size_before) _tokenizer.reset();
+    if (raw.size() != size_before) _tokenizer.reset();
   }
 
   void discard(const Object& value) {
@@ -710,14 +710,14 @@ class Set {
   }
 
   void intersection_update(py::args others) {
-    auto size_before = _raw->size();
     auto& raw = *_raw;
+    auto size_before = raw.size();
     for (const auto& other : others) {
       RawSet values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw_sets_in_place_intersection(raw, values);
     }
-    if (_raw->size() != size_before) _tokenizer.reset();
+    if (raw.size() != size_before) _tokenizer.reset();
   }
 
   SetIterator iter() const {
