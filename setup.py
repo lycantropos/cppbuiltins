@@ -4,7 +4,7 @@ from pathlib import Path
 from setuptools import (find_packages,
                         setup)
 
-import cppbuiltins
+__version__ = '0.2.0'
 
 project_base_url = 'https://github.com/lycantropos/cppbuiltins/'
 
@@ -13,11 +13,13 @@ def read_file(path_string: str) -> str:
     return Path(path_string).read_text(encoding='utf-8')
 
 
+name = 'cppbuiltins'
 parameters = dict(
-        name=cppbuiltins.__name__,
+        name=name,
         packages=find_packages(exclude=('tests', 'tests.*')),
-        version=cppbuiltins.__version__,
-        description=cppbuiltins.__doc__,
+        version=__version__,
+        description='Alternative implementation of python builtins '
+                    'based on C++ `std` library.',
         long_description=read_file('README.md'),
         long_description_content_type='text/markdown',
         author='Azat Ibrakov',
@@ -36,8 +38,7 @@ parameters = dict(
         url=project_base_url,
         download_url=project_base_url + 'archive/master.zip',
         python_requires='>=3.5',
-        setup_requires=read_file('requirements-setup.txt'),
-        install_requires=read_file('requirements.txt'))
+        setup_requires=read_file('requirements-setup.txt'))
 if platform.python_implementation() == 'CPython':
     import sys
     import tempfile
@@ -117,7 +118,7 @@ if platform.python_implementation() == 'CPython':
 
     parameters.update(
             cmdclass={'build_ext': BuildExt},
-            ext_modules=[Extension('_' + cppbuiltins.__name__,
+            ext_modules=[Extension(name,
                                    glob('src/*.cpp'),
                                    include_dirs=[LazyPybindInclude()],
                                    language='c++')],
