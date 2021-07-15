@@ -6,8 +6,8 @@ cppbuiltins
 [![](https://img.shields.io/github/license/lycantropos/cppbuiltins.svg)](https://github.com/lycantropos/cppbuiltins/blob/master/LICENSE "License")
 [![](https://badge.fury.io/py/cppbuiltins.svg)](https://badge.fury.io/py/cppbuiltins "PyPI")
 
-In what follows `python` is an alias for `python3.5` or `pypy3.5`
-or any later version (`python3.6`, `pypy3.6` and so on).
+In what follows `python` is an alias for `python3.5`
+or any later version (`python3.6` and so on).
 
 Installation
 ------------
@@ -94,40 +94,16 @@ pytest
 ```
 
 Inside `Docker` container:
-- with `CPython`
-  ```bash
-  docker-compose --file docker-compose.cpython.yml up
-  ```
-- with `PyPy`
-  ```bash
-  docker-compose --file docker-compose.pypy.yml up
-  ```
+```bash
+docker-compose --file docker-compose.yml up
+```
 
 `Bash` script:
-- with `CPython`
-  ```bash
-  ./run-tests.sh
-  ```
-  or
-  ```bash
-  ./run-tests.sh cpython
-  ```
-
-- with `PyPy`
-  ```bash
-  ./run-tests.sh pypy
-  ```
+```bash
+./run-tests.sh
+```
 
 `PowerShell` script:
-- with `CPython`
-  ```powershell
-  .\run-tests.ps1
-  ```
-  or
-  ```powershell
-  .\run-tests.ps1 cpython
-  ```
-- with `PyPy`
-  ```powershell
-  .\run-tests.ps1 pypy
-  ```
+```powershell
+.\run-tests.ps1
+```

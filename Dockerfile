@@ -10,12 +10,10 @@ WORKDIR /opt/cppbuiltins
 COPY requirements-setup.txt .
 COPY requirements-tests.txt .
 RUN pip install -r requirements-tests.txt
-COPY requirements.txt .
 
 COPY README.md .
 COPY pytest.ini .
 COPY setup.py .
-COPY cppbuiltins cppbuiltins/
 COPY src/ src/
 COPY tests/ tests/
 

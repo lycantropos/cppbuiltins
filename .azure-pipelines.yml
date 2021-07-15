@@ -28,10 +28,6 @@ strategy:
       image: 'macos-latest'
       python.version: '3.9'
       python.architecture: 'x64'
-    MacOs PyPy3:
-      image: 'macos-latest'
-      python.version: 'pypy3'
-      python.architecture: 'x64'
     Ubuntu CPython3.5:
       image: 'ubuntu-latest'
       python.version: '3.5'
@@ -51,10 +47,6 @@ strategy:
     Ubuntu CPython3.9:
       image: 'ubuntu-latest'
       python.version: '3.9'
-      python.architecture: 'x64'
-    Ubuntu PyPy3:
-      image: 'ubuntu-latest'
-      python.version: 'pypy3'
       python.architecture: 'x64'
     Windows CPython3.5 (x86):
       image: 'windows-latest'
@@ -96,10 +88,6 @@ strategy:
       image: 'windows-latest'
       python.version: '3.9'
       python.architecture: 'x64'
-    Windows PyPy3:
-      image: 'windows-latest'
-      python.version: 'pypy3'
-      python.architecture: 'x86'
 
 pool:
   vmImage: $(image)
