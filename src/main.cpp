@@ -458,7 +458,7 @@ class List {
       const Size size = values.size();
       RawList keys;
       keys.reserve(size);
-      for (const auto value : values) keys.push_back(key(value));
+      for (const auto& value : values) keys.push_back(key(value));
       std::vector<Size> indices;
       indices.reserve(size);
       for (Size index = 0; index < size; ++index) indices.push_back(index);
@@ -855,7 +855,7 @@ static std::ostream& operator<<(std::ostream& stream, const Set& set) {
 PYBIND11_MODULE(MODULE_NAME, m) {
   m.doc() =
       R"pbdoc(Alternative implementation of python builtins based on C++ `std` library.)pbdoc";
-  m.attr("__version__") = VERSION_INFO;
+  m.attr("__version__") = C_STR(VERSION_INFO);
 
   py::class_<List> PyList(m, LIST_NAME);
   PyList.def(py::init<py::iterable>(), py::arg("values"))
