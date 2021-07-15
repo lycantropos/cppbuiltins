@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  cppbuiltins-pypy:
+    build:
+      context: .
+      args:
+        - IMAGE_NAME=${PYPY_IMAGE_NAME}
+        - IMAGE_VERSION=${PYPY_IMAGE_VERSION}
+    image: lycantropos/cppbuiltins-pypy:0.2.0
+    volumes:
+      - ./cppbuiltins:/opt/cppbuiltins/cppbuiltins
+      - ./pytest.ini:/opt/cppbuiltins/pytest.ini
+      - ./README.md:/opt/cppbuiltins/README.md
+      - ./requirements-tests.txt:/opt/cppbuiltins/requirements-tests.txt
+      - ./requirements.txt:/opt/cppbuiltins/requirements.txt
+      - ./setup.py:/opt/cppbuiltins/setup.py
+      - ./tests:/opt/cppbuiltins/tests
+    entrypoint: pytest

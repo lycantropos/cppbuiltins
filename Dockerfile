@@ -8,15 +8,15 @@ RUN pip install --upgrade pip setuptools
 WORKDIR /opt/cppbuiltins
 
 COPY requirements-setup.txt .
-RUN pip install --force-reinstall -r requirements-setup.txt
-
 COPY requirements-tests.txt .
-RUN pip install --force-reinstall -r requirements-tests.txt
+RUN pip install -r requirements-tests.txt
+COPY requirements.txt .
 
 COPY README.md .
 COPY pytest.ini .
 COPY setup.py .
+COPY cppbuiltins cppbuiltins/
 COPY src/ src/
 COPY tests/ tests/
 
-RUN python setup.py develop
+RUN pip install -e .

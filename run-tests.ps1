@@ -1,16 +1,20 @@
-docker-compose up --build --exit-code-from cppbuiltins
+param ([String]$implementation = "cpython")
+
+$compose_file = "docker-compose.${implementation}.yml"
+
+docker-compose --file $compose_file up --build --exit-code-from cppbuiltins-${implementation}
 
 $STATUS = $LastExitCode
 
-docker-compose down --remove-orphans
+docker-compose --file $compose_file down --remove-orphans
 
 if ($STATUS -eq 0)
 {
-    echo "tests passed"
+    echo "${implementation} tests passed"
 }
 else
 {
-    echo "tests failed"
+    echo "${implementation} tests failed"
 }
 
 exit $STATUS
