@@ -115,21 +115,14 @@ steps:
     displayName: 'Install in editable mode'
     env:
       CPPFLAGS: --coverage -O0
-  - bash: python -m pip install --upgrade coverage codecov
+  - bash: python -m pip install --upgrade codecov
     displayName: 'Install coverage dependencies'
-  - bash: coverage run -m doctest README.md
+  - bash: python -m doctest README.md
     displayName: 'Run doctests'
   - bash: python -m pip install -r requirements-tests.txt
     displayName: 'Install tests dependencies'
-  - bash: coverage run --append -m pytest
+  - bash: pytest
     displayName: 'Run tests'
-  - bash: coverage xml
-    displayName: 'Collect coverage'
-  - bash: python -m codecov -f coverage.xml -X gcov --build "$AGENT_JOBNAME"
-    condition: succeeded()
-    displayName: 'Upload coverage'
-    env:
-      CODECOV_TOKEN: $(CODECOV_TOKEN)
   - bash: python -m pip install --upgrade gcovr
     condition: and(succeeded(), startsWith(variables['python.version'], '3.'))
     displayName: 'Install С++ coverage dependencies'
