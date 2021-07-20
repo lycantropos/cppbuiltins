@@ -9,11 +9,14 @@
 #include <unordered_set>
 #include <vector>
 
+#include "int.h"
+
 namespace py = pybind11;
 
 #define MODULE_NAME cppbuiltins
 #define C_STR_HELPER(a) #a
 #define C_STR(a) C_STR_HELPER(a)
+#define INT_NAME "int"
 #define LIST_ITERATOR_NAME "list_iterator"
 #define LIST_NAME "list"
 #define LIST_REVERSED_ITERATOR_NAME "list_reversed_iterator"
@@ -24,6 +27,7 @@ namespace py = pybind11;
 #endif
 
 using Index = Py_ssize_t;
+using Int = class BigInt<int, '_'>;
 using IterableState = py::list;
 using IteratorState = py::tuple;
 using Object = py::object;
@@ -856,6 +860,20 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   m.doc() =
       R"pbdoc(Alternative implementation of python builtins based on C++ `std` library.)pbdoc";
   m.attr("__version__") = C_STR(VERSION_INFO);
+
+  py::class_<Int> PyInt(m, INT_NAME);
+  PyInt.def(py::init<>())
+      .def(py::init<>([](const py::str& string, std::size_t base) {
+             py::str ascii_string = py::reinterpret_steal<py::str>(
+                 _PyUnicode_TransformDecimalAndSpaceToASCII(string.ptr()));
+             if (!ascii_string) throw py::error_already_set();
+             const char* characters = PyUnicode_AsUTF8(ascii_string.ptr());
+             if (!characters) throw py::error_already_set();
+             return Int(characters, base);
+           }),
+           py::arg("string"), py::arg("base") = 10)
+      .def(py::self == py::self)
+      .def("__repr__", [](const Int& self) { return self.repr(10); });
 
   py::class_<List> PyList(m, LIST_NAME);
   PyList.def(py::init<py::iterable>(), py::arg("values"))
