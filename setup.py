@@ -42,7 +42,7 @@ def cpp_flag(compiler: CCompiler) -> str:
     The newer version is preferred when available.
     """
     flags = ['-std=c++{}'.format(str(year)[2:])
-             for year in range(2011, date.today().year + 1, 3)]
+             for year in range(2014, date.today().year + 1, 3)]
     for flag in reversed(flags):
         if has_flag(compiler, flag):
             return flag
