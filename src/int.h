@@ -64,7 +64,9 @@ static constexpr bool is_space(char character) {
 }
 
 template <class Digit, char SEPARATOR,
-          std::size_t BINARY_SHIFT = std::numeric_limits<Digit>::digits / 2>
+          std::size_t BINARY_SHIFT =
+              static_cast<std::size_t>(std::numeric_limits<Digit>::digits / 2) *
+              2>
 class BigInt {
  public:
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(SEPARATOR)] > 36,
@@ -106,8 +108,10 @@ class BigInt {
     if (start[0] == '0' &&
         ((base == 16 && (start[1] == 'x' || start[1] == 'X')) ||
          (base == 8 && (start[1] == 'o' || start[1] == 'O')) ||
-         (base == 2 && (start[1] == 'b' || start[1] == 'B'))))
-      start += 2 + (*start == SEPARATOR);
+         (base == 2 && (start[1] == 'b' || start[1] == 'B')))) {
+      start += 2;
+      start += (*start == SEPARATOR);
+    }
     if (*start == SEPARATOR)
       throw std::invalid_argument("Should not start with separator.");
     const char* stop = start;
@@ -129,6 +133,9 @@ class BigInt {
       parse_non_binary_base_digits(start, stop, base, digits_count);
     else
       parse_binary_base_digits(start, stop, base, digits_count);
+    digits_count = _digits.size();
+    while (digits_count > 0 && _digits[digits_count - 1] == 0) --digits_count;
+    if (digits_count != _digits.size()) _digits.resize(digits_count);
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
     while (*stop != '\0' && is_space(*stop)) ++stop;
     if (*stop != '\0')
@@ -231,6 +238,7 @@ class BigInt {
       }
       if (digit) _digits.push_back(digit);
     }
+    if (_digits.empty()) _digits.push_back(0);
   }
 
   std::vector<Digit> to_decimal_digits() const {
