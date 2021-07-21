@@ -48,6 +48,10 @@ constexpr std::size_t power_of_ten<0>() {
   return 1;
 }
 
+constexpr std::size_t floor_log10(std::size_t value) {
+  return value < 10 ? 0 : floor_log10(value / 10) + 1;
+}
+
 template <std::size_t N>
 constexpr std::size_t floor_log10() {
   static_assert(N, "Argument should be positive.");

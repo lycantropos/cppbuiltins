@@ -33,6 +33,11 @@ using IteratorState = py::tuple;
 using Object = py::object;
 using RawList = std::vector<Object>;
 
+static std::ostream& operator<<(std::ostream& stream, const Int& value) {
+  return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr(10)
+                << "')";
+}
+
 template <>
 struct std::hash<Object> {
   std::size_t operator()(const Object& object) const {
@@ -873,7 +878,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            }),
            py::arg("string"), py::arg("base") = 10)
       .def(py::self == py::self)
-      .def("__repr__", [](const Int& self) { return self.repr(10); });
+      .def("__repr__", &to_repr<Int>)
+      .def("__str__", [](const Int& self) { return self.repr(10); });
 
   py::class_<List> PyList(m, LIST_NAME);
   PyList.def(py::init<py::iterable>(), py::arg("values"))
