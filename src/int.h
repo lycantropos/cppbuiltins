@@ -164,7 +164,8 @@ class BigInt {
       *--stop = '0' + (remainder % 10);
     if (_sign == 0)
       *--stop = '0';
-    else if (_sign < 0) *--stop = '-';
+    else if (_sign < 0)
+      *--stop = '-';
     return std::string(characters, characters_count);
   }
 
@@ -186,9 +187,9 @@ class BigInt {
     std::size_t bits_in_accumulator = 0;
     while (--stop >= start) {
       if (*stop == SEPARATOR) continue;
-      Digit digit_value = ASCII_CODES_DIGIT_VALUES[mask_char(*stop)];
       accumulator |=
-          static_cast<DoubleDigit>(digit_value << bits_in_accumulator);
+          static_cast<DoubleDigit>(ASCII_CODES_DIGIT_VALUES[mask_char(*stop)])
+          << bits_in_accumulator;
       bits_in_accumulator += bits_per_character;
       if (bits_in_accumulator >= BINARY_SHIFT) {
         _digits.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
