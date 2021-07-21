@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "int.h"
+#include "big_int.h"
 
 namespace py = pybind11;
 
