@@ -15,8 +15,10 @@ from hypothesis.strategies import SearchStrategy as Strategy
 Domain = TypeVar('Domain')
 Range = TypeVar('Range')
 Strategy = Strategy
+AlternativeInt = cppbuiltins.int
 AlternativeList = cppbuiltins.list
 AlternativeSet = cppbuiltins.set
+NativeInt = builtins.int
 NativeList = builtins.list
 NativeSet = builtins.set
 AlternativeNativeListsPair = Tuple[AlternativeList, NativeList]
