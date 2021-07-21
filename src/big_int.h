@@ -147,20 +147,21 @@ class BigInt {
   }
 
   std::string repr(std::size_t base = 10) const {
-    const std::vector<Digit> digits = to_decimal_digits();
+    const std::vector<Digit> decimal_digits = to_decimal_digits();
     std::size_t characters_count = (_sign < 0) +
-                                   (digits.size() - 1) * DECIMAL_SHIFT +
-                                   floor_log10(digits.back()) + 1;
+                                   (decimal_digits.size() - 1) * DECIMAL_SHIFT +
+                                   floor_log10(decimal_digits.back()) + 1;
     char* characters = new char[characters_count + 1]();
     char* stop = &characters[characters_count];
-    for (std::size_t index = 0; index < digits.size() - 1; index++) {
-      Digit remainder = digits[index];
+    for (std::size_t index = 0; index < decimal_digits.size() - 1; index++) {
+      Digit remainder = decimal_digits[index];
       for (std::size_t step = 0; step < DECIMAL_SHIFT; step++) {
         *--stop = '0' + (remainder % 10);
         remainder /= 10;
       }
     }
-    for (Digit remainder = digits.back(); remainder != 0; remainder /= 10)
+    for (Digit remainder = decimal_digits.back(); remainder != 0;
+         remainder /= 10)
       *--stop = '0' + (remainder % 10);
     if (_sign == 0)
       *--stop = '0';
