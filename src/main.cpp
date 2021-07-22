@@ -882,9 +882,10 @@ PYBIND11_MODULE(MODULE_NAME, m) {
              return Int(characters, base);
            }),
            py::arg("string"), py::arg("base") = 10)
+      .def(py::self == py::self)
       .def(py::self + py::self)
       .def(py::self - py::self)
-      .def(py::self == py::self)
+      .def("__pos__", [](const Int* self) { return self; })
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(10); });
 
