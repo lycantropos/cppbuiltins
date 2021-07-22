@@ -74,9 +74,9 @@ class BigInt {
 
   using DoubleDigit = typename double_precision<Digit>::type;
 
-  static constexpr Digit BINARY_DIGIT = 1 << BINARY_SHIFT;
-  static constexpr Digit BINARY_DIGIT_MASK = BINARY_DIGIT - 1;
-  static constexpr std::size_t DECIMAL_SHIFT = floor_log10<BINARY_DIGIT>();
+  static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
+  static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
+  static constexpr std::size_t DECIMAL_SHIFT = floor_log10<BINARY_BASE>();
   static constexpr std::size_t DECIMAL_BASE = power_of_ten<DECIMAL_SHIFT>();
 
   BigInt() : _digits({0}) {}
@@ -210,10 +210,10 @@ class BigInt {
     if (bases_logs[base] == 0.0) {
       std::size_t infimum_base_power = base;
       std::size_t infimum_base_exponent = 1;
-      bases_logs[base] = log(base) / log(BINARY_DIGIT);
+      bases_logs[base] = log(base) / log(BINARY_BASE);
       while (true) {
         std::size_t candidate = infimum_base_power * base;
-        if (candidate > BINARY_DIGIT) break;
+        if (candidate > BINARY_BASE) break;
         infimum_base_power = candidate;
         ++infimum_base_exponent;
       }
