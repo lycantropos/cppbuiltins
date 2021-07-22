@@ -83,13 +83,32 @@ class BigInt {
   static_assert(std::numeric_limits<DoubleDigit>::digits >= 2 * BINARY_SHIFT,
                 "Double precision digit should be able to hold all integers "
                 "lesser than squared base.");
+  using SignedDigit = typename std::make_signed<Digit>::type;
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
   static constexpr std::size_t DECIMAL_SHIFT = floor_log10<BINARY_BASE>();
   static constexpr std::size_t DECIMAL_BASE = power_of_ten<DECIMAL_SHIFT>();
 
-  BigInt() : _digits({0}) {}
+  BigInt() : _sign(0), _digits({0}) {}
+
+  explicit BigInt(SignedDigit value) {
+    Digit modulus;
+    if (value < 0) {
+      modulus = -static_cast<Digit>(value);
+      _sign = -1;
+    } else {
+      modulus = static_cast<Digit>(value);
+      _sign = value == 0 ? 0 : 1;
+    }
+    Digit remainder = modulus >> BINARY_SHIFT;
+    if (remainder) {
+      _digits.push_back(modulus & BINARY_DIGIT_MASK);
+      _digits.push_back(remainder);
+    } else
+      _digits.push_back(modulus);
+  }
+
   BigInt(const char* characters, std::size_t base = 10) {
     if ((base != 0 && base < 2) || base > 36)
       throw std::invalid_argument(
@@ -139,17 +158,35 @@ class BigInt {
     }
     if (prev == SEPARATOR)
       throw std::invalid_argument("Should not end with separator.");
+    const char* cursor = stop;
+    while (*cursor != '\0' && is_space(*cursor)) ++cursor;
+    if (*cursor != '\0')
+      throw std::invalid_argument("Should not end with non-whitespaces.");
     if (base & (base - 1))
       parse_non_binary_base_digits(start, stop, base, digits_count);
     else
       parse_binary_base_digits(start, stop, base, digits_count);
-    digits_count = _digits.size();
-    while (digits_count > 0 && _digits[digits_count - 1] == 0) --digits_count;
-    if (digits_count != _digits.size()) _digits.resize(digits_count);
+    normalize_digits(_digits);
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
-    while (*stop != '\0' && is_space(*stop)) ++stop;
-    if (*stop != '\0')
-      throw std::invalid_argument("Should not end with non-whitespaces.");
+  }
+
+  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator+(
+      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+    if (_digits.size() == 1 && other._digits.size() == 1)
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
+          _sign * static_cast<SignedDigit>(_digits[0]) +
+          other._sign * static_cast<SignedDigit>(other._digits[0]));
+    if (_sign < 0) {
+      if (other._sign < 0)
+        return sum_moduli(other);
+      else
+        return other.subtract_moduli(*this);
+    } else {
+      if (other._sign < 0)
+        return subtract_moduli(other);
+      else
+        return sum_moduli(other);
+    }
   }
 
   bool operator==(const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
@@ -183,6 +220,87 @@ class BigInt {
  private:
   int _sign;
   std::vector<Digit> _digits;
+
+  BigInt(int sign, const std::vector<Digit>& digits)
+      : _sign(sign), _digits(digits) {}
+
+  BigInt<Digit, BINARY_SHIFT, SEPARATOR> subtract_moduli(
+      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+    const BigInt<Digit, BINARY_SHIFT, SEPARATOR>*longest = this,
+                                      *shortest = &other;
+    std::size_t size_longest = longest->_digits.size(),
+                size_shortest = shortest->_digits.size();
+    int swapping_sign = 1;
+    Digit accumulator = 0;
+    if (size_longest < size_shortest) {
+      swapping_sign = -1;
+      std::swap(longest, shortest);
+      std::swap(size_longest, size_shortest);
+    } else if (size_longest == size_shortest) {
+      std::size_t index = size_shortest;
+      while (--index > 0 && longest->_digits[index] == shortest->_digits[index])
+        ;
+      if (index == 0 && longest->_digits[0] == shortest->_digits[0])
+        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>();
+      if (longest->_digits[index] < shortest->_digits[index]) {
+        swapping_sign = -1;
+        std::swap(longest, shortest);
+      }
+      size_longest = size_shortest = index + 1;
+    }
+    std::vector<Digit> digits;
+    digits.reserve(size_longest);
+    std::size_t index = 0;
+    for (; index < size_shortest; ++index) {
+      accumulator =
+          longest->_digits[index] - shortest->_digits[index] - accumulator;
+      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator >>= BINARY_SHIFT;
+      accumulator &= 1;
+    }
+    for (; index < size_longest; ++index) {
+      accumulator = longest->_digits[index] - accumulator;
+      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator >>= BINARY_SHIFT;
+      accumulator &= 1;
+    }
+    normalize_digits(digits);
+    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(_sign * swapping_sign, digits);
+  }
+
+  BigInt<Digit, BINARY_SHIFT, SEPARATOR> sum_moduli(
+      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+    const BigInt *longest = this, *shortest = &other;
+    std::size_t size_longest = longest->_digits.size(),
+                size_shortest = shortest->_digits.size();
+    if (size_longest < size_shortest) {
+      std::swap(size_longest, size_shortest);
+      std::swap(longest, shortest);
+    }
+    std::vector<Digit> digits;
+    digits.reserve(size_longest + 1);
+    Digit accumulator = 0;
+    std::size_t index = 0;
+    for (; index < size_shortest; ++index) {
+      accumulator += longest->_digits[index] + shortest->_digits[index];
+      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator >>= BINARY_SHIFT;
+    }
+    for (; index < size_longest; ++index) {
+      accumulator += longest->_digits[index];
+      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator >>= BINARY_SHIFT;
+    }
+    digits.push_back(accumulator);
+    normalize_digits(digits);
+    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(_sign, digits);
+  }
+
+  static void normalize_digits(std::vector<Digit>& digits) {
+    std::size_t digits_count = digits.size();
+    while (digits_count > 1 && digits[digits_count - 1] == 0) --digits_count;
+    if (digits_count != digits.size()) digits.resize(digits_count);
+  }
 
   void parse_binary_base_digits(const char* start, const char* stop,
                                 std::size_t base, std::size_t digits_count) {
