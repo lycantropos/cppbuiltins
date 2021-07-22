@@ -1,5 +1,4 @@
 import sys
-from numbers import Rational
 
 from hypothesis import given
 
@@ -8,7 +7,7 @@ from . import strategies
 
 
 @given(strategies.ints, strategies.ints)
-def test_basic(first: AlternativeInt, second: Rational) -> None:
+def test_basic(first: AlternativeInt, second: AlternativeInt) -> None:
     result = first + second
 
     assert isinstance(result, AlternativeInt)
