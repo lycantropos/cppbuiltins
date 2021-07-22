@@ -51,3 +51,4 @@ ints = (strategies.builds(AlternativeInt, decimal_int_strings)
                             strategies.sampled_from([0, 16]))
         | strategies.builds(AlternativeInt, prefixed_octal_int_strings,
                             strategies.sampled_from([0, 8])))
+zero_ints = strategies.builds(AlternativeInt)
