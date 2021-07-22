@@ -187,6 +187,10 @@ class BigInt {
       return sum_moduli(other);
   }
 
+  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-() const {
+    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(-_sign, _digits);
+  }
+
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
