@@ -5,37 +5,7 @@
 
 template <class T>
 struct double_precision {
-  using type = T;
-};
-
-template <>
-struct double_precision<std::int8_t> {
-  using type = std::int16_t;
-};
-
-template <>
-struct double_precision<std::int16_t> {
-  using type = std::int32_t;
-};
-
-template <>
-struct double_precision<std::int32_t> {
-  using type = std::int64_t;
-};
-
-template <>
-struct double_precision<std::uint8_t> {
-  using type = std::uint16_t;
-};
-
-template <>
-struct double_precision<std::uint16_t> {
-  using type = std::uint32_t;
-};
-
-template <>
-struct double_precision<std::uint32_t> {
-  using type = std::uint64_t;
+  using type = void;
 };
 
 template <std::size_t N>

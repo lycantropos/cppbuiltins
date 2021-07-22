@@ -26,6 +26,11 @@ namespace py = pybind11;
 #define VERSION_INFO "dev"
 #endif
 
+template <>
+struct double_precision<digit> {
+  using type = twodigits;
+};
+
 using Index = Py_ssize_t;
 using Int = BigInt<digit, '_'>;
 using IterableState = py::list;

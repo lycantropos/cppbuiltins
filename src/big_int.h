@@ -8,6 +8,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "utils.h"
@@ -69,10 +70,13 @@ template <class Digit, char SEPARATOR,
                       (std::numeric_limits<Digit>::digits - 1) / 2)>
 class BigInt {
  public:
+  static_assert(std::is_integral<Digit>(), "Digits should be integral.");
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(SEPARATOR)] > 36,
                 "Separator should not be a digit");
 
   using DoubleDigit = typename double_precision<Digit>::type;
+  static_assert(std::is_integral<DoubleDigit>(),
+                "Double precision digit should be integral.");
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
