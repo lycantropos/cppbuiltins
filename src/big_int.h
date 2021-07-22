@@ -172,23 +172,27 @@ class BigInt {
 
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator+(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
-    if (_sign == 0)
-      return other;
-    else if (other._sign == 0)
-      return *this;
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
           _sign * static_cast<SignedDigit>(_digits[0]) +
           other._sign * static_cast<SignedDigit>(other._digits[0]));
     if (_sign < 0) {
       if (other._sign < 0)
-        return sum_moduli(other);
-      else
-        return other.subtract_moduli(*this);
-    } else if (other._sign < 0)
-      return subtract_moduli(other);
-    else
-      return sum_moduli(other);
+        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
+            -1, sum_moduli(_digits, other._digits));
+      else {
+        int sign = 1;
+        std::vector<Digit> digits =
+            subtract_moduli(other._digits, _digits, sign);
+        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+      }
+    } else if (other._sign < 0) {
+      int sign = 1;
+      std::vector<Digit> digits = subtract_moduli(_digits, other._digits, sign);
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+    } else
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
+          _sign | other._sign, sum_moduli(_digits, other._digits));
   }
 
   operator bool() const { return bool(_sign); }
@@ -199,23 +203,26 @@ class BigInt {
 
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
-    if (_sign == 0)
-      return -other;
-    else if (other._sign == 0)
-      return *this;
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
           _sign * static_cast<SignedDigit>(_digits[0]) -
           other._sign * static_cast<SignedDigit>(other._digits[0]));
     if (_sign < 0) {
-      if (other._sign < 0)
-        return other.subtract_moduli(*this);
-      else
-        return sum_moduli(other);
+      if (other._sign < 0) {
+        int sign = 1;
+        auto digits = subtract_moduli(other._digits, _digits, sign);
+        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+      } else
+        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
+            -1, sum_moduli(_digits, other._digits));
     } else if (other._sign < 0)
-      return sum_moduli(other);
-    else
-      return subtract_moduli(other);
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
+          1, sum_moduli(_digits, other._digits));
+    else {
+      int sign = _sign | other._sign;
+      auto digits = subtract_moduli(_digits, other._digits, sign);
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+    }
   }
 
   bool operator==(const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
@@ -253,13 +260,12 @@ class BigInt {
   BigInt(int sign, const std::vector<Digit>& digits)
       : _sign(sign), _digits(digits) {}
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR> subtract_moduli(
-      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
-    const BigInt<Digit, BINARY_SHIFT, SEPARATOR>*longest = this,
-                                      *shortest = &other;
-    std::size_t size_longest = longest->_digits.size(),
-                size_shortest = shortest->_digits.size();
-    int sign = longest->_sign;
+  static std::vector<Digit> subtract_moduli(const std::vector<Digit>& first,
+                                            const std::vector<Digit>& second,
+                                            int& sign) {
+    const std::vector<Digit>*longest = &first, *shortest = &second;
+    std::size_t size_longest = longest->size(),
+                size_shortest = shortest->size();
     Digit accumulator = 0;
     if (size_longest < size_shortest) {
       std::swap(longest, shortest);
@@ -267,62 +273,63 @@ class BigInt {
       sign = -sign;
     } else if (size_longest == size_shortest) {
       std::size_t index = size_shortest;
-      while (--index > 0 && longest->_digits[index] == shortest->_digits[index])
+      while (--index > 0 && (*longest)[index] == (*shortest)[index])
         ;
-      if (index == 0 && longest->_digits[0] == shortest->_digits[0])
-        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>();
-      if (longest->_digits[index] < shortest->_digits[index]) {
+      if (index == 0 && (*longest)[0] == (*shortest)[0]) {
+        sign = 0;
+        return {0};
+      }
+      if ((*longest)[index] < (*shortest)[index]) {
         std::swap(longest, shortest);
         sign = -sign;
       }
       size_longest = size_shortest = index + 1;
     }
-    std::vector<Digit> digits;
-    digits.reserve(size_longest);
+    std::vector<Digit> result;
+    result.reserve(size_longest);
     std::size_t index = 0;
     for (; index < size_shortest; ++index) {
-      accumulator =
-          longest->_digits[index] - shortest->_digits[index] - accumulator;
-      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator = (*longest)[index] - (*shortest)[index] - accumulator;
+      result.push_back(accumulator & BINARY_DIGIT_MASK);
       accumulator >>= BINARY_SHIFT;
       accumulator &= 1;
     }
     for (; index < size_longest; ++index) {
-      accumulator = longest->_digits[index] - accumulator;
-      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator = (*longest)[index] - accumulator;
+      result.push_back(accumulator & BINARY_DIGIT_MASK);
       accumulator >>= BINARY_SHIFT;
       accumulator &= 1;
     }
-    normalize_digits(digits);
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+    normalize_digits(result);
+    return result;
   }
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR> sum_moduli(
-      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
-    const BigInt *longest = this, *shortest = &other;
-    std::size_t size_longest = longest->_digits.size(),
-                size_shortest = shortest->_digits.size();
+  static std::vector<Digit> sum_moduli(const std::vector<Digit>& first,
+                                       const std::vector<Digit>& second) {
+    const std::vector<Digit>*longest = &first, *shortest = &second;
+    std::size_t size_longest = longest->size(),
+                size_shortest = shortest->size();
     if (size_longest < size_shortest) {
       std::swap(size_longest, size_shortest);
       std::swap(longest, shortest);
     }
-    std::vector<Digit> digits;
-    digits.reserve(size_longest + 1);
+    std::vector<Digit> result;
+    result.reserve(size_longest + 1);
     Digit accumulator = 0;
     std::size_t index = 0;
     for (; index < size_shortest; ++index) {
-      accumulator += longest->_digits[index] + shortest->_digits[index];
-      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator += (*longest)[index] + (*shortest)[index];
+      result.push_back(accumulator & BINARY_DIGIT_MASK);
       accumulator >>= BINARY_SHIFT;
     }
     for (; index < size_longest; ++index) {
-      accumulator += longest->_digits[index];
-      digits.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator += (*longest)[index];
+      result.push_back(accumulator & BINARY_DIGIT_MASK);
       accumulator >>= BINARY_SHIFT;
     }
-    digits.push_back(accumulator);
-    normalize_digits(digits);
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(longest->_sign, digits);
+    result.push_back(accumulator);
+    normalize_digits(result);
+    return result;
   }
 
   static void normalize_digits(std::vector<Digit>& digits) {
