@@ -172,6 +172,10 @@ class BigInt {
 
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator+(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+    if (_sign == 0)
+      return other;
+    else if (other._sign == 0)
+      return *this;
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
           _sign * static_cast<SignedDigit>(_digits[0]) +
@@ -195,6 +199,10 @@ class BigInt {
 
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+    if (_sign == 0)
+      return -other;
+    else if (other._sign == 0)
+      return *this;
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
           _sign * static_cast<SignedDigit>(_digits[0]) -
@@ -251,12 +259,12 @@ class BigInt {
                                       *shortest = &other;
     std::size_t size_longest = longest->_digits.size(),
                 size_shortest = shortest->_digits.size();
-    int swapping_sign = 1;
+    int sign = longest->_sign;
     Digit accumulator = 0;
     if (size_longest < size_shortest) {
-      swapping_sign = -1;
       std::swap(longest, shortest);
       std::swap(size_longest, size_shortest);
+      sign = -sign;
     } else if (size_longest == size_shortest) {
       std::size_t index = size_shortest;
       while (--index > 0 && longest->_digits[index] == shortest->_digits[index])
@@ -264,8 +272,8 @@ class BigInt {
       if (index == 0 && longest->_digits[0] == shortest->_digits[0])
         return BigInt<Digit, BINARY_SHIFT, SEPARATOR>();
       if (longest->_digits[index] < shortest->_digits[index]) {
-        swapping_sign = -1;
         std::swap(longest, shortest);
+        sign = -sign;
       }
       size_longest = size_shortest = index + 1;
     }
@@ -286,8 +294,7 @@ class BigInt {
       accumulator &= 1;
     }
     normalize_digits(digits);
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(_sign * swapping_sign,
-                                                  digits);
+    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
   }
 
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> sum_moduli(
@@ -315,7 +322,7 @@ class BigInt {
     }
     digits.push_back(accumulator);
     normalize_digits(digits);
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(_sign, digits);
+    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(longest->_sign, digits);
   }
 
   static void normalize_digits(std::vector<Digit>& digits) {
