@@ -210,7 +210,8 @@ class BigInt {
     if (_sign < 0) {
       if (other._sign < 0) {
         int sign = 1;
-        auto digits = subtract_moduli(other._digits, _digits, sign);
+        std::vector<Digit> digits =
+            subtract_moduli(other._digits, _digits, sign);
         return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
       } else
         return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
@@ -220,7 +221,7 @@ class BigInt {
           1, sum_moduli(_digits, other._digits));
     else {
       int sign = _sign | other._sign;
-      auto digits = subtract_moduli(_digits, other._digits, sign);
+      std::vector<Digit> digits = subtract_moduli(_digits, other._digits, sign);
       return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
     }
   }
