@@ -32,7 +32,7 @@ struct double_precision<digit> {
 };
 
 using Index = Py_ssize_t;
-using Int = BigInt<digit, '_'>;
+using Int = BigInt<digit, PyLong_SHIFT, '_'>;
 using IterableState = py::list;
 using IteratorState = py::tuple;
 using Object = py::object;

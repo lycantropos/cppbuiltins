@@ -64,13 +64,14 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
-template <class Digit, char SEPARATOR,
-          std::size_t BINARY_SHIFT =
-              2 * static_cast<std::size_t>(
-                      (std::numeric_limits<Digit>::digits - 1) / 2)>
+template <class Digit, std::size_t BINARY_SHIFT, char SEPARATOR>
 class BigInt {
  public:
-  static_assert(std::is_integral<Digit>(), "Digits should be integral.");
+  static_assert(std::is_integral<Digit>() && std::is_unsigned<Digit>(),
+                "Digits should be unsigned integrals.");
+  static_assert(
+      BINARY_SHIFT <= std::numeric_limits<Digit>::digits - 2,
+      "Digit should be able to hold all integers lesser than quadruple base.");
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(SEPARATOR)] > 36,
                 "Separator should not be a digit");
 
@@ -81,7 +82,7 @@ class BigInt {
                 "Double precision digit should be integral.");
   static_assert(std::numeric_limits<DoubleDigit>::digits >= 2 * BINARY_SHIFT,
                 "Double precision digit should be able to hold all integers "
-                "lesser than base squared.");
+                "lesser than squared base.");
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
@@ -151,7 +152,7 @@ class BigInt {
       throw std::invalid_argument("Should not end with non-whitespaces.");
   }
 
-  bool operator==(const BigInt<Digit, SEPARATOR, BINARY_SHIFT>& other) const {
+  bool operator==(const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
     return _sign == other._sign && _digits == other._digits;
   }
 
