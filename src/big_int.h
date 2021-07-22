@@ -65,8 +65,8 @@ static constexpr bool is_space(char character) {
 
 template <class Digit, char SEPARATOR,
           std::size_t BINARY_SHIFT =
-              static_cast<std::size_t>(std::numeric_limits<Digit>::digits / 2) *
-              2>
+              2 * static_cast<std::size_t>(
+                      (std::numeric_limits<Digit>::digits - 1) / 2)>
 class BigInt {
  public:
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(SEPARATOR)] > 36,
