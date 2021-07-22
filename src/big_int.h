@@ -77,6 +77,9 @@ class BigInt {
   using DoubleDigit = typename double_precision<Digit>::type;
   static_assert(std::is_integral<DoubleDigit>(),
                 "Double precision digit should be integral.");
+  static_assert(std::numeric_limits<DoubleDigit>::digits >= 2 * BINARY_SHIFT,
+                "Double precision digit should be able to hold all integers "
+                "lesser than base squared.");
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
