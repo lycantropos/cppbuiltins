@@ -75,6 +75,8 @@ class BigInt {
                 "Separator should not be a digit");
 
   using DoubleDigit = typename double_precision<Digit>::type;
+  static_assert(!std::is_same<DoubleDigit, undefined>(),
+                "Double precision version of digit type is undefined.");
   static_assert(std::is_integral<DoubleDigit>(),
                 "Double precision digit should be integral.");
   static_assert(std::numeric_limits<DoubleDigit>::digits >= 2 * BINARY_SHIFT,

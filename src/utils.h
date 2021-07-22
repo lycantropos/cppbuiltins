@@ -3,9 +3,11 @@
 
 #include <cstddef>
 
+using undefined = void;
+
 template <class T>
 struct double_precision {
-  using type = void;
+  using type = undefined;
 };
 
 template <std::size_t N>
