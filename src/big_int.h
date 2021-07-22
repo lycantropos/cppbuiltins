@@ -181,12 +181,27 @@ class BigInt {
         return sum_moduli(other);
       else
         return other.subtract_moduli(*this);
-    } else {
+    } else if (other._sign < 0)
+      return subtract_moduli(other);
+    else
+      return sum_moduli(other);
+  }
+
+  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-(
+      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+    if (_digits.size() == 1 && other._digits.size() == 1)
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
+          _sign * static_cast<SignedDigit>(_digits[0]) -
+          other._sign * static_cast<SignedDigit>(other._digits[0]));
+    if (_sign < 0) {
       if (other._sign < 0)
-        return subtract_moduli(other);
+        return other.subtract_moduli(*this);
       else
         return sum_moduli(other);
-    }
+    } else if (other._sign < 0)
+      return sum_moduli(other);
+    else
+      return subtract_moduli(other);
   }
 
   bool operator==(const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
@@ -265,7 +280,8 @@ class BigInt {
       accumulator &= 1;
     }
     normalize_digits(digits);
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(_sign * swapping_sign, digits);
+    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(_sign * swapping_sign,
+                                                  digits);
   }
 
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> sum_moduli(
