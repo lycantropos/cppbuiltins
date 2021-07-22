@@ -27,7 +27,7 @@ namespace py = pybind11;
 #endif
 
 using Index = Py_ssize_t;
-using Int = BigInt<int, '_'>;
+using Int = BigInt<digit, '_'>;
 using IterableState = py::list;
 using IteratorState = py::tuple;
 using Object = py::object;
