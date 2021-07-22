@@ -187,6 +187,8 @@ class BigInt {
       return sum_moduli(other);
   }
 
+  operator bool() const { return bool(_sign); }
+
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-() const {
     return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(-_sign, _digits);
   }

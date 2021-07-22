@@ -886,6 +886,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self + py::self)
       .def(-py::self)
       .def(py::self - py::self)
+      .def("__bool__", &Int::operator bool)
       .def("__pos__", [](const Int* self) { return self; })
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(10); });
