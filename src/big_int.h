@@ -70,8 +70,8 @@ class BigInt {
   static_assert(std::is_integral<Digit>() && std::is_unsigned<Digit>(),
                 "Digits should be unsigned integrals.");
   static_assert(
-      BINARY_SHIFT <= std::numeric_limits<Digit>::digits - 2,
-      "Digit should be able to hold all integers lesser than quadruple base.");
+      BINARY_SHIFT <= std::numeric_limits<Digit>::digits - 1,
+      "Digit should be able to hold all integers lesser than double base.");
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(SEPARATOR)] > 36,
                 "Separator should not be a digit");
 
