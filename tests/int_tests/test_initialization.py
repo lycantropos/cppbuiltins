@@ -34,3 +34,9 @@ def test_no_argument() -> None:
 def test_invalid_bases(string: str, base: int) -> None:
     with pytest.raises(ValueError):
         AlternativeInt(string, base)
+
+
+@given(strategies.invalid_int_strings, strategies.valid_bases)
+def test_invalid_strings(string: str, base: int) -> None:
+    with pytest.raises(ValueError):
+        AlternativeInt(string, base)

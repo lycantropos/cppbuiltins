@@ -9,6 +9,10 @@ from tests.utils import (AlternativeInt,
 
 strings = strategies.text()
 invalid_bases = strategies.just(1) | strategies.integers(37, sys.maxsize)
+invalid_int_strings = strategies.text(strategies.characters(
+        blacklist_categories=['Nd'],
+        blacklist_characters=string.ascii_letters))
+valid_bases = strategies.just(0) | strategies.integers(2, 36)
 whitespaces_class = r'[\f\n\r\t\v ]'
 decimal_int_strings = strategies.from_regex(
         re.compile(r'\A{whitespaces}*[+-]?\d(_?\d+)*{whitespaces}*\Z'
