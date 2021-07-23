@@ -156,8 +156,7 @@ class BigInt {
       prev = *stop;
       ++stop;
     }
-    if (!digits_count)
-      throw std::invalid_argument("No digits found.");
+    if (!digits_count) throw std::invalid_argument("No digits found.");
     if (prev == SEPARATOR)
       throw std::invalid_argument("Should not end with separator.");
     const char* cursor = stop;
