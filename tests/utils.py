@@ -1,9 +1,12 @@
 import builtins
 import pickle
+from functools import partial
 from itertools import zip_longest
 from operator import eq
 from typing import (Any,
+                    Callable,
                     Hashable,
+                    Iterable,
                     Iterator,
                     List,
                     Tuple,
@@ -23,14 +26,6 @@ NativeList = builtins.list
 NativeSet = builtins.set
 AlternativeNativeListsPair = Tuple[AlternativeList, NativeList]
 AlternativeNativeSetsPair = Tuple[AlternativeSet, NativeSet]
-
-
-def equivalence(left: bool, right: bool) -> bool:
-    return left is right
-
-
-def pickle_round_trip(value: Domain) -> Domain:
-    return pickle.loads(pickle.dumps(value))
 
 
 def are_iterators_equal(left: Iterator[Any],
@@ -53,6 +48,23 @@ def are_alternative_native_sets_equal(alternative: AlternativeSet,
     return (len(alternative) == len(native)
             and all(element in native for element in alternative)
             and all(element in alternative for element in native))
+
+
+def equivalence(left: bool, right: bool) -> bool:
+    return left is right
+
+
+def pack(function: Callable[..., Range]
+         ) -> Callable[[Iterable[Domain]], Range]:
+    return partial(apply, function)
+
+
+def apply(function: Callable[..., Range], args: Tuple[Domain, ...]) -> Range:
+    return function(*args)
+
+
+def pickle_round_trip(value: Domain) -> Domain:
+    return pickle.loads(pickle.dumps(value))
 
 
 def to_alternative_native_lists_pair(values: List[Any]
