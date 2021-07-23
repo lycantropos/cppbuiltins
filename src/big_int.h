@@ -173,9 +173,8 @@ class BigInt {
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator+(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-          _sign * static_cast<SignedDigit>(_digits[0]) +
-          other._sign * static_cast<SignedDigit>(other._digits[0]));
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(signed_digit() +
+                                                    other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0)
         return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
@@ -204,9 +203,8 @@ class BigInt {
   BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-(
       const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-          _sign * static_cast<SignedDigit>(_digits[0]) -
-          other._sign * static_cast<SignedDigit>(other._digits[0]));
+      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(signed_digit() -
+                                                    other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0) {
         int sign = 1;
@@ -337,6 +335,10 @@ class BigInt {
     std::size_t digits_count = digits.size();
     while (digits_count > 1 && digits[digits_count - 1] == 0) --digits_count;
     if (digits_count != digits.size()) digits.resize(digits_count);
+  }
+
+  SignedDigit signed_digit() const {
+    return _sign * static_cast<SignedDigit>(_digits[0]);
   }
 
   void parse_binary_base_digits(const char* start, const char* stop,
