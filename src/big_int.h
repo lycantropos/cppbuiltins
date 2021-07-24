@@ -328,10 +328,6 @@ class BigInt {
     if (digits_count != digits.size()) digits.resize(digits_count);
   }
 
-  SignedDigit signed_digit() const {
-    return _sign * static_cast<SignedDigit>(_digits[0]);
-  }
-
   void parse_binary_base_digits(const char* start, const char* stop,
                                 std::size_t base, std::size_t digits_count) {
     const std::size_t bits_per_character = floor_log2(base);
@@ -411,6 +407,10 @@ class BigInt {
       if (digit) _digits.push_back(digit);
     }
     if (_digits.empty()) _digits.push_back(0);
+  }
+
+  SignedDigit signed_digit() const {
+    return _sign * static_cast<SignedDigit>(_digits[0]);
   }
 
   std::vector<Digit> to_decimal_digits() const {
