@@ -256,10 +256,13 @@ class BigInt {
       sign = value == 0 ? 0 : 1;
     }
     Digit remainder = modulus >> BINARY_SHIFT;
-    return remainder
-               ? BigInt(sign, std::vector<Digit>(
-                                  {modulus & BINARY_DIGIT_MASK, remainder}))
-               : BigInt(sign, std::vector<Digit>({modulus}));
+    std::vector<Digit> digits;
+    if (remainder) {
+      digits.push_back(modulus & BINARY_DIGIT_MASK);
+      digits.push_back(remainder);
+    } else
+      digits.push_back(modulus);
+    return BigInt(sign, digits);
   }
 
   static BigInt from_signed_double_digit(SignedDoubleDigit value) {
