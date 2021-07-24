@@ -884,6 +884,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::arg("string"), py::arg("base") = 10)
       .def(py::self == py::self)
       .def(py::self + py::self)
+      .def(py::self * py::self)
       .def(-py::self)
       .def(py::self - py::self)
       .def("__bool__", &Int::operator bool)

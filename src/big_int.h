@@ -84,6 +84,7 @@ class BigInt {
                 "Double precision digit should be able to hold all integers "
                 "lesser than squared base.");
   using SignedDigit = typename std::make_signed<Digit>::type;
+  using SignedDoubleDigit = typename std::make_signed<DoubleDigit>::type;
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
@@ -91,6 +92,26 @@ class BigInt {
   static constexpr std::size_t DECIMAL_BASE = power_of_ten<DECIMAL_SHIFT>();
 
   BigInt() : _sign(0), _digits({0}) {}
+
+  explicit BigInt(SignedDoubleDigit value) {
+    DoubleDigit modulus;
+    if (value < 0) {
+      _sign = -1;
+      modulus = static_cast<DoubleDigit>(-1 - value) + 1;
+    } else if (value > 0) {
+      _sign = 1;
+      modulus = static_cast<DoubleDigit>(value);
+    } else {
+      _sign = 0;
+      _digits.push_back(0);
+      return;
+    }
+    DoubleDigit accumulator = modulus;
+    while (accumulator) {
+      _digits.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
+      accumulator >>= BINARY_SHIFT;
+    }
+  }
 
   explicit BigInt(SignedDigit value) {
     Digit modulus;
@@ -193,6 +214,14 @@ class BigInt {
 
   operator bool() const { return bool(_sign); }
 
+  BigInt operator*(const BigInt& other) const {
+    return _digits.size() == 1 && other._digits.size() == 1
+               ? BigInt(static_cast<SignedDoubleDigit>(signed_digit()) *
+                        other.signed_digit())
+               : BigInt(_sign * other._sign,
+                        multiply_digits(_digits, other._digits));
+  }
+
   BigInt operator-() const { return BigInt(-_sign, _digits); }
 
   BigInt operator-(const BigInt& other) const {
@@ -247,8 +276,32 @@ class BigInt {
   int _sign;
   std::vector<Digit> _digits;
 
+  static constexpr Digit KARATSUBA_CUTOFF = 70;
+  static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
+
   BigInt(int sign, const std::vector<Digit>& digits)
       : _sign(sign), _digits(digits) {}
+
+  static Digit subtract_digits_in_place(Digit* longest,
+                                        std::size_t size_longest,
+                                        Digit* shortest,
+                                        std::size_t size_shortest) {
+    Digit accumulator = 0;
+    std::size_t index = 0;
+    for (; index < size_shortest; ++index) {
+      accumulator = longest[index] - shortest[index] - accumulator;
+      longest[index] = accumulator & BINARY_DIGIT_MASK;
+      accumulator >>= BINARY_SHIFT;
+      accumulator &= 1;
+    }
+    for (; accumulator && index < size_longest; ++index) {
+      accumulator = longest[index] - accumulator;
+      longest[index] = accumulator & BINARY_DIGIT_MASK;
+      accumulator >>= BINARY_SHIFT;
+      accumulator &= 1;
+    }
+    return accumulator;
+  }
 
   static std::vector<Digit> subtract_moduli(const std::vector<Digit>& first,
                                             const std::vector<Digit>& second,
@@ -294,6 +347,23 @@ class BigInt {
     return result;
   }
 
+  static Digit sum_digits_in_place(Digit* longest, std::size_t size_longest,
+                                   Digit* shortest, std::size_t size_shortest) {
+    Digit accumulator = 0;
+    std::size_t index = 0;
+    for (; index < size_shortest; ++index) {
+      accumulator += longest[index] + shortest[index];
+      longest[index] = accumulator & BINARY_DIGIT_MASK;
+      accumulator >>= BINARY_SHIFT;
+    }
+    for (; accumulator && index < size_longest; ++index) {
+      accumulator += longest[index];
+      longest[index] = accumulator & BINARY_DIGIT_MASK;
+      accumulator >>= BINARY_SHIFT;
+    }
+    return accumulator;
+  }
+
   static std::vector<Digit> sum_moduli(const std::vector<Digit>& first,
                                        const std::vector<Digit>& second) {
     const std::vector<Digit>*longest = &first, *shortest = &second;
@@ -318,6 +388,153 @@ class BigInt {
       accumulator >>= BINARY_SHIFT;
     }
     result.push_back(accumulator);
+    normalize_digits(result);
+    return result;
+  }
+
+  static void split_digits(const std::vector<Digit>& digits, std::size_t size,
+                           std::vector<Digit>& high, std::vector<Digit>& low) {
+    const std::size_t size_low = std::min<std::size_t>(digits.size(), size);
+    const typename std::vector<Digit>::const_iterator mid =
+        digits.begin() + size_low;
+    low = std::vector<Digit>(digits.begin(), mid);
+    high = std::vector<Digit>(mid, digits.end());
+    normalize_digits(high);
+    normalize_digits(low);
+  }
+
+  static std::vector<Digit> multiply_digits(const std::vector<Digit>& first,
+                                            const std::vector<Digit>& second) {
+    const std::vector<Digit>*shortest = &first, *longest = &second;
+    std::size_t size_shortest = shortest->size(),
+                size_longest = longest->size();
+    if (size_shortest > size_longest) {
+      std::swap(shortest, longest);
+      std::swap(size_shortest, size_longest);
+    }
+    if (size_shortest <=
+        (shortest == longest ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF)) {
+      return size_shortest == 0 ? std::vector<Digit>({0})
+                                : multiply_digits_plain(*shortest, *longest);
+    }
+    if (2 * size_shortest <= size_longest)
+      return multiply_digits_lopsided(*shortest, *longest);
+    std::size_t shift = size_longest >> 1;
+    std::vector<Digit> shortest_high, shortest_low;
+    split_digits(*shortest, shift, shortest_high, shortest_low);
+    std::vector<Digit> longest_high, longest_low;
+    if (shortest == longest) {
+      longest_high = shortest_high;
+      longest_low = shortest_low;
+    } else
+      split_digits(*longest, shift, longest_high, longest_low);
+    std::vector<Digit> result(size_shortest + size_longest, 0);
+    std::vector<Digit> highs_product =
+        multiply_digits(shortest_high, longest_high);
+    std::copy(highs_product.begin(), highs_product.end(),
+              result.begin() + 2 * shift);
+    std::size_t uninitialized_digits_count =
+        result.size() - 2 * shift - highs_product.size();
+    std::fill(result.begin() + 2 * shift + highs_product.size(),
+              result.begin() + uninitialized_digits_count, 0);
+    std::vector<Digit> lows_product =
+        multiply_digits(shortest_low, longest_low);
+    std::copy(lows_product.begin(), lows_product.end(), result.begin());
+    uninitialized_digits_count = 2 * shift - lows_product.size();
+    std::fill(result.begin() + lows_product.size(),
+              result.begin() + uninitialized_digits_count, 0);
+    std::size_t digits_after_shift = result.size() - shift;
+    (void)subtract_digits_in_place(result.data() + shift, digits_after_shift,
+                                   lows_product.data(), lows_product.size());
+    (void)subtract_digits_in_place(result.data() + shift, digits_after_shift,
+                                   highs_product.data(), highs_product.size());
+    std::vector<Digit> shortest_components_sum =
+        sum_moduli(shortest_high, shortest_low);
+    std::vector<Digit> longest_components_sum;
+    if (shortest == longest)
+      longest_components_sum = shortest_components_sum;
+    else
+      longest_components_sum = sum_moduli(longest_high, longest_low);
+    std::vector<Digit> components_sums_product =
+        multiply_digits(shortest_components_sum, longest_components_sum);
+    (void)sum_digits_in_place(result.data() + shift, digits_after_shift,
+                              components_sums_product.data(),
+                              components_sums_product.size());
+    normalize_digits(result);
+    return result;
+  }
+
+  static std::vector<Digit> multiply_digits_lopsided(
+      const std::vector<Digit>& shortest, const std::vector<Digit>& longest) {
+    const std::size_t size_shortest = shortest.size();
+    std::size_t size_longest = longest.size();
+    std::vector<Digit> result(size_shortest + size_longest, 0);
+    std::size_t processed_digits_count = 0;
+    while (size_longest > 0) {
+      const std::size_t step_digits_count =
+          std::min<std::size_t>(size_longest, size_shortest);
+      std::vector<Digit> step_digits(
+          longest.begin() + processed_digits_count,
+          longest.begin() + processed_digits_count + step_digits_count);
+      std::vector<Digit> product = multiply_digits(shortest, step_digits);
+      (void)sum_digits_in_place(result.data() + processed_digits_count,
+                                result.size() - processed_digits_count,
+                                product.data(), product.size());
+      size_longest -= step_digits_count;
+      processed_digits_count += step_digits_count;
+    }
+    normalize_digits(result);
+    return result;
+  }
+
+  static std::vector<Digit> multiply_digits_plain(
+      const std::vector<Digit>& first, const std::vector<Digit>& second) {
+    std::size_t size_a = first.size(), size_b = second.size();
+    std::vector<Digit> result(size_a + size_b, 0);
+    if (&first == &second) {
+      for (std::size_t index = 0; index < size_a; ++index) {
+        DoubleDigit accumulator;
+        DoubleDigit digit = first[index];
+        auto result_position = result.begin() + (index << 1);
+        auto first_position = first.begin() + (index + 1);
+        accumulator = *result_position + digit * digit;
+        *(result_position++) =
+            static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
+        accumulator >>= BINARY_SHIFT;
+        digit <<= 1;
+        while (first_position != first.end()) {
+          accumulator += *result_position + *(first_position++) * digit;
+          *(result_position++) =
+              static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
+          accumulator >>= BINARY_SHIFT;
+        }
+        if (accumulator) {
+          accumulator += *result_position;
+          *(result_position++) =
+              static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
+          accumulator >>= BINARY_SHIFT;
+        }
+        if (accumulator)
+          *result_position +=
+              static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
+      }
+    } else {
+      for (std::size_t index = 0; index < size_a; ++index) {
+        DoubleDigit accumulator = 0;
+        DoubleDigit digit = first[index];
+        auto result_position = result.begin() + index;
+        auto second_position = second.begin();
+        while (second_position != second.end()) {
+          accumulator += *result_position + *(second_position++) * digit;
+          *(result_position++) =
+              static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
+          accumulator >>= BINARY_SHIFT;
+        }
+        if (accumulator)
+          *result_position +=
+              static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
+      }
+    }
     normalize_digits(result);
     return result;
   }
