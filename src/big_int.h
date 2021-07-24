@@ -391,7 +391,7 @@ class BigInt {
         continue;
       }
       DoubleDigit digit =
-          static_cast<Digit>(ASCII_CODES_DIGIT_VALUES[mask_char(*start++)]);
+          static_cast<Digit>(ASCII_CODES_DIGIT_VALUES[mask_char(*(start++))]);
       std::size_t base_exponent = 1;
       for (; base_exponent < infimum_base_exponent && start != stop; ++start) {
         if (*start == SEPARATOR) continue;
