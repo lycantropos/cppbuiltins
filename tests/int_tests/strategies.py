@@ -62,4 +62,6 @@ int_strings_with_bases = (
                          strategies.sampled_from([0, 8]))))
 ints = (strategies.builds(AlternativeInt, decimal_int_strings)
         | strategies.builds(pack(AlternativeInt), int_strings_with_bases))
+unary_ints = strategies.builds(AlternativeInt, strategies.just('1'),
+                               strategies.sampled_from(range(2, 37)))
 zero_ints = strategies.builds(AlternativeInt)
