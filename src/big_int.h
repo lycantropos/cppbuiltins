@@ -155,47 +155,39 @@ class BigInt {
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator+(
-      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+  BigInt operator+(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return from_signed_digit(signed_digit() + other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0)
-        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-            -1, sum_moduli(_digits, other._digits));
+        return BigInt(-1, sum_moduli(_digits, other._digits));
       else {
         int sign = 1;
         std::vector<Digit> digits =
             subtract_moduli(other._digits, _digits, sign);
-        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+        return BigInt(sign, digits);
       }
     } else if (other._sign < 0) {
       int sign = 1;
       std::vector<Digit> digits = subtract_moduli(_digits, other._digits, sign);
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+      return BigInt(sign, digits);
     } else
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-          _sign | other._sign, sum_moduli(_digits, other._digits));
+      return BigInt(_sign | other._sign, sum_moduli(_digits, other._digits));
   }
 
   operator bool() const { return bool(_sign); }
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator*(
-      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+  BigInt operator*(const BigInt& other) const {
     return _digits.size() == 1 && other._digits.size() == 1
                ? from_signed_double_digit(signed_double_digit() *
                                           other.signed_double_digit())
-               : BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-                     _sign * other._sign,
-                     multiply_digits(_digits, other._digits));
+               : BigInt(_sign * other._sign,
+                        multiply_digits(_digits, other._digits));
   }
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-() const {
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(-_sign, _digits);
-  }
+  BigInt operator-() const { return BigInt(-_sign, _digits); }
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR> operator-(
-      const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+  BigInt operator-(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return from_signed_digit(signed_digit() - other.signed_digit());
     if (_sign < 0) {
@@ -203,21 +195,19 @@ class BigInt {
         int sign = 1;
         std::vector<Digit> digits =
             subtract_moduli(other._digits, _digits, sign);
-        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+        return BigInt(sign, digits);
       } else
-        return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-            -1, sum_moduli(_digits, other._digits));
+        return BigInt(-1, sum_moduli(_digits, other._digits));
     } else if (other._sign < 0)
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-          1, sum_moduli(_digits, other._digits));
+      return BigInt(1, sum_moduli(_digits, other._digits));
     else {
       int sign = _sign | other._sign;
       std::vector<Digit> digits = subtract_moduli(_digits, other._digits, sign);
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+      return BigInt(sign, digits);
     }
   }
 
-  bool operator==(const BigInt<Digit, BINARY_SHIFT, SEPARATOR>& other) const {
+  bool operator==(const BigInt& other) const {
     return _sign == other._sign && _digits == other._digits;
   }
 
@@ -252,12 +242,10 @@ class BigInt {
   static constexpr Digit KARATSUBA_CUTOFF = 1;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
 
-  BigInt<Digit, BINARY_SHIFT, SEPARATOR>(int sign,
-                                         const std::vector<Digit>& digits)
+  BigInt(int sign, const std::vector<Digit>& digits)
       : _sign(sign), _digits(digits) {}
 
-  static BigInt<Digit, BINARY_SHIFT, SEPARATOR> from_signed_digit(
-      SignedDigit value) {
+  static BigInt from_signed_digit(SignedDigit value) {
     Digit modulus;
     int sign;
     if (value < 0) {
@@ -268,13 +256,13 @@ class BigInt {
       sign = value == 0 ? 0 : 1;
     }
     Digit remainder = modulus >> BINARY_SHIFT;
-    return remainder ? BigInt<Digit, BINARY_SHIFT, SEPARATOR>(
-                           sign, {modulus & BINARY_DIGIT_MASK, remainder})
-                     : BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, {modulus});
+    return remainder
+               ? BigInt(sign, std::vector<Digit>(
+                                  {modulus & BINARY_DIGIT_MASK, remainder}))
+               : BigInt(sign, std::vector<Digit>({modulus}));
   }
 
-  static BigInt<Digit, BINARY_SHIFT, SEPARATOR> from_signed_double_digit(
-      SignedDoubleDigit value) {
+  static BigInt from_signed_double_digit(SignedDoubleDigit value) {
     DoubleDigit modulus;
     int sign;
     if (value < 0) {
@@ -284,14 +272,14 @@ class BigInt {
       sign = 1;
       modulus = static_cast<DoubleDigit>(value);
     } else
-      return BigInt<Digit, BINARY_SHIFT, SEPARATOR>();
+      return BigInt();
     DoubleDigit accumulator = modulus;
     std::vector<Digit> digits;
     while (accumulator) {
       digits.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
       accumulator >>= BINARY_SHIFT;
     }
-    return BigInt<Digit, BINARY_SHIFT, SEPARATOR>(sign, digits);
+    return BigInt(sign, digits);
   }
 
   static Digit subtract_digits_in_place(Digit* longest,
