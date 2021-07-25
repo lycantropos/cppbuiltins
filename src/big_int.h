@@ -239,7 +239,7 @@ class BigInt {
   int _sign;
   std::vector<Digit> _digits;
 
-  static constexpr Digit KARATSUBA_CUTOFF = 1;
+  static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
 
   BigInt(int sign, const std::vector<Digit>& digits)
