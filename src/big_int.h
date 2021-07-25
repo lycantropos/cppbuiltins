@@ -213,9 +213,9 @@ class BigInt {
 
   std::string repr(std::size_t base = 10) const {
     const std::vector<Digit> decimal_digits = to_decimal_digits();
-    std::size_t characters_count = (_sign < 0) +
-                                   (decimal_digits.size() - 1) * DECIMAL_SHIFT +
-                                   floor_log10(decimal_digits.back()) + 1;
+    const std::size_t characters_count =
+        (_sign < 0) + (decimal_digits.size() - 1) * DECIMAL_SHIFT +
+        floor_log10(decimal_digits.back()) + 1;
     char* characters = new char[characters_count + 1]();
     char* stop = &characters[characters_count];
     for (std::size_t index = 0; index < decimal_digits.size() - 1; index++) {
@@ -287,11 +287,10 @@ class BigInt {
 
   static Digit subtract_digits_in_place(Digit* longest,
                                         std::size_t size_longest,
-                                        Digit* shortest,
-                                        std::size_t size_shortest) {
+                                        const std::vector<Digit>& shortest) {
     Digit accumulator = 0;
     std::size_t index = 0;
-    for (; index < size_shortest; ++index) {
+    for (; index < shortest.size(); ++index) {
       accumulator = longest[index] - shortest[index] - accumulator;
       longest[index] = accumulator & BINARY_DIGIT_MASK;
       accumulator >>= BINARY_SHIFT;
@@ -351,10 +350,10 @@ class BigInt {
   }
 
   static Digit sum_digits_in_place(Digit* longest, std::size_t size_longest,
-                                   Digit* shortest, std::size_t size_shortest) {
+                                   const std::vector<Digit>& shortest) {
     Digit accumulator = 0;
     std::size_t index = 0;
-    for (; index < size_shortest; ++index) {
+    for (; index < shortest.size(); ++index) {
       accumulator += longest[index] + shortest[index];
       longest[index] = accumulator & BINARY_DIGIT_MASK;
       accumulator >>= BINARY_SHIFT;
@@ -411,7 +410,7 @@ class BigInt {
     const std::vector<Digit>*shortest = &first, *longest = &second;
     std::size_t size_shortest = shortest->size(),
                 size_longest = longest->size();
-    if (size_shortest > size_longest) {
+    if (size_longest < size_shortest) {
       std::swap(shortest, longest);
       std::swap(size_shortest, size_longest);
     }
@@ -422,7 +421,7 @@ class BigInt {
     }
     if (2 * size_shortest <= size_longest)
       return multiply_digits_lopsided(*shortest, *longest);
-    std::size_t shift = size_longest >> 1;
+    const std::size_t shift = size_longest >> 1;
     std::vector<Digit> shortest_high, shortest_low;
     split_digits(*shortest, shift, shortest_high, shortest_low);
     std::vector<Digit> longest_high, longest_low;
@@ -432,30 +431,27 @@ class BigInt {
     } else
       split_digits(*longest, shift, longest_high, longest_low);
     std::vector<Digit> result(size_shortest + size_longest, 0);
-    std::vector<Digit> highs_product =
+    const std::vector<Digit> highs_product =
         multiply_digits(shortest_high, longest_high);
     std::copy(highs_product.begin(), highs_product.end(),
               result.begin() + 2 * shift);
-    std::vector<Digit> lows_product =
+    const std::vector<Digit> lows_product =
         multiply_digits(shortest_low, longest_low);
     std::copy(lows_product.begin(), lows_product.end(), result.begin());
-    std::size_t digits_after_shift = result.size() - shift;
+    const std::size_t digits_after_shift = result.size() - shift;
     (void)subtract_digits_in_place(result.data() + shift, digits_after_shift,
-                                   lows_product.data(), lows_product.size());
+                                   lows_product);
     (void)subtract_digits_in_place(result.data() + shift, digits_after_shift,
-                                   highs_product.data(), highs_product.size());
-    std::vector<Digit> shortest_components_sum =
+                                   highs_product);
+    const std::vector<Digit> shortest_components_sum =
         sum_moduli(shortest_high, shortest_low);
-    std::vector<Digit> longest_components_sum;
-    if (shortest == longest)
-      longest_components_sum = shortest_components_sum;
-    else
-      longest_components_sum = sum_moduli(longest_high, longest_low);
-    std::vector<Digit> components_sums_product =
+    const std::vector<Digit> longest_components_sum =
+        (shortest == longest) ? shortest_components_sum
+                              : sum_moduli(longest_high, longest_low);
+    const std::vector<Digit> components_sums_product =
         multiply_digits(shortest_components_sum, longest_components_sum);
     (void)sum_digits_in_place(result.data() + shift, digits_after_shift,
-                              components_sums_product.data(),
-                              components_sums_product.size());
+                              components_sums_product);
     normalize_digits(result);
     return result;
   }
@@ -469,13 +465,13 @@ class BigInt {
     while (size_longest > 0) {
       const std::size_t step_digits_count =
           std::min<std::size_t>(size_longest, size_shortest);
-      std::vector<Digit> step_digits(
+      const std::vector<Digit> step_digits(
           longest.begin() + processed_digits_count,
           longest.begin() + processed_digits_count + step_digits_count);
-      std::vector<Digit> product = multiply_digits(shortest, step_digits);
+      const std::vector<Digit> product = multiply_digits(shortest, step_digits);
       (void)sum_digits_in_place(result.data() + processed_digits_count,
                                 result.size() - processed_digits_count,
-                                product.data(), product.size());
+                                product);
       size_longest -= step_digits_count;
       processed_digits_count += step_digits_count;
     }
@@ -485,10 +481,10 @@ class BigInt {
 
   static std::vector<Digit> multiply_digits_plain(
       const std::vector<Digit>& first, const std::vector<Digit>& second) {
-    std::size_t size_a = first.size(), size_b = second.size();
-    std::vector<Digit> result(size_a + size_b, 0);
-    if (&first == &second) {
-      for (std::size_t index = 0; index < size_a; ++index) {
+    std::size_t first_size = first.size(), second_size = second.size();
+    std::vector<Digit> result(first_size + second_size, 0);
+    if (&first == &second)
+      for (std::size_t index = 0; index < first_size; ++index) {
         DoubleDigit accumulator;
         DoubleDigit digit = first[index];
         auto result_position = result.begin() + (index << 1);
@@ -514,10 +510,10 @@ class BigInt {
           *result_position +=
               static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
       }
-    } else {
-      for (std::size_t index = 0; index < size_a; ++index) {
+    else
+      for (std::size_t index = 0; index < first_size; ++index) {
         DoubleDigit accumulator = 0;
-        DoubleDigit digit = first[index];
+        const DoubleDigit digit = first[index];
         auto result_position = result.begin() + index;
         auto second_position = second.begin();
         while (second_position != second.end()) {
@@ -530,7 +526,6 @@ class BigInt {
           *result_position +=
               static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
       }
-    }
     normalize_digits(result);
     return result;
   }
