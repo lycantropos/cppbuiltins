@@ -416,7 +416,7 @@ class BigInt {
       std::swap(size_shortest, size_longest);
     }
     if (size_shortest <=
-        (shortest == longest ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF)) {
+        ((shortest == longest) ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF)) {
       return size_shortest == 0 ? std::vector<Digit>({0})
                                 : multiply_digits_plain(*shortest, *longest);
     }
@@ -436,16 +436,9 @@ class BigInt {
         multiply_digits(shortest_high, longest_high);
     std::copy(highs_product.begin(), highs_product.end(),
               result.begin() + 2 * shift);
-    std::size_t uninitialized_digits_count =
-        result.size() - 2 * shift - highs_product.size();
-    std::fill(result.begin() + 2 * shift + highs_product.size(),
-              result.begin() + uninitialized_digits_count, 0);
     std::vector<Digit> lows_product =
         multiply_digits(shortest_low, longest_low);
     std::copy(lows_product.begin(), lows_product.end(), result.begin());
-    uninitialized_digits_count = 2 * shift - lows_product.size();
-    std::fill(result.begin() + lows_product.size(),
-              result.begin() + uninitialized_digits_count, 0);
     std::size_t digits_after_shift = result.size() - shift;
     (void)subtract_digits_in_place(result.data() + shift, digits_after_shift,
                                    lows_product.data(), lows_product.size());
