@@ -211,6 +211,10 @@ class BigInt {
     return _sign == other._sign && _digits == other._digits;
   }
 
+  BigInt abs() const {
+    return _sign < 0 ? BigInt(1, _digits) : *this;
+  }
+
   std::string repr(std::size_t base = 10) const {
     const std::vector<Digit> decimal_digits = to_decimal_digits();
     const std::size_t characters_count =
