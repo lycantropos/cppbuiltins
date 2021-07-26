@@ -217,13 +217,13 @@ class BigInt {
            (_sign == other._sign &&
             (_digits.size() < other._digits.size() ||
              (_digits.size() == other._digits.size() &&
-              (_digits == other._digits ||
-               (_sign > 0 ? std::lexicographical_compare(
-                                _digits.rbegin(), _digits.rend(),
-                                other._digits.rbegin(), other._digits.rend())
-                          : std::lexicographical_compare(
-                                other._digits.rbegin(), other._digits.rend(),
-                                _digits.rbegin(), _digits.rend()))))));
+              (_sign > 0
+                   ? !std::lexicographical_compare(
+                         other._digits.rbegin(), other._digits.rend(),
+                         _digits.rbegin(), _digits.rend())
+                   : !std::lexicographical_compare(
+                         _digits.rbegin(), _digits.rend(),
+                         other._digits.rbegin(), other._digits.rend())))));
   }
 
   BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
