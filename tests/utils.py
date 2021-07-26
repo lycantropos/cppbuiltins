@@ -9,6 +9,7 @@ from typing import (Any,
                     Iterable,
                     Iterator,
                     List,
+                    Optional,
                     Tuple,
                     TypeVar)
 
@@ -24,6 +25,7 @@ AlternativeSet = cppbuiltins.set
 NativeInt = builtins.int
 NativeList = builtins.list
 NativeSet = builtins.set
+AlternativeNativeIntsPair = Tuple[AlternativeInt, NativeInt]
 AlternativeNativeListsPair = Tuple[AlternativeList, NativeList]
 AlternativeNativeSetsPair = Tuple[AlternativeSet, NativeSet]
 
@@ -35,6 +37,11 @@ def are_iterators_equal(left: Iterator[Any],
     return all(left_value == right_value
                for left_value, right_value in zip_longest(left, right,
                                                           fillvalue=_sentinel))
+
+
+def are_alternative_native_ints_equal(alternative: AlternativeInt,
+                                      native: NativeInt) -> bool:
+    return str(alternative) == str(native)
 
 
 def are_alternative_native_lists_equal(alternative: AlternativeList,
@@ -65,6 +72,15 @@ def apply(function: Callable[..., Range], args: Tuple[Domain, ...]) -> Range:
 
 def pickle_round_trip(value: Domain) -> Domain:
     return pickle.loads(pickle.dumps(value))
+
+
+def to_alternative_native_ints_pair(characters: str,
+                                    base: Optional[int] = None
+                                    ) -> AlternativeNativeIntsPair:
+    return ((AlternativeInt(characters), NativeInt(characters))
+            if base is None
+            else (AlternativeInt(characters, base),
+                  NativeInt(characters, base)))
 
 
 def to_alternative_native_lists_pair(values: List[Any]

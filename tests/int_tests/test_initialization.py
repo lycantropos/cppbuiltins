@@ -7,7 +7,7 @@ from tests.utils import AlternativeInt
 from . import strategies
 
 
-@given(strategies.decimal_int_strings)
+@given(strategies.decimal_int_strings_with_leading_zeros)
 def test_decimal_string(string: str) -> None:
     result = AlternativeInt(string)
 
