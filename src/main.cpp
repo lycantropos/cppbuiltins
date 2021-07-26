@@ -252,9 +252,7 @@ class List {
                                         other._raw->begin(), other._raw->end());
   }
 
-  bool operator<=(const List& other) const {
-    return *this < other || *this == other;
-  }
+  bool operator<=(const List& other) const { return !(other < *this); }
 
   List operator+(const List& other) const {
     RawList raw{*_raw};
