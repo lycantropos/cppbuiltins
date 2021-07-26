@@ -1,6 +1,7 @@
 #ifndef INT_HPP
 #define INT_HPP
 
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstddef>
@@ -211,9 +212,21 @@ class BigInt {
     return _sign == other._sign && _digits == other._digits;
   }
 
-  BigInt abs() const {
-    return _sign < 0 ? BigInt(1, _digits) : *this;
+  bool operator<=(const BigInt& other) const {
+    return _sign < other._sign ||
+           (_sign == other._sign &&
+            (_digits.size() < other._digits.size() ||
+             (_digits.size() == other._digits.size() &&
+              (_digits == other._digits ||
+               (_sign > 0 ? std::lexicographical_compare(
+                                _digits.rbegin(), _digits.rend(),
+                                other._digits.rbegin(), other._digits.rend())
+                          : std::lexicographical_compare(
+                                other._digits.rbegin(), other._digits.rend(),
+                                _digits.rbegin(), _digits.rend()))))));
   }
+
+  BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
 
   std::string repr(std::size_t base = 10) const {
     const std::vector<Digit> decimal_digits = to_decimal_digits();
