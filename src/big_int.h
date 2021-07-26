@@ -212,6 +212,21 @@ class BigInt {
     return _sign == other._sign && _digits == other._digits;
   }
 
+  bool operator<(const BigInt& other) const {
+    return _sign < other._sign ||
+           (_sign == other._sign &&
+            (_sign > 0 ? _digits.size() < other._digits.size() ||
+                             (_digits.size() == other._digits.size() &&
+                              std::lexicographical_compare(
+                                  _digits.rbegin(), _digits.rend(),
+                                  other._digits.rbegin(), other._digits.rend()))
+                       : _digits.size() > other._digits.size() ||
+                             (_digits.size() == other._digits.size() &&
+                              std::lexicographical_compare(
+                                  other._digits.rbegin(), other._digits.rend(),
+                                  _digits.rbegin(), _digits.rend()))));
+  }
+
   bool operator<=(const BigInt& other) const {
     return _sign < other._sign ||
            (_sign == other._sign &&
