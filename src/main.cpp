@@ -1,5 +1,3 @@
-#include <Python.h>
-#include <object.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 
@@ -14,6 +12,10 @@
 #include "big_int.h"
 
 namespace py = pybind11;
+
+#ifndef Py_SET_SIZE
+#define Py_SET_SIZE(object, size) ((PyVarObject *)(object))->ob_size = size
+#endif
 
 #define MODULE_NAME cppbuiltins
 #define C_STR_HELPER(a) #a
