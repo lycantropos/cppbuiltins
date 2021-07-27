@@ -99,6 +99,8 @@ class BigInt {
 
   BigInt() : _sign(0), _digits({0}) {}
 
+  BigInt(const BigInt& value) : _sign(value._sign), _digits(value._digits) {}
+
   BigInt(const char* characters, std::size_t base = 10) {
     if ((base != 0 && base < 2) || base > 36)
       throw std::invalid_argument(
