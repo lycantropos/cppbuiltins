@@ -32,16 +32,10 @@ struct double_precision<digit> {
 };
 
 using Index = Py_ssize_t;
-using Int = BigInt<digit, PyLong_SHIFT, _PyHASH_BITS, '_'>;
 using IterableState = py::list;
 using IteratorState = py::tuple;
 using Object = py::object;
 using RawList = std::vector<Object>;
-
-static std::ostream& operator<<(std::ostream& stream, const Int& value) {
-  return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr(10)
-                << "')";
-}
 
 template <>
 struct std::hash<Object> {
@@ -112,6 +106,90 @@ std::string to_repr(const Type& value) {
   stream.precision(std::numeric_limits<double>::digits10 + 2);
   stream << value;
   return {stream.str()};
+}
+
+int int_to_sign(const py::int_& value) {
+  PyLongObject* ptr = (PyLongObject*)value.ptr();
+  Py_ssize_t signed_size = Py_SIZE(ptr);
+  return signed_size < 0 ? -1 : signed_size > 0;
+}
+
+std::vector<digit> int_to_digits(const py::int_& value) {
+  PyLongObject* ptr = (PyLongObject*)value.ptr();
+  Py_ssize_t signed_size = Py_SIZE(ptr);
+  std::size_t size = Py_ABS(signed_size) + (signed_size == 0);
+  std::vector<digit> result;
+  result.reserve(size);
+  for (std::size_t index = 0; index < size; ++index)
+    result.push_back(ptr->ob_digit[index]);
+  return result;
+}
+
+const char* pystr_to_ascii_c_str(const py::str& string) {
+  py::str ascii_string = py::reinterpret_steal<py::str>(
+      _PyUnicode_TransformDecimalAndSpaceToASCII(string.ptr()));
+  if (!ascii_string) throw py::error_already_set();
+  const char* result = PyUnicode_AsUTF8(ascii_string.ptr());
+  if (!result) throw py::error_already_set();
+  return result;
+}
+
+class Int : public BigInt<digit, '_', PyLong_SHIFT> {
+ private:
+  using BaseClass = BigInt<digit, '_', PyLong_SHIFT>;
+
+ public:
+  Int() : BaseClass() {}
+
+  Int(const BaseClass& value) : BaseClass(value) {}
+
+  Int(py::int_ value) : BaseClass(int_to_sign(value), int_to_digits(value)) {}
+
+  Int(const py::str& value, std::size_t base)
+      : BaseClass(pystr_to_ascii_c_str(value), base) {}
+
+  Int operator+(const Int& other) const {
+    return Int(BaseClass::operator+(other));
+  }
+
+  Int operator*(const Int& other) const {
+    return Int(BaseClass::operator*(other));
+  }
+
+  Int operator-() const { return Int(BaseClass::operator-()); }
+
+  Int operator-(const Int& other) const {
+    return Int(BaseClass::operator-(other));
+  }
+
+  Py_hash_t hash() const {
+    int sign = this->sign();
+    const std::vector<BaseClass::Digit>& digits = this->digits();
+    if (digits.size() == 1) {
+      if (sign > 0)
+        return digits[0];
+      else if (sign < 0)
+        return -static_cast<Py_hash_t>(digits[0] + (digits[0] == 1));
+      else
+        return 0;
+    }
+    Py_uhash_t result = 0;
+    for (auto position = digits.rbegin(); position != digits.rend();
+         ++position) {
+      result = ((result << BaseClass::BINARY_SHIFT) & _PyHASH_MODULUS) |
+               (result >> (_PyHASH_BITS - BaseClass::BINARY_SHIFT));
+      result += *position;
+      if (result >= _PyHASH_MODULUS) result -= _PyHASH_MODULUS;
+    }
+    result = result * sign;
+    result -= (result == std::numeric_limits<std::size_t>::max());
+    return static_cast<Py_hash_t>(result);
+  }
+};
+
+static std::ostream& operator<<(std::ostream& stream, const Int& value) {
+  return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr(10)
+                << "')";
 }
 
 template <class Iterable>
@@ -871,15 +949,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<Int> PyInt(m, INT_NAME);
   PyInt.def(py::init<>())
-      .def(py::init<>([](const py::str& string, std::size_t base) {
-             py::str ascii_string = py::reinterpret_steal<py::str>(
-                 _PyUnicode_TransformDecimalAndSpaceToASCII(string.ptr()));
-             if (!ascii_string) throw py::error_already_set();
-             const char* characters = PyUnicode_AsUTF8(ascii_string.ptr());
-             if (!characters) throw py::error_already_set();
-             return Int(characters, base);
-           }),
-           py::arg("string"), py::arg("base") = 10)
+      .def(py::init<const py::str&, std::size_t>(), py::arg("string"),
+           py::arg("base") = 10)
+      .def(py::init<const py::int_&>(), py::arg("value"))
       .def(py::self == py::self)
       .def(py::self <= py::self)
       .def(py::self < py::self)
@@ -888,8 +960,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(-py::self)
       .def(py::self - py::self)
       .def("__abs__", &Int::abs)
-      .def("__hash__",
-           [](const Int& self) { return static_cast<Py_hash_t>(self.hash()); })
+      .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
       .def("__pos__", [](const Int* self) { return self; })
       .def("__repr__", &to_repr<Int>)
