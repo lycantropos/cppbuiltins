@@ -148,9 +148,7 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
   Int(const py::str& value, std::size_t base)
       : BaseClass(pystr_to_ascii_c_str(value), base) {}
 
-  static Int from_state(const py::int_& value) {
-    return Int(value);
-  }
+  static Int from_state(const py::int_& value) { return Int(value); }
 
   static py::int_ to_state(const Int& value) {
     return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
@@ -175,7 +173,7 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
     const std::vector<BaseClass::Digit>& digits = this->digits();
     std::size_t size = digits.size();
     PyLongObject* result = _PyLong_New(size);
-    for(std::size_t index = 0; index < size; ++index)
+    for (std::size_t index = 0; index < size; ++index)
       result->ob_digit[index] = digits[index];
     Py_SET_SIZE(result, Py_SIZE(result) * sign);
     return result;
