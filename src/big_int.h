@@ -284,6 +284,14 @@ class BigInt {
 
   int sign() const { return _sign; }
 
+  SignedDigit signed_digit() const {
+    return _sign * static_cast<SignedDigit>(_digits[0]);
+  }
+
+  SignedDoubleDigit signed_double_digit() const {
+    return _sign * static_cast<SignedDoubleDigit>(_digits[0]);
+  }
+
  private:
   int _sign;
   std::vector<Digit> _digits;
@@ -661,14 +669,6 @@ class BigInt {
       if (digit) _digits.push_back(digit);
     }
     if (_digits.empty()) _digits.push_back(0);
-  }
-
-  SignedDigit signed_digit() const {
-    return _sign * static_cast<SignedDigit>(_digits[0]);
-  }
-
-  SignedDoubleDigit signed_double_digit() const {
-    return _sign * static_cast<SignedDoubleDigit>(_digits[0]);
   }
 
   std::vector<Digit> to_decimal_digits() const {
