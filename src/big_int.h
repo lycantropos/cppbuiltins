@@ -65,7 +65,8 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
-template <class Digit, std::size_t BINARY_SHIFT, char SEPARATOR>
+template <class Digit, std::size_t BINARY_SHIFT, std::size_t HASH_SHIFT,
+          char SEPARATOR>
 class BigInt {
  public:
   static_assert(std::is_integral<Digit>() && std::is_unsigned<Digit>(),
@@ -73,6 +74,8 @@ class BigInt {
   static_assert(
       BINARY_SHIFT <= std::numeric_limits<Digit>::digits - 1,
       "Digit should be able to hold all integers lesser than double base.");
+  static_assert(BINARY_SHIFT <= HASH_SHIFT,
+                "Hash base should not be less than digit base.");
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(SEPARATOR)] > 36,
                 "Separator should not be a digit");
 
@@ -91,6 +94,8 @@ class BigInt {
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
   static constexpr std::size_t DECIMAL_SHIFT = floor_log10<BINARY_BASE>();
   static constexpr std::size_t DECIMAL_BASE = power_of_ten<DECIMAL_SHIFT>();
+  static constexpr std::size_t HASH_MASK =
+      (static_cast<std::size_t>(1) << HASH_SHIFT) - 1;
 
   BigInt() : _sign(0), _digits({0}) {}
 
@@ -267,6 +272,29 @@ class BigInt {
     else if (_sign < 0)
       *--stop = '-';
     return std::string(characters, characters_count);
+  }
+
+  std::size_t hash() const {
+    if (_digits.size() == 1) {
+      if (_sign > 0)
+        return _digits[0];
+      else if (_sign < 0)
+        return std::numeric_limits<std::size_t>::max() - _digits[0] +
+               (_digits[0] != 1);
+      else
+        return 0;
+    }
+    std::size_t result = 0;
+    for (auto position = _digits.rbegin(); position != _digits.rend();
+         ++position) {
+      result = ((result << BINARY_SHIFT) & HASH_MASK) |
+               (result >> (HASH_SHIFT - BINARY_SHIFT));
+      result += *position;
+      if (result >= HASH_MASK) result -= HASH_MASK;
+    }
+    result = result * _sign;
+    result -= (result == std::numeric_limits<std::size_t>::max());
+    return result;
   }
 
  private:

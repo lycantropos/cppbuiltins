@@ -32,7 +32,7 @@ struct double_precision<digit> {
 };
 
 using Index = Py_ssize_t;
-using Int = BigInt<digit, PyLong_SHIFT, '_'>;
+using Int = BigInt<digit, PyLong_SHIFT, _PyHASH_BITS, '_'>;
 using IterableState = py::list;
 using IteratorState = py::tuple;
 using Object = py::object;
@@ -888,6 +888,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(-py::self)
       .def(py::self - py::self)
       .def("__abs__", &Int::abs)
+      .def("__hash__",
+           [](const Int& self) { return static_cast<Py_hash_t>(self.hash()); })
       .def("__bool__", &Int::operator bool)
       .def("__pos__", [](const Int* self) { return self; })
       .def("__repr__", &to_repr<Int>)
