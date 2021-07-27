@@ -183,6 +183,10 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
     return result;
   }
 
+  Int abs() const {
+    return Int(BaseClass::abs());
+  }
+
   Py_hash_t hash() const {
     int sign = this->sign();
     const std::vector<BaseClass::Digit>& digits = this->digits();
