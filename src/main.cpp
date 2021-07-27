@@ -158,6 +158,8 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
     return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
   }
 
+  const Int& operator+() const { return *this; }
+
   Int operator+(const Int& other) const {
     return Int(BaseClass::operator+(other));
   }
@@ -984,6 +986,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self < py::self)
       .def(py::self + py::self)
       .def(~py::self)
+      .def(+py::self)
       .def(py::self * py::self)
       .def(-py::self)
       .def(py::self - py::self)
@@ -991,7 +994,6 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__abs__", &Int::abs)
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
-      .def("__pos__", [](const Int* self) { return self; })
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(10); });
 
