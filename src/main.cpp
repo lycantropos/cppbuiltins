@@ -148,6 +148,14 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
   Int(const py::str& value, std::size_t base)
       : BaseClass(pystr_to_ascii_c_str(value), base) {}
 
+  static Int from_state(const py::int_& value) {
+    return Int(value);
+  }
+
+  static py::int_ to_state(const Int& value) {
+    return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
+  }
+
   Int operator+(const Int& other) const {
     return Int(BaseClass::operator+(other));
   }
@@ -160,6 +168,17 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
 
   Int operator-(const Int& other) const {
     return Int(BaseClass::operator-(other));
+  }
+
+  PyLongObject* as_PyLong() const {
+    int sign = this->sign();
+    const std::vector<BaseClass::Digit>& digits = this->digits();
+    std::size_t size = digits.size();
+    PyLongObject* result = _PyLong_New(size);
+    for(std::size_t index = 0; index < size; ++index)
+      result->ob_digit[index] = digits[index];
+    Py_SET_SIZE(result, Py_SIZE(result) * sign);
+    return result;
   }
 
   Py_hash_t hash() const {
@@ -959,6 +978,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self * py::self)
       .def(-py::self)
       .def(py::self - py::self)
+      .def(py::pickle(&Int::to_state, &Int::from_state))
       .def("__abs__", &Int::abs)
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
