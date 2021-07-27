@@ -162,6 +162,8 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
     return Int(BaseClass::operator+(other));
   }
 
+  Int operator~() const { return Int(BaseClass::operator~()); }
+
   Int operator*(const Int& other) const {
     return Int(BaseClass::operator*(other));
   }
@@ -981,6 +983,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self <= py::self)
       .def(py::self < py::self)
       .def(py::self + py::self)
+      .def(~py::self)
       .def(py::self * py::self)
       .def(-py::self)
       .def(py::self - py::self)

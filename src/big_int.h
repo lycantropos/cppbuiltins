@@ -195,6 +195,17 @@ class BigInt {
 
   BigInt operator-() const { return BigInt(-_sign, _digits); }
 
+  BigInt operator~() const {
+    if (_digits.size() == 1) return from_signed_digit(-signed_digit() - 1);
+    if (_sign > 0)
+      return BigInt(-1, sum_moduli(_digits, {1}));
+    else {
+      int sign = 1;
+      std::vector<Digit> digits = subtract_moduli(_digits, {1}, sign);
+      return BigInt(sign, digits);
+    }
+  }
+
   BigInt operator-(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return from_signed_digit(signed_digit() - other.signed_digit());
