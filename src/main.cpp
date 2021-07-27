@@ -14,7 +14,7 @@
 namespace py = pybind11;
 
 #ifndef Py_SET_SIZE
-#define Py_SET_SIZE(object, size) ((PyVarObject *)(object))->ob_size = size
+#define Py_SET_SIZE(object, size) ((PyVarObject*)(object))->ob_size = size
 #endif
 
 #define MODULE_NAME cppbuiltins
@@ -187,9 +187,7 @@ class Int : public BigInt<digit, '_', PyLong_SHIFT> {
     return result;
   }
 
-  Int abs() const {
-    return Int(BaseClass::abs());
-  }
+  Int abs() const { return Int(BaseClass::abs()); }
 
   Py_hash_t hash() const {
     int sign = this->sign();
