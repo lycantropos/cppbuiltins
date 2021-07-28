@@ -8,13 +8,12 @@ RUN pip install --upgrade pip setuptools
 WORKDIR /opt/cppbuiltins
 
 COPY requirements-setup.txt .
-COPY requirements-tests.txt .
-RUN pip install -r requirements-tests.txt
-
 COPY README.md .
-COPY pytest.ini .
 COPY setup.py .
 COPY src/ src/
-COPY tests/ tests/
-
 RUN pip install -e .
+
+COPY requirements-tests.txt .
+RUN pip install -r requirements-tests.txt
+COPY pytest.ini .
+COPY tests/ tests/
