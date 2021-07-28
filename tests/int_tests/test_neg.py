@@ -15,13 +15,6 @@ def test_basic(int_: AlternativeInt) -> None:
 
 
 @given(strategies.ints)
-def test_involution(int_: AlternativeInt) -> None:
-    result = -int_
-
-    assert int_ == -result
-
-
-@given(strategies.ints)
 def test_fixed_point(int_: AlternativeInt) -> None:
     result = -int_
 
