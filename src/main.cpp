@@ -180,6 +180,8 @@ class Int : public BigInt<digit, '_', _BINARY_SHIFT> {
     return Int(BaseClass::operator-(other));
   }
 
+  Int abs() const { return Int(BaseClass::abs()); }
+
   PyLongObject* as_PyLong() const {
     int sign = this->sign();
     const std::vector<BaseClass::Digit>& digits = this->digits();
@@ -190,8 +192,6 @@ class Int : public BigInt<digit, '_', _BINARY_SHIFT> {
     Py_SET_SIZE(result, Py_SIZE(result) * sign);
     return result;
   }
-
-  Int abs() const { return Int(BaseClass::abs()); }
 
   Py_hash_t hash() const {
     int sign = this->sign();
