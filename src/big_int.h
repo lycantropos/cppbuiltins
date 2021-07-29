@@ -647,6 +647,7 @@ class BigInt {
     }
     if (bits_in_accumulator) _digits.push_back(static_cast<Digit>(accumulator));
   }
+
   static Digit shift_digits_left(const Digit* input_digits,
                                  std::size_t input_digits_count,
                                  std::size_t shift, Digit* output_digits) {
