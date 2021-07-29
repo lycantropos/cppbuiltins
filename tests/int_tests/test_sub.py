@@ -25,6 +25,11 @@ def test_commutative_case(first: AlternativeInt,
     assert equivalence(first - second == second - first, first == second)
 
 
+@given(strategies.ints, strategies.ints)
+def test_sign(first: AlternativeInt, second: AlternativeInt) -> None:
+    assert first - second >= 0 if first >= second else first - second < 0
+
+
 @given(strategies.ints, strategies.zero_ints)
 def test_right_neutral_element(first: AlternativeInt,
                                second: AlternativeInt) -> None:
