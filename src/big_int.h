@@ -165,8 +165,7 @@ class BigInt {
 
   BigInt operator+(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
-      return from_signed_double_digit(signed_double_digit() +
-                                      other.signed_double_digit());
+      return from_signed_digit(signed_digit() + other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0)
         return BigInt(-1, sum_moduli(_digits, other._digits));
@@ -216,8 +215,7 @@ class BigInt {
 
   BigInt operator-(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
-      return from_signed_double_digit(signed_double_digit() -
-                                      other.signed_double_digit());
+      return from_signed_digit(signed_digit() - other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0) {
         int sign = 1;
