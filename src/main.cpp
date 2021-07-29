@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -29,11 +30,6 @@ namespace py = pybind11;
 #ifndef VERSION_INFO
 #define VERSION_INFO "dev"
 #endif
-
-template <>
-struct double_precision<digit> {
-  using type = twodigits;
-};
 
 using Index = Py_ssize_t;
 using IterableState = py::list;
@@ -138,9 +134,17 @@ const char* pystr_to_ascii_c_str(const py::str& string) {
   return result;
 }
 
-class Int : public BigInt<digit, '_', PyLong_SHIFT> {
+template <>
+struct double_precision<digit> {
+  using type = twodigits;
+};
+
+static constexpr std::size_t _BINARY_SHIFT =
+    std::numeric_limits<std::make_signed<digit>::type>::digits - 1;
+
+class Int : public BigInt<digit, '_', _BINARY_SHIFT> {
  private:
-  using BaseClass = BigInt<digit, '_', PyLong_SHIFT>;
+  using BaseClass = BigInt<digit, '_', _BINARY_SHIFT>;
 
  public:
   Int() : BaseClass() {}

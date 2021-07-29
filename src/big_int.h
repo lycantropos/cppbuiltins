@@ -71,14 +71,15 @@ class BigInt {
   static_assert(std::is_integral<_Digit>() && std::is_unsigned<_Digit>(),
                 "Digits should be unsigned integrals.");
   using Digit = _Digit;
+  using SignedDigit = typename std::make_signed<Digit>::type;
 
   static_assert(ASCII_CODES_DIGIT_VALUES[mask_char(_SEPARATOR)] > 36,
                 "Separator should not be a digit");
   static constexpr char SEPARATOR = _SEPARATOR;
 
-  static_assert(
-      _BINARY_SHIFT <= std::numeric_limits<Digit>::digits - 1,
-      "Digit should be able to hold all integers lesser than double base.");
+  static_assert(_BINARY_SHIFT <= std::numeric_limits<SignedDigit>::digits - 1,
+                "Digit should be able to hold all integers lesser than double "
+                "signed base.");
   static constexpr Digit BINARY_SHIFT = _BINARY_SHIFT;
 
   using DoubleDigit = typename double_precision<Digit>::type;
@@ -89,7 +90,6 @@ class BigInt {
   static_assert(std::numeric_limits<DoubleDigit>::digits >= 2 * BINARY_SHIFT,
                 "Double precision digit should be able to hold all integers "
                 "lesser than squared base.");
-  using SignedDigit = typename std::make_signed<Digit>::type;
   using SignedDoubleDigit = typename std::make_signed<DoubleDigit>::type;
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
