@@ -185,6 +185,13 @@ class BigInt {
 
   operator bool() const { return bool(_sign); }
 
+  operator double() const {
+    if (_digits.size() == 1) return static_cast<double>(signed_digit());
+    int exponent;
+    double fraction = frexp(exponent);
+    return std::ldexp(fraction, exponent);
+  }
+
   BigInt operator*(const BigInt& other) const {
     return _digits.size() == 1 && other._digits.size() == 1
                ? from_signed_double_digit(signed_double_digit() *
@@ -309,6 +316,19 @@ class BigInt {
 
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
+
+  static std::size_t digit_bit_length(Digit value) {
+    static const std::size_t bit_lengths_table[32] = {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+    std::size_t result = 0;
+    while (value >= 32) {
+      result += 6;
+      value >>= 6;
+    }
+    result += bit_lengths_table[value];
+    return result;
+  }
 
   static BigInt from_signed_digit(SignedDigit value) {
     Digit modulus;
@@ -626,6 +646,95 @@ class BigInt {
       }
     }
     if (bits_in_accumulator) _digits.push_back(static_cast<Digit>(accumulator));
+  }
+  static Digit shift_digits_left(const Digit* input_digits,
+                                 std::size_t input_digits_count,
+                                 std::size_t shift, Digit* output_digits) {
+    Digit accumulator = 0;
+    for (std::size_t index = 0; index < input_digits_count; index++) {
+      DoubleDigit step =
+          static_cast<DoubleDigit>(input_digits[index]) << shift | accumulator;
+      output_digits[index] = static_cast<Digit>(step) & BINARY_DIGIT_MASK;
+      accumulator = static_cast<Digit>(step >> BINARY_SHIFT);
+    }
+    return accumulator;
+  }
+
+  static Digit shift_digits_right(const Digit* input_digits,
+                                  std::size_t input_digits_count,
+                                  std::size_t shift, Digit* output_digits) {
+    Digit accumulator = 0;
+    Digit mask = (static_cast<Digit>(1) << shift) - 1;
+    for (std::size_t index = input_digits_count; index-- > 0;) {
+      DoubleDigit step = static_cast<DoubleDigit>(accumulator) << BINARY_SHIFT |
+                         input_digits[index];
+      accumulator = static_cast<Digit>(step) & mask;
+      output_digits[index] = static_cast<Digit>(step >> shift);
+    }
+    return accumulator;
+  }
+
+  static constexpr std::size_t MANTISSA_BITS =
+      std::numeric_limits<double>::digits;
+  static constexpr double MANTISSA_BITS_POWER_OF_TWO =
+      power_of_two<MANTISSA_BITS>();
+
+  double frexp(int& exponent) const {
+    Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
+        0,
+    };
+    static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
+    std::size_t size = _digits.size();
+    std::size_t bits_count = digit_bit_length(_digits.back());
+    if (size >=
+            (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 &&
+        (size >
+             (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 ||
+         bits_count >
+             (std::numeric_limits<std::size_t>::max() - 1) % BINARY_SHIFT + 1))
+      throw std::overflow_error("Too large to convert to floating point.");
+    bits_count = (size - 1) * BINARY_SHIFT + bits_count;
+    std::size_t shift_digits, shift_bits, result_size;
+    if (bits_count <= MANTISSA_BITS + 2) {
+      shift_digits = (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
+      shift_bits = (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
+      result_size = shift_digits;
+      Digit remainder = shift_digits_left(_digits.data(), size, shift_bits,
+                                          result_digits + result_size);
+      result_size += size;
+      result_digits[result_size++] = remainder;
+    } else {
+      shift_digits = (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
+      shift_bits = (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
+      Digit remainder =
+          shift_digits_right(_digits.data() + shift_digits, size - shift_digits,
+                             shift_bits, result_digits);
+      result_size = size - shift_digits;
+      if (remainder)
+        result_digits[0] |= 1;
+      else
+        while (shift_digits > 0)
+          if (_digits[--shift_digits]) {
+            result_digits[0] |= 1;
+            break;
+          }
+    }
+    result_digits[0] += half_even_correction[result_digits[0] & 7];
+    double result_modulus = result_digits[--result_size];
+    while (result_size > 0)
+      result_modulus =
+          result_modulus * BINARY_BASE + result_digits[--result_size];
+    result_modulus /= 4.0 * MANTISSA_BITS_POWER_OF_TWO;
+    if (result_modulus == 1.0) {
+      if (bits_count == std::numeric_limits<std::size_t>::max())
+        throw std::overflow_error("Too large to convert to floating point.");
+      result_modulus = 0.5;
+      bits_count += 1;
+    }
+    exponent = bits_count;
+    if (exponent > std::numeric_limits<double>::max_exponent)
+      throw std::overflow_error("Too large to convert to floating point.");
+    return _sign * result_modulus;
   }
 
   void parse_non_binary_base_digits(const char* start, const char* stop,

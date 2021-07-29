@@ -992,6 +992,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__abs__", &Int::abs)
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
+      .def("__float__", &Int::operator double)
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(10); });
 

@@ -20,6 +20,16 @@ constexpr std::size_t power_of_ten<0>() {
   return 1;
 }
 
+template <std::size_t N>
+constexpr double power_of_two() {
+  return 2.0 * power_of_two<N - 1>();
+}
+
+template <>
+constexpr double power_of_two<0>() {
+  return 1.0;
+}
+
 constexpr std::size_t floor_log10(std::size_t value) {
   return value < 10 ? 0 : floor_log10(value / 10) + 1;
 }
