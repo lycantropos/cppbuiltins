@@ -36,18 +36,25 @@ def has_flag(compiler: CCompiler, name: str) -> bool:
     return True
 
 
-def cpp_flag(compiler: CCompiler) -> str:
+def cpp_flag(compiler: CCompiler,
+             *,
+             min_year: int = 2017) -> str:
     """
     Returns the -std=c++[11|...] compiler flag.
     The newer version is preferred when available.
     """
-    flags = ['-std=c++{}'.format(str(year)[2:])
-             for year in range(2014, date.today().year + 1, 3)]
+    flags = ['-std={}'.format(year_to_standard(year))
+             for year in range(min_year, date.today().year + 1, 3)]
     for flag in reversed(flags):
         if has_flag(compiler, flag):
             return flag
     raise RuntimeError('Unsupported compiler: '
-                       'at least C++11 support is needed.')
+                       'at least {} support is needed.'
+                       .format(year_to_standard(min_year)))
+
+
+def year_to_standard(year: int) -> str:
+    return 'c++{}'.format(str(year)[2:])
 
 
 class BuildExt(build_ext):
