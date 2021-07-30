@@ -94,8 +94,8 @@ class BigInt {
 
   static constexpr Digit BINARY_BASE = 1 << BINARY_SHIFT;
   static constexpr Digit BINARY_DIGIT_MASK = BINARY_BASE - 1;
-  static constexpr std::size_t DECIMAL_SHIFT = floor_log10<BINARY_BASE>();
-  static constexpr std::size_t DECIMAL_BASE = power_of_ten<DECIMAL_SHIFT>();
+  static constexpr std::size_t DECIMAL_SHIFT = floor_log10(BINARY_BASE);
+  static constexpr std::size_t DECIMAL_BASE = power(10, DECIMAL_SHIFT);
 
   BigInt() : _sign(0), _digits({0}) {}
 
@@ -677,8 +677,7 @@ class BigInt {
 
   static constexpr std::size_t MANTISSA_BITS =
       std::numeric_limits<double>::digits;
-  static constexpr double MANTISSA_BITS_POWER_OF_TWO =
-      power_of_two<MANTISSA_BITS>();
+  static constexpr double MANTISSA_BITS_POWER_OF_TWO = power(2.0, MANTISSA_BITS);
 
   double frexp(int& exponent) const {
     Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
