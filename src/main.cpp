@@ -1061,7 +1061,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
-      .def("__deepcopy__", [](const Int& self) -> Int { return self; })
+      .def("__deepcopy__",
+           [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__int__", &Int::to_state)
       .def("__float__", &Int::operator double)
       .def("__repr__", &to_repr<Int>)
