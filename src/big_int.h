@@ -65,7 +65,9 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
-template <class _Digit, char _SEPARATOR, std::size_t _BINARY_SHIFT>
+template <class _Digit, char _SEPARATOR,
+          std::size_t _BINARY_SHIFT =
+              std::numeric_limits<typename std::make_signed<_Digit>::type>::digits - 1>
 class BigInt {
  public:
   static_assert(std::is_integral<_Digit>() && std::is_unsigned<_Digit>(),
@@ -316,19 +318,6 @@ class BigInt {
 
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
-
-  static std::size_t digit_bit_length(Digit value) {
-    static const std::size_t bit_lengths_table[32] = {
-        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-    std::size_t result = 0;
-    while (value >= 32) {
-      result += 6;
-      value >>= 6;
-    }
-    result += bit_lengths_table[value];
-    return result;
-  }
 
   static BigInt from_signed_digit(SignedDigit value) {
     Digit modulus;
@@ -677,7 +666,8 @@ class BigInt {
 
   static constexpr std::size_t MANTISSA_BITS =
       std::numeric_limits<double>::digits;
-  static constexpr double MANTISSA_BITS_POWER_OF_TWO = power(2.0, MANTISSA_BITS);
+  static constexpr double MANTISSA_BITS_POWER_OF_TWO =
+      power(2.0, MANTISSA_BITS);
 
   double frexp(int& exponent) const {
     Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
@@ -685,7 +675,7 @@ class BigInt {
     };
     static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
     std::size_t size = _digits.size();
-    std::size_t bits_count = digit_bit_length(_digits.back());
+    std::size_t bits_count = to_bit_length(_digits.back());
     if (size >=
             (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 &&
         (size >

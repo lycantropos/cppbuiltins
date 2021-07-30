@@ -101,31 +101,100 @@ static bool operator==(const Object& left, const Object& right) {
 }  // namespace pybind11
 
 template <class Type>
-std::string to_repr(const Type& value) {
+static std::string to_repr(const Type& value) {
   std::ostringstream stream;
   stream.precision(std::numeric_limits<double>::digits10 + 2);
   stream << value;
   return {stream.str()};
 }
 
-int int_to_sign(const py::int_& value) {
+using BaseInt =
+    BigInt<std::conditional_t<sizeof(void*) == 8, std::uint32_t, std::uint16_t>,
+           '_'>;
+
+template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
+          std::size_t TARGET_SHIFT,
+          TargetDigit TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
+                                          1>
+static void binary_digits_to_greater_binary_base(
+    const std::vector<SourceDigit>& source_digits,
+    std::vector<TargetDigit>& target_digits) {
+  static_assert(SOURCE_SHIFT < TARGET_SHIFT,
+                "Target base should be greater than a source one.");
+  const std::size_t target_digits_count = static_cast<std::size_t>(
+      (source_digits.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
+  target_digits.reserve(target_digits_count);
+  typename double_precision<TargetDigit>::type accumulator = 0;
+  std::size_t accumulator_bits_count = 0;
+  for (const SourceDigit digit : source_digits) {
+    accumulator |=
+        static_cast<typename double_precision<TargetDigit>::type>(digit)
+        << accumulator_bits_count;
+    accumulator_bits_count += SOURCE_SHIFT;
+    if (accumulator_bits_count >= TARGET_SHIFT) {
+      target_digits.push_back(
+          static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
+      accumulator >>= TARGET_SHIFT;
+      accumulator_bits_count -= TARGET_SHIFT;
+    }
+  }
+  if (accumulator_bits_count) target_digits.push_back(accumulator);
+}
+
+template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
+          std::size_t TARGET_SHIFT,
+          std::size_t TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
+                                          1>
+static void binary_digits_to_lesser_binary_base(
+    const std::vector<SourceDigit>& source_digits,
+    std::vector<TargetDigit>& target_digits) {
+  static_assert(SOURCE_SHIFT > TARGET_SHIFT,
+                "Target base should be lesser than a source one.");
+  const std::size_t target_digits_bits_count =
+      ((source_digits.size() - 1) * SOURCE_SHIFT +
+       to_bit_length(source_digits.back()));
+  const std::size_t target_digits_count = static_cast<std::size_t>(
+      (target_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
+  target_digits.reserve(target_digits_count);
+  typename double_precision<TargetDigit>::type accumulator = 0;
+  std::size_t accumulator_bits_count = 0;
+  for (std::size_t index = 0; index < source_digits.size(); ++index) {
+    accumulator |= static_cast<typename double_precision<TargetDigit>::type>(
+                       source_digits[index])
+                   << accumulator_bits_count;
+    accumulator_bits_count += SOURCE_SHIFT;
+    do {
+      target_digits.push_back(
+          static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
+      accumulator_bits_count -= TARGET_SHIFT;
+      accumulator >>= TARGET_SHIFT;
+    } while (index < source_digits.size() - 1
+                 ? accumulator_bits_count >= TARGET_SHIFT
+                 : accumulator != 0);
+  }
+}
+
+static int int_to_sign(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
   return signed_size < 0 ? -1 : signed_size > 0;
 }
 
-std::vector<digit> int_to_digits(const py::int_& value) {
+static std::vector<BaseInt::Digit> int_to_digits(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
   std::size_t size = Py_ABS(signed_size) + (signed_size == 0);
-  std::vector<digit> result;
-  result.reserve(size);
-  for (std::size_t index = 0; index < size; ++index)
-    result.push_back(ptr->ob_digit[index]);
+  std::vector<BaseInt::Digit> result;
+  if constexpr (BaseInt::BINARY_SHIFT < PyLong_SHIFT) {
+    binary_digits_to_lesser_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
+                                          BaseInt::BINARY_SHIFT>(
+        std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size), result);
+  } else
+    result = std::vector<BaseInt::Digit>(ptr->ob_digit, ptr->ob_digit + size);
   return result;
 }
 
-const char* pystr_to_ascii_c_str(const py::str& string) {
+static const char* pystr_to_ascii_c_str(const py::str& string) {
   py::str ascii_string = py::reinterpret_steal<py::str>(
       _PyUnicode_TransformDecimalAndSpaceToASCII(string.ptr()));
   if (!ascii_string) throw py::error_already_set();
@@ -134,27 +203,16 @@ const char* pystr_to_ascii_c_str(const py::str& string) {
   return result;
 }
 
-template <>
-struct double_precision<digit> {
-  using type = twodigits;
-};
-
-static constexpr std::size_t _BINARY_SHIFT =
-    std::numeric_limits<std::make_signed<digit>::type>::digits - 1;
-
-class Int : public BigInt<digit, '_', _BINARY_SHIFT> {
- private:
-  using BaseClass = BigInt<digit, '_', _BINARY_SHIFT>;
-
+class Int : public BaseInt {
  public:
-  Int() : BaseClass() {}
+  Int() : BaseInt() {}
 
-  Int(const BaseClass& value) : BaseClass(value) {}
+  Int(const BaseInt& value) : BaseInt(value) {}
 
-  Int(py::int_ value) : BaseClass(int_to_sign(value), int_to_digits(value)) {}
+  Int(py::int_ value) : BaseInt(int_to_sign(value), int_to_digits(value)) {}
 
   Int(const py::str& value, std::size_t base)
-      : BaseClass(pystr_to_ascii_c_str(value), base) {}
+      : BaseInt(pystr_to_ascii_c_str(value), base) {}
 
   static Int from_state(const py::int_& value) { return Int(value); }
 
@@ -165,37 +223,42 @@ class Int : public BigInt<digit, '_', _BINARY_SHIFT> {
   const Int& operator+() const { return *this; }
 
   Int operator+(const Int& other) const {
-    return Int(BaseClass::operator+(other));
+    return Int(BaseInt::operator+(other));
   }
 
-  Int operator~() const { return Int(BaseClass::operator~()); }
+  Int operator~() const { return Int(BaseInt::operator~()); }
 
   Int operator*(const Int& other) const {
-    return Int(BaseClass::operator*(other));
+    return Int(BaseInt::operator*(other));
   }
 
-  Int operator-() const { return Int(BaseClass::operator-()); }
+  Int operator-() const { return Int(BaseInt::operator-()); }
 
   Int operator-(const Int& other) const {
-    return Int(BaseClass::operator-(other));
+    return Int(BaseInt::operator-(other));
   }
 
-  Int abs() const { return Int(BaseClass::abs()); }
+  Int abs() const { return Int(BaseInt::abs()); }
 
   PyLongObject* as_PyLong() const {
     int sign = this->sign();
-    const std::vector<BaseClass::Digit>& digits = this->digits();
-    std::size_t size = digits.size();
-    PyLongObject* result = _PyLong_New(size);
-    for (std::size_t index = 0; index < size; ++index)
-      result->ob_digit[index] = digits[index];
+    const std::vector<BaseInt::Digit>& digits = this->digits();
+    std::vector<digit> result_digits;
+    if constexpr (BaseInt::BINARY_SHIFT < PyLong_SHIFT)
+      binary_digits_to_greater_binary_base<
+          BaseInt::Digit, digit, BaseInt::BINARY_SHIFT, PyLong_SHIFT>(
+          digits, result_digits);
+    else if constexpr (BaseInt::BINARY_SHIFT == PyLong_SHIFT)
+      result_digits = digits;
+    PyLongObject* result = _PyLong_New(result_digits.size());
+    std::memcpy(result->ob_digit, result_digits.data(), sizeof(digit) * result_digits.size());
     Py_SET_SIZE(result, Py_SIZE(result) * sign);
     return result;
   }
 
   Py_hash_t hash() const {
     int sign = this->sign();
-    const std::vector<BaseClass::Digit>& digits = this->digits();
+    const std::vector<BaseInt::Digit>& digits = this->digits();
     if (digits.size() == 1) {
       if (sign > 0)
         return digits[0];
@@ -207,8 +270,8 @@ class Int : public BigInt<digit, '_', _BINARY_SHIFT> {
     Py_uhash_t result = 0;
     for (auto position = digits.rbegin(); position != digits.rend();
          ++position) {
-      result = ((result << BaseClass::BINARY_SHIFT) & _PyHASH_MODULUS) |
-               (result >> (_PyHASH_BITS - BaseClass::BINARY_SHIFT));
+      result = ((result << BaseInt::BINARY_SHIFT) & _PyHASH_MODULUS) |
+               (result >> (_PyHASH_BITS - BaseInt::BINARY_SHIFT));
       result += *position;
       if (result >= _PyHASH_MODULUS) result -= _PyHASH_MODULUS;
     }
@@ -996,6 +1059,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__abs__", &Int::abs)
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
+      .def("__int__", &Int::to_state)
       .def("__float__", &Int::operator double)
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(10); });
