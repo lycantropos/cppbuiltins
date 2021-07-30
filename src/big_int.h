@@ -65,9 +65,11 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
-template <class _Digit, char _SEPARATOR,
-          std::size_t _BINARY_SHIFT =
-              std::numeric_limits<typename std::make_signed<_Digit>::type>::digits - 1>
+template <
+    class _Digit, char _SEPARATOR,
+    std::size_t _BINARY_SHIFT =
+        std::numeric_limits<typename std::make_signed<_Digit>::type>::digits -
+        1>
 class BigInt {
  public:
   static_assert(std::is_integral<_Digit>() && std::is_unsigned<_Digit>(),

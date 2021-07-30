@@ -187,7 +187,7 @@ static std::vector<BaseInt::Digit> int_to_digits(const py::int_& value) {
   std::vector<BaseInt::Digit> result;
   if constexpr (BaseInt::BINARY_SHIFT < PyLong_SHIFT) {
     binary_digits_to_lesser_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
-                                          BaseInt::BINARY_SHIFT>(
+                                        BaseInt::BINARY_SHIFT>(
         std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size), result);
   } else
     result = std::vector<BaseInt::Digit>(ptr->ob_digit, ptr->ob_digit + size);
@@ -245,13 +245,14 @@ class Int : public BaseInt {
     const std::vector<BaseInt::Digit>& digits = this->digits();
     std::vector<digit> result_digits;
     if constexpr (BaseInt::BINARY_SHIFT < PyLong_SHIFT)
-      binary_digits_to_greater_binary_base<
-          BaseInt::Digit, digit, BaseInt::BINARY_SHIFT, PyLong_SHIFT>(
+      binary_digits_to_greater_binary_base<BaseInt::Digit, digit,
+                                           BaseInt::BINARY_SHIFT, PyLong_SHIFT>(
           digits, result_digits);
     else if constexpr (BaseInt::BINARY_SHIFT == PyLong_SHIFT)
       result_digits = digits;
     PyLongObject* result = _PyLong_New(result_digits.size());
-    std::memcpy(result->ob_digit, result_digits.data(), sizeof(digit) * result_digits.size());
+    std::memcpy(result->ob_digit, result_digits.data(),
+                sizeof(digit) * result_digits.size());
     Py_SET_SIZE(result, Py_SIZE(result) * sign);
     return result;
   }
