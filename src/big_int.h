@@ -172,19 +172,19 @@ class BigInt {
       return from_signed_digit(signed_digit() + other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0)
-        return BigInt(-1, sum_moduli(_digits, other._digits));
+        return BigInt(-1, sum_digits(_digits, other._digits));
       else {
         int sign = 1;
         std::vector<Digit> digits =
-            subtract_moduli(other._digits, _digits, sign);
+            subtract_digits(other._digits, _digits, sign);
         return BigInt(sign, digits);
       }
     } else if (other._sign < 0) {
       int sign = 1;
-      std::vector<Digit> digits = subtract_moduli(_digits, other._digits, sign);
+      std::vector<Digit> digits = subtract_digits(_digits, other._digits, sign);
       return BigInt(sign, digits);
     } else
-      return BigInt(_sign | other._sign, sum_moduli(_digits, other._digits));
+      return BigInt(_sign | other._sign, sum_digits(_digits, other._digits));
   }
 
   operator bool() const { return bool(_sign); }
@@ -209,10 +209,10 @@ class BigInt {
   BigInt operator~() const {
     if (_digits.size() == 1) return from_signed_digit(-signed_digit() - 1);
     if (_sign > 0)
-      return BigInt(-1, sum_moduli(_digits, {1}));
+      return BigInt(-1, sum_digits(_digits, {1}));
     else {
       int sign = 1;
-      std::vector<Digit> digits = subtract_moduli(_digits, {1}, sign);
+      std::vector<Digit> digits = subtract_digits(_digits, {1}, sign);
       return BigInt(sign, digits);
     }
   }
@@ -224,15 +224,15 @@ class BigInt {
       if (other._sign < 0) {
         int sign = 1;
         std::vector<Digit> digits =
-            subtract_moduli(other._digits, _digits, sign);
+            subtract_digits(other._digits, _digits, sign);
         return BigInt(sign, digits);
       } else
-        return BigInt(-1, sum_moduli(_digits, other._digits));
+        return BigInt(-1, sum_digits(_digits, other._digits));
     } else if (other._sign < 0)
-      return BigInt(1, sum_moduli(_digits, other._digits));
+      return BigInt(1, sum_digits(_digits, other._digits));
     else {
       int sign = _sign | other._sign;
-      std::vector<Digit> digits = subtract_moduli(_digits, other._digits, sign);
+      std::vector<Digit> digits = subtract_digits(_digits, other._digits, sign);
       return BigInt(sign, digits);
     }
   }
@@ -381,7 +381,7 @@ class BigInt {
     return accumulator;
   }
 
-  static std::vector<Digit> subtract_moduli(const std::vector<Digit>& first,
+  static std::vector<Digit> subtract_digits(const std::vector<Digit>& first,
                                             const std::vector<Digit>& second,
                                             int& sign) {
     const std::vector<Digit>*longest = &first, *shortest = &second;
@@ -442,7 +442,7 @@ class BigInt {
     return accumulator;
   }
 
-  static std::vector<Digit> sum_moduli(const std::vector<Digit>& first,
+  static std::vector<Digit> sum_digits(const std::vector<Digit>& first,
                                        const std::vector<Digit>& second) {
     const std::vector<Digit>*longest = &first, *shortest = &second;
     std::size_t size_longest = longest->size(),
@@ -520,10 +520,10 @@ class BigInt {
     (void)subtract_digits_in_place(result.data() + shift, digits_after_shift,
                                    highs_product);
     const std::vector<Digit> shortest_components_sum =
-        sum_moduli(shortest_high, shortest_low);
+        sum_digits(shortest_high, shortest_low);
     const std::vector<Digit> longest_components_sum =
         (shortest == longest) ? shortest_components_sum
-                              : sum_moduli(longest_high, longest_low);
+                              : sum_digits(longest_high, longest_low);
     const std::vector<Digit> components_sums_product =
         multiply_digits(shortest_components_sum, longest_components_sum);
     (void)sum_digits_in_place(result.data() + shift, digits_after_shift,
