@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "big_int.h"
+#include "utils.h"
 
 namespace py = pybind11;
 
@@ -1071,6 +1072,12 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
+      .def("__divmod__",
+           [](const Int& self, const Int& other) {
+             Int quotient, remainder;
+             self.divmod(other, quotient, remainder);
+             return py::make_tuple(quotient, remainder);
+           })
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__int__", &Int::to_state)

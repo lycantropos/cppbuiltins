@@ -167,6 +167,53 @@ class BigInt {
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
 
+  void divmod(const BigInt& divisor, BigInt& quotient,
+              BigInt& remainder) const {
+    std::size_t digits_count = _digits.size(),
+                divisor_digits_count = divisor._digits.size();
+    if (_sign == 0) {
+      quotient = BigInt();
+      remainder = *this;
+    } else if (divisor._sign == 0)
+      throw std::range_error("Division by zero is undefined.");
+    else if (digits_count < divisor_digits_count ||
+             (digits_count == divisor_digits_count &&
+              _digits.back() < divisor._digits.back())) {
+      if (_sign != divisor._sign) {
+        quotient = BigInt(-1, std::vector<Digit>({1}));
+        remainder = *this + divisor;
+      } else {
+        quotient = BigInt();
+        remainder = *this;
+      }
+    } else {
+      if (divisor_digits_count == 1) {
+        Digit remainder_digit;
+        std::vector<Digit> quotient_digits = divmod_digits_by_digit_inplace(
+            _digits, divisor._digits[0], remainder_digit);
+        quotient = BigInt(_sign * divisor._sign, quotient_digits);
+        remainder = from_signed_digit(
+            _sign * static_cast<SignedDigit>(remainder_digit));
+      } else {
+        std::vector<Digit> remainder_digits;
+        std::vector<Digit> quotient_digits = divmod_two_or_more_digits(
+            _digits, divisor._digits, remainder_digits);
+        quotient =
+            BigInt(_sign * divisor._sign *
+                       (quotient_digits.size() > 1 || quotient_digits[0] != 0),
+                   quotient_digits);
+        remainder = BigInt(
+            _sign * (remainder_digits.size() > 1 || remainder_digits[0] != 0),
+            remainder_digits);
+      }
+      if ((divisor._sign < 0 && remainder._sign > 0) ||
+          (divisor._sign > 0 && remainder._sign < 0)) {
+        quotient = quotient - BigInt(1, std::vector<Digit>({1}));
+        remainder = remainder + divisor;
+      }
+    }
+  }
+
   BigInt operator+(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return from_signed_digit(signed_digit() + other.signed_digit());
@@ -317,6 +364,105 @@ class BigInt {
  private:
   int _sign;
   std::vector<Digit> _digits;
+
+  static std::vector<Digit> divmod_two_or_more_digits(
+      const std::vector<Digit>& dividend, const std::vector<Digit>& divisor,
+      std::vector<Digit>& remainder) {
+    std::size_t dividend_digits_count = dividend.size();
+    std::size_t divisor_digits_count = divisor.size();
+    Digit* dividend_normalized = new Digit[dividend_digits_count + 1]();
+    Digit* divisor_normalized = new Digit[divisor_digits_count]();
+    std::size_t shift = BINARY_SHIFT - to_bit_length(divisor.back());
+    shift_digits_left(divisor.data(), divisor_digits_count, shift,
+                      divisor_normalized);
+    Digit accumulator = shift_digits_left(
+        dividend.data(), dividend_digits_count, shift, dividend_normalized);
+    if (accumulator != 0 || dividend_normalized[dividend_digits_count - 1] >=
+                                divisor_normalized[divisor_digits_count - 1])
+      dividend_normalized[dividend_digits_count++] = accumulator;
+    std::size_t quotient_size = dividend_digits_count - divisor_digits_count;
+    Digit* quotient_data = new Digit[quotient_size]();
+    Digit last_divisor_digit_normalized =
+        divisor_normalized[divisor_digits_count - 1];
+    Digit penult_divisor_digit_normalized =
+        divisor_normalized[divisor_digits_count - 2];
+    for (Digit *digits_normalized_tail = dividend_normalized + quotient_size,
+               *quotient_position = quotient_data + quotient_size;
+         digits_normalized_tail-- > dividend_normalized;) {
+      DoubleDigit step = (static_cast<DoubleDigit>(
+                              digits_normalized_tail[divisor_digits_count])
+                          << BINARY_SHIFT) |
+                         digits_normalized_tail[divisor_digits_count - 1];
+      Digit quotient_digit =
+          static_cast<Digit>(step / last_divisor_digit_normalized);
+      Digit step_remainder = static_cast<Digit>(
+          step - static_cast<DoubleDigit>(last_divisor_digit_normalized) *
+                     quotient_digit);
+      while (static_cast<DoubleDigit>(penult_divisor_digit_normalized) *
+                 quotient_digit >
+             ((static_cast<DoubleDigit>(step_remainder) << BINARY_SHIFT) |
+              digits_normalized_tail[divisor_digits_count - 2])) {
+        --quotient_digit;
+        step_remainder += last_divisor_digit_normalized;
+        if (step_remainder >= BINARY_BASE) break;
+      }
+      SignedDigit accumulator = 0;
+      for (std::size_t index = 0; index < divisor_digits_count; ++index) {
+        SignedDoubleDigit step;
+        step = static_cast<SignedDigit>(digits_normalized_tail[index]) +
+               accumulator -
+               static_cast<SignedDoubleDigit>(quotient_digit) *
+                   static_cast<SignedDoubleDigit>(divisor_normalized[index]);
+        digits_normalized_tail[index] =
+            static_cast<Digit>(step) & BINARY_DIGIT_MASK;
+        accumulator = static_cast<SignedDigit>(step >> BINARY_SHIFT);
+      }
+      if (static_cast<SignedDigit>(
+              digits_normalized_tail[divisor_digits_count]) +
+              accumulator <
+          0) {
+        Digit accumulator = 0;
+        for (std::size_t index = 0; index < divisor_digits_count; ++index) {
+          accumulator +=
+              digits_normalized_tail[index] + divisor_normalized[index];
+          digits_normalized_tail[index] = accumulator & BINARY_DIGIT_MASK;
+          accumulator >>= BINARY_SHIFT;
+        }
+        --quotient_digit;
+      }
+      *--quotient_position = quotient_digit;
+    }
+    std::vector<Digit> quotient =
+        quotient_size
+            ? std::vector<Digit>(quotient_data, quotient_data + quotient_size)
+            : std::vector<Digit>({0});
+    normalize_digits(quotient);
+    shift_digits_right(dividend_normalized, divisor_digits_count, shift,
+                       divisor_normalized);
+    remainder = std::vector<Digit>(divisor_normalized,
+                                   divisor_normalized + divisor_digits_count);
+    normalize_digits(remainder);
+    return quotient;
+  }
+
+  static std::vector<Digit> divmod_digits_by_digit_inplace(
+      const std::vector<Digit>& dividend, Digit divisor, Digit& remainder) {
+    DoubleDigit accumulator = 0;
+    std::size_t digits_count = dividend.size();
+    Digit* quotient_data = new Digit[digits_count]();
+    for (std::size_t offset = 1; offset <= digits_count; ++offset) {
+      accumulator =
+          (accumulator << BINARY_SHIFT) | dividend[digits_count - offset];
+      Digit quotient_digit = quotient_data[digits_count - offset] =
+          static_cast<Digit>(accumulator / divisor);
+      accumulator -= static_cast<DoubleDigit>(quotient_digit) * divisor;
+    }
+    remainder = static_cast<Digit>(accumulator);
+    std::vector<Digit> quotient =
+        std::vector<Digit>(quotient_data, quotient_data + dividend.size());
+    normalize_digits(quotient);
+    return quotient;
+  }
 
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
