@@ -235,6 +235,16 @@ class Int : public BaseInt {
     return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
   }
 
+  void divmod(const BigInt& divisor, BigInt& quotient,
+              BigInt& remainder) const {
+    try {
+      BaseInt::divmod(divisor, quotient, remainder);
+    } catch (const std::range_error& exception) {
+      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+      throw py::error_already_set();
+    }
+  }
+
   const Int& operator+() const { return *this; }
 
   Int operator+(const Int& other) const {
@@ -1072,12 +1082,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
-      .def("__divmod__",
-           [](const Int& self, const Int& other) {
-             Int quotient, remainder;
-             self.divmod(other, quotient, remainder);
-             return py::make_tuple(quotient, remainder);
-           }, py::is_operator{})
+      .def(
+          "__divmod__",
+          [](const Int& self, const Int& other) {
+            Int quotient, remainder;
+            self.divmod(other, quotient, remainder);
+            return py::make_tuple(quotient, remainder);
+          },
+          py::is_operator{})
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__int__", &Int::to_state)
