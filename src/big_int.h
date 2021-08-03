@@ -171,14 +171,14 @@ class BigInt {
               BigInt& remainder) const {
     std::size_t digits_count = _digits.size(),
                 divisor_digits_count = divisor._digits.size();
-    if (_sign == 0) {
+    if (divisor._sign == 0)
+      throw std::range_error("Division by zero is undefined.");
+    else if (_sign == 0) {
       quotient = BigInt();
       remainder = *this;
-    } else if (divisor._sign == 0)
-      throw std::range_error("Division by zero is undefined.");
-    else if (digits_count < divisor_digits_count ||
-             (digits_count == divisor_digits_count &&
-              _digits.back() < divisor._digits.back())) {
+    } else if (digits_count < divisor_digits_count ||
+               (digits_count == divisor_digits_count &&
+                _digits.back() < divisor._digits.back())) {
       if (_sign != divisor._sign) {
         quotient = BigInt(-1, std::vector<Digit>({1}));
         remainder = *this + divisor;
