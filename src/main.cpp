@@ -1102,6 +1102,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
             return quotient;
           },
           py::is_operator{})
+      .def(
+          "__mod__",
+          [](const Int& self, const Int& other) {
+            Int quotient, remainder;
+            self.divmod(other, quotient, remainder);
+            return remainder;
+          },
+          py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(10); });
 
