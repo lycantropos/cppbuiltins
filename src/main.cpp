@@ -1077,7 +1077,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
              Int quotient, remainder;
              self.divmod(other, quotient, remainder);
              return py::make_tuple(quotient, remainder);
-           })
+           }, py::is_operator{})
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__int__", &Int::to_state)
