@@ -235,6 +235,8 @@ class Int : public BaseInt {
     return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
   }
 
+  Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
+
   void divmod(const BigInt& divisor, BigInt& quotient,
               BigInt& remainder) const {
     try {
@@ -1062,6 +1064,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   m.doc() =
       R"pbdoc(Alternative implementation of python builtins based on C++ `std` library.)pbdoc";
   m.attr("__version__") = C_STR(VERSION_INFO);
+
+  m.def("gcd", &Int::gcd);
 
   py::class_<Int> PyInt(m, INT_NAME);
   PyInt.def(py::init<>())

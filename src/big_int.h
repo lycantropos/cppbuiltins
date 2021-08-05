@@ -65,6 +65,16 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
+template <class T>
+static T euclidean_algorithm(T first, T second) {
+  while (second != 0) {
+    const T step = second;
+    second = first % second;
+    first = step;
+  }
+  return first;
+}
+
 template <typename Digit>
 bool digits_lesser_than(const std::vector<Digit>& first,
                         const std::vector<Digit>& second) {
@@ -183,6 +193,123 @@ class BigInt {
       parse_binary_base_digits(start, stop, base, digits_count);
     normalize_digits(_digits);
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
+  }
+
+  BigInt gcd(const BigInt& other) const {
+    std::vector<Digit> largest_digits = abs()._digits,
+                       smallest_digits = other.abs()._digits;
+    if (largest_digits.size() <= 2 && smallest_digits.size() <= 2) {
+      return from_double_digit(euclidean_algorithm(
+          reduce_digits(largest_digits), reduce_digits(smallest_digits)));
+    }
+    if (digits_lesser_than(largest_digits, smallest_digits))
+      std::swap(largest_digits, smallest_digits);
+    std::size_t largest_digits_count, smallest_digits_count;
+    while ((largest_digits_count = largest_digits.size()) > 2) {
+      smallest_digits_count = smallest_digits.size();
+      if (smallest_digits_count == 1 && smallest_digits[0] == 0)
+        return BigInt(1, largest_digits);
+      std::size_t highest_digit_bit_length =
+          to_bit_length(largest_digits.back());
+      SignedDoubleDigit largest_leading_bits =
+          ((static_cast<DoubleDigit>(largest_digits[largest_digits_count - 1])
+            << (2 * BINARY_SHIFT - highest_digit_bit_length)) |
+           (static_cast<DoubleDigit>(largest_digits[largest_digits_count - 2])
+            << (BINARY_SHIFT - highest_digit_bit_length)) |
+           (largest_digits[largest_digits_count - 3] >>
+            highest_digit_bit_length));
+      SignedDoubleDigit smallest_leading_bits =
+          ((smallest_digits_count >= largest_digits_count - 2
+                ? smallest_digits[largest_digits_count - 3] >>
+                      highest_digit_bit_length
+                : 0) |
+           (smallest_digits_count >= largest_digits_count - 1
+                ? static_cast<DoubleDigit>(
+                      smallest_digits[largest_digits_count - 2])
+                      << (BINARY_SHIFT - highest_digit_bit_length)
+                : 0) |
+           (smallest_digits_count >= largest_digits_count
+                ? static_cast<DoubleDigit>(
+                      smallest_digits[largest_digits_count - 1])
+                      << (2 * BINARY_SHIFT - highest_digit_bit_length)
+                : 0));
+      SignedDoubleDigit A = 1, B = 0, C = 0, D = 1;
+      std::size_t iterations_count = 0;
+      for (;; ++iterations_count) {
+        if (smallest_leading_bits == C) break;
+        SignedDoubleDigit q =
+            (largest_leading_bits + (A - 1)) / (smallest_leading_bits - C);
+        SignedDoubleDigit s = B + q * D;
+        SignedDoubleDigit step =
+            largest_leading_bits - q * smallest_leading_bits;
+        if (s > step) break;
+        largest_leading_bits = smallest_leading_bits;
+        smallest_leading_bits = step;
+        step = A + q * C;
+        A = D;
+        B = C;
+        C = s;
+        D = step;
+      }
+      if (iterations_count == 0) {
+        if (smallest_digits_count == 1) {
+          std::vector<Digit> quotient;
+          Digit remainder = divmod_digits_by_digit(
+              largest_digits, smallest_digits[0], quotient);
+          largest_digits = smallest_digits;
+          smallest_digits = std::vector<Digit>({remainder});
+        } else {
+          std::vector<Digit> quotient, remainder;
+          divmod_two_or_more_digits(largest_digits, smallest_digits, quotient,
+                                    remainder);
+          largest_digits = smallest_digits;
+          smallest_digits = remainder;
+        }
+        continue;
+      }
+      if (iterations_count & 1) {
+        A = -A;
+        B = -B;
+        C = -C;
+        D = -D;
+        std::swap(A, B);
+        std::swap(C, D);
+      }
+      SignedDoubleDigit next_largest_accumulator = 0;
+      SignedDoubleDigit next_smallest_accumulator = 0;
+      std::size_t index = 0;
+      std::vector<Digit> next_largest_digits, next_smallest_digits;
+      next_largest_digits.reserve(largest_digits_count);
+      next_smallest_digits.reserve(largest_digits_count);
+      for (; index < smallest_digits_count; ++index) {
+        next_largest_accumulator +=
+            (A * largest_digits[index]) - (B * smallest_digits[index]);
+        next_smallest_accumulator +=
+            (D * smallest_digits[index]) - (C * largest_digits[index]);
+        next_largest_digits.push_back(
+            static_cast<Digit>(next_largest_accumulator & BINARY_DIGIT_MASK));
+        next_smallest_digits.push_back(
+            static_cast<Digit>(next_smallest_accumulator & BINARY_DIGIT_MASK));
+        next_largest_accumulator >>= BINARY_SHIFT;
+        next_smallest_accumulator >>= BINARY_SHIFT;
+      }
+      for (; index < largest_digits_count; ++index) {
+        next_largest_accumulator += A * largest_digits[index];
+        next_smallest_accumulator -= C * largest_digits[index];
+        next_largest_digits.push_back(
+            static_cast<Digit>(next_largest_accumulator & BINARY_DIGIT_MASK));
+        next_smallest_digits.push_back(
+            static_cast<Digit>(next_smallest_accumulator & BINARY_DIGIT_MASK));
+        next_largest_accumulator >>= BINARY_SHIFT;
+        next_smallest_accumulator >>= BINARY_SHIFT;
+      }
+      normalize_digits(next_largest_digits);
+      normalize_digits(next_smallest_digits);
+      largest_digits = next_largest_digits;
+      smallest_digits = next_smallest_digits;
+    }
+    return from_double_digit(euclidean_algorithm(
+        reduce_digits(largest_digits), reduce_digits(smallest_digits)));
   }
 
   void divmod(const BigInt& divisor, BigInt& quotient,
@@ -466,6 +593,16 @@ class BigInt {
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
 
+  static BigInt from_double_digit(DoubleDigit value) {
+    if (value == 0) return BigInt();
+    std::vector<Digit> digits;
+    while (value) {
+      digits.push_back(static_cast<Digit>(value & BINARY_DIGIT_MASK));
+      value >>= BINARY_SHIFT;
+    }
+    return BigInt(1, digits);
+  }
+
   static BigInt from_signed_digit(SignedDigit value) {
     Digit modulus;
     int sign;
@@ -504,6 +641,13 @@ class BigInt {
       accumulator >>= BINARY_SHIFT;
     }
     return BigInt(sign, digits);
+  }
+
+  static DoubleDigit reduce_digits(const std::vector<Digit>& digits) {
+    DoubleDigit result = 0;
+    for (auto position = digits.rbegin(); position != digits.rend(); ++position)
+      result = (result << BINARY_SHIFT) | *position;
+    return result;
   }
 
   static Digit subtract_digits_in_place(Digit* longest,
