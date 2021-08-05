@@ -207,7 +207,7 @@ class BigInt {
     } else {
       if (divisor_digits_count == 1) {
         std::vector<Digit> quotient_digits;
-        Digit remainder_digit = divmod_digits_by_digit_in_place(
+        Digit remainder_digit = divmod_digits_by_digit(
             _digits, divisor._digits[0], quotient_digits);
         quotient = BigInt(_sign * divisor._sign, quotient_digits);
         remainder = from_signed_digit(
@@ -445,9 +445,9 @@ class BigInt {
     normalize_digits(remainder);
   }
 
-  static Digit divmod_digits_by_digit_in_place(
-      const std::vector<Digit>& dividend, Digit divisor,
-      std::vector<Digit>& quotient) {
+  static Digit divmod_digits_by_digit(const std::vector<Digit>& dividend,
+                                      Digit divisor,
+                                      std::vector<Digit>& quotient) {
     DoubleDigit remainder = 0;
     std::size_t digits_count = dividend.size();
     Digit* quotient_data = new Digit[digits_count]();
