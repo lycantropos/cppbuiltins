@@ -196,12 +196,11 @@ class BigInt {
   }
 
   BigInt gcd(const BigInt& other) const {
-    std::vector<Digit> largest_digits = abs()._digits,
-                       smallest_digits = other.abs()._digits;
-    if (largest_digits.size() <= 2 && smallest_digits.size() <= 2) {
+    std::vector<Digit> largest_digits = _digits,
+                       smallest_digits = other._digits;
+    if (largest_digits.size() <= 2 && smallest_digits.size() <= 2)
       return from_double_digit(euclidean_algorithm(
           reduce_digits(largest_digits), reduce_digits(smallest_digits)));
-    }
     if (digits_lesser_than(largest_digits, smallest_digits))
       std::swap(largest_digits, smallest_digits);
     std::size_t largest_digits_count, smallest_digits_count;
