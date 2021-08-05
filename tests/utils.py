@@ -1,4 +1,5 @@
 import builtins
+import math
 import pickle
 from functools import partial
 from itertools import zip_longest
@@ -28,6 +29,9 @@ NativeSet = builtins.set
 AlternativeNativeIntsPair = Tuple[AlternativeInt, NativeInt]
 AlternativeNativeListsPair = Tuple[AlternativeList, NativeList]
 AlternativeNativeSetsPair = Tuple[AlternativeSet, NativeSet]
+
+alternative_gcd = cppbuiltins.gcd
+native_gcd = math.gcd
 
 
 def are_iterators_equal(left: Iterator[Any],
