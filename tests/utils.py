@@ -45,7 +45,7 @@ def are_iterators_equal(left: Iterator[Any],
 
 def are_alternative_native_ints_equal(alternative: AlternativeInt,
                                       native: NativeInt) -> bool:
-    return str(alternative) == str(native)
+    return int(alternative) == native
 
 
 def are_alternative_native_lists_equal(alternative: AlternativeList,
