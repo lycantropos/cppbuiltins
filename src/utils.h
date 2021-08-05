@@ -26,8 +26,13 @@ struct double_precision<std::uint32_t> {
 };
 
 template <class T>
-constexpr T power(const T base, const std::size_t exponent) {
-  return exponent == 0 ? T(1) : T(base) * power<T>(base, exponent - 1);
+T euclidean_algorithm(T first, T second) {
+  while (second != 0) {
+    const T step = second;
+    second = first % second;
+    first = step;
+  }
+  return first;
 }
 
 constexpr std::size_t floor_log10(const std::size_t value) {
@@ -39,6 +44,11 @@ std::size_t floor_log2(std::size_t value) {
   for (; value; ++result, value >>= 1)
     ;
   return result - 1;
+}
+
+template <class T>
+constexpr T power(const T base, const std::size_t exponent) {
+  return exponent == 0 ? T(1) : T(base) * power<T>(base, exponent - 1);
 }
 
 static constexpr std::size_t bit_lengths_table[32] = {

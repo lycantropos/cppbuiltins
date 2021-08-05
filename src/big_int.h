@@ -65,19 +65,9 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
-template <class T>
-static T euclidean_algorithm(T first, T second) {
-  while (second != 0) {
-    const T step = second;
-    second = first % second;
-    first = step;
-  }
-  return first;
-}
-
 template <typename Digit>
-bool digits_lesser_than(const std::vector<Digit>& first,
-                        const std::vector<Digit>& second) {
+static bool digits_lesser_than(const std::vector<Digit>& first,
+                               const std::vector<Digit>& second) {
   return first.size() < second.size() ||
          (first.size() == second.size() &&
           std::lexicographical_compare(first.rbegin(), first.rend(),
@@ -85,8 +75,8 @@ bool digits_lesser_than(const std::vector<Digit>& first,
 }
 
 template <typename Digit>
-bool digits_lesser_than_or_equal(const std::vector<Digit>& first,
-                                 const std::vector<Digit>& second) {
+static bool digits_lesser_than_or_equal(const std::vector<Digit>& first,
+                                        const std::vector<Digit>& second) {
   return first.size() < second.size() ||
          (first.size() == second.size() &&
           !std::lexicographical_compare(second.rbegin(), second.rend(),

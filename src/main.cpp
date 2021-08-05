@@ -117,79 +117,78 @@ template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT,
           TargetDigit TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
                                           1>
-static void binary_digits_to_greater_binary_base(
-    const std::vector<SourceDigit>& source_digits,
-    std::vector<TargetDigit>& target_digits) {
+static std::vector<SourceDigit> binary_digits_to_greater_binary_base(
+    const std::vector<SourceDigit>& source) {
   static_assert(SOURCE_SHIFT < TARGET_SHIFT,
                 "Target base should be greater than a source one.");
-  const std::size_t target_digits_count = static_cast<std::size_t>(
-      (source_digits.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
-  target_digits.reserve(target_digits_count);
+  const std::size_t result_digits_count = static_cast<std::size_t>(
+      (source.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
+  std::vector<TargetDigit> result;
+  result.reserve(result_digits_count);
   typename double_precision<TargetDigit>::type accumulator = 0;
   std::size_t accumulator_bits_count = 0;
-  for (const SourceDigit digit : source_digits) {
+  for (const SourceDigit digit : source) {
     accumulator |=
         static_cast<typename double_precision<TargetDigit>::type>(digit)
         << accumulator_bits_count;
     accumulator_bits_count += SOURCE_SHIFT;
     if (accumulator_bits_count >= TARGET_SHIFT) {
-      target_digits.push_back(
+      result.push_back(
           static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
       accumulator >>= TARGET_SHIFT;
       accumulator_bits_count -= TARGET_SHIFT;
     }
   }
-  if (accumulator_bits_count) target_digits.push_back(accumulator);
+  if (accumulator_bits_count) result.push_back(accumulator);
+  return result;
 }
 
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT,
           std::size_t TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
                                           1>
-static void binary_digits_to_lesser_binary_base(
-    const std::vector<SourceDigit>& source_digits,
-    std::vector<TargetDigit>& target_digits) {
+static std::vector<SourceDigit> binary_digits_to_lesser_binary_base(
+    const std::vector<SourceDigit>& source) {
   static_assert(SOURCE_SHIFT > TARGET_SHIFT,
                 "Target base should be lesser than a source one.");
-  const std::size_t target_digits_bits_count =
-      ((source_digits.size() - 1) * SOURCE_SHIFT +
-       to_bit_length(source_digits.back()));
-  const std::size_t target_digits_count = static_cast<std::size_t>(
-      (target_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
-  target_digits.reserve(target_digits_count);
+  const std::size_t result_digits_bits_count =
+      ((source.size() - 1) * SOURCE_SHIFT + to_bit_length(source.back()));
+  const std::size_t result_digits_count = static_cast<std::size_t>(
+      (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
+  std::vector<TargetDigit> result;
+  result.reserve(result_digits_count);
   typename double_precision<TargetDigit>::type accumulator = 0;
   std::size_t accumulator_bits_count = 0;
-  for (std::size_t index = 0; index < source_digits.size(); ++index) {
-    accumulator |= static_cast<typename double_precision<TargetDigit>::type>(
-                       source_digits[index])
-                   << accumulator_bits_count;
+  for (std::size_t index = 0; index < source.size(); ++index) {
+    accumulator |=
+        static_cast<typename double_precision<TargetDigit>::type>(source[index])
+        << accumulator_bits_count;
     accumulator_bits_count += SOURCE_SHIFT;
     do {
-      target_digits.push_back(
+      result.push_back(
           static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
       accumulator_bits_count -= TARGET_SHIFT;
       accumulator >>= TARGET_SHIFT;
-    } while (index < source_digits.size() - 1
-                 ? accumulator_bits_count >= TARGET_SHIFT
-                 : accumulator != 0);
+    } while (index < source.size() - 1 ? accumulator_bits_count >= TARGET_SHIFT
+                                       : accumulator != 0);
   }
+  return result;
 }
 
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT>
-static void binary_digits_to_binary_base(
-    const std::vector<SourceDigit>& source_digits,
-    std::vector<TargetDigit>& target_digits) {
+static std::vector<TargetDigit> binary_digits_to_binary_base(
+    const std::vector<SourceDigit>& source) {
   if constexpr (SOURCE_SHIFT < TARGET_SHIFT)
-    binary_digits_to_greater_binary_base<SourceDigit, TargetDigit, SOURCE_SHIFT,
-                                         TARGET_SHIFT>(source_digits,
-                                                       target_digits);
+    return binary_digits_to_greater_binary_base<SourceDigit, TargetDigit,
+                                                SOURCE_SHIFT, TARGET_SHIFT>(
+        source);
   else if constexpr (SOURCE_SHIFT > TARGET_SHIFT)
-    binary_digits_to_lesser_binary_base<SourceDigit, TargetDigit, SOURCE_SHIFT,
-                                        TARGET_SHIFT>(source_digits,
-                                                      target_digits);
+    return binary_digits_to_lesser_binary_base<SourceDigit, TargetDigit,
+                                               SOURCE_SHIFT, TARGET_SHIFT>(
+        source);
   else
-    target_digits = source_digits;
+    return source;
 }
 
 static int int_to_sign(const py::int_& value) {
@@ -202,10 +201,10 @@ static std::vector<BaseInt::Digit> int_to_digits(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
   std::size_t size = Py_ABS(signed_size) + (signed_size == 0);
-  std::vector<BaseInt::Digit> result;
-  binary_digits_to_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
-                               BaseInt::BINARY_SHIFT>(
-      std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size), result);
+  std::vector<BaseInt::Digit> result =
+      binary_digits_to_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
+                                   BaseInt::BINARY_SHIFT>(
+          std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size));
   return result;
 }
 
@@ -270,9 +269,8 @@ class Int : public BaseInt {
   PyLongObject* as_PyLong() const {
     int sign = this->sign();
     const std::vector<BaseInt::Digit>& digits = this->digits();
-    std::vector<digit> result_digits;
-    binary_digits_to_binary_base<BaseInt::Digit, digit, BaseInt::BINARY_SHIFT,
-                                 PyLong_SHIFT>(digits, result_digits);
+    std::vector<digit> result_digits = binary_digits_to_binary_base<
+        BaseInt::Digit, digit, BaseInt::BINARY_SHIFT, PyLong_SHIFT>(digits);
     PyLongObject* result = _PyLong_New(result_digits.size());
     std::memcpy(result->ob_digit, result_digits.data(),
                 sizeof(digit) * result_digits.size());
