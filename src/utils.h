@@ -26,6 +26,9 @@ struct double_precision<std::uint32_t> {
 };
 
 template <class T>
+using double_precision_t = typename double_precision<T>::type;
+
+template <class T>
 T euclidean_algorithm(T first, T second) {
   while (second != 0) {
     const T step = second;
@@ -35,8 +38,9 @@ T euclidean_algorithm(T first, T second) {
   return first;
 }
 
-constexpr std::size_t floor_log10(const std::size_t value) {
-  return value < 10 ? 0 : floor_log10(value / 10) + 1;
+template <std::size_t BASE>
+constexpr std::size_t floor_log(const std::size_t value) {
+  return value < BASE ? 0 : floor_log<BASE>(value / BASE) + 1;
 }
 
 std::size_t floor_log2(std::size_t value) {

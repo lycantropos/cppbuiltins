@@ -113,84 +113,6 @@ using BaseInt =
     BigInt<std::conditional_t<sizeof(void*) == 8, std::uint32_t, std::uint16_t>,
            '_'>;
 
-template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
-          std::size_t TARGET_SHIFT,
-          TargetDigit TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
-                                          1>
-static std::vector<SourceDigit> binary_digits_to_greater_binary_base(
-    const std::vector<SourceDigit>& source) {
-  static_assert(SOURCE_SHIFT < TARGET_SHIFT,
-                "Target base should be greater than a source one.");
-  const std::size_t result_digits_count = static_cast<std::size_t>(
-      (source.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
-  std::vector<TargetDigit> result;
-  result.reserve(result_digits_count);
-  typename double_precision<TargetDigit>::type accumulator = 0;
-  std::size_t accumulator_bits_count = 0;
-  for (const SourceDigit digit : source) {
-    accumulator |=
-        static_cast<typename double_precision<TargetDigit>::type>(digit)
-        << accumulator_bits_count;
-    accumulator_bits_count += SOURCE_SHIFT;
-    if (accumulator_bits_count >= TARGET_SHIFT) {
-      result.push_back(
-          static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
-      accumulator >>= TARGET_SHIFT;
-      accumulator_bits_count -= TARGET_SHIFT;
-    }
-  }
-  if (accumulator_bits_count) result.push_back(accumulator);
-  return result;
-}
-
-template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
-          std::size_t TARGET_SHIFT,
-          std::size_t TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
-                                          1>
-static std::vector<SourceDigit> binary_digits_to_lesser_binary_base(
-    const std::vector<SourceDigit>& source) {
-  static_assert(SOURCE_SHIFT > TARGET_SHIFT,
-                "Target base should be lesser than a source one.");
-  const std::size_t result_digits_bits_count =
-      ((source.size() - 1) * SOURCE_SHIFT + to_bit_length(source.back()));
-  const std::size_t result_digits_count = static_cast<std::size_t>(
-      (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
-  std::vector<TargetDigit> result;
-  result.reserve(result_digits_count);
-  typename double_precision<TargetDigit>::type accumulator = 0;
-  std::size_t accumulator_bits_count = 0;
-  for (std::size_t index = 0; index < source.size(); ++index) {
-    accumulator |=
-        static_cast<typename double_precision<TargetDigit>::type>(source[index])
-        << accumulator_bits_count;
-    accumulator_bits_count += SOURCE_SHIFT;
-    do {
-      result.push_back(
-          static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
-      accumulator_bits_count -= TARGET_SHIFT;
-      accumulator >>= TARGET_SHIFT;
-    } while (index < source.size() - 1 ? accumulator_bits_count >= TARGET_SHIFT
-                                       : accumulator != 0);
-  }
-  return result;
-}
-
-template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
-          std::size_t TARGET_SHIFT>
-static std::vector<TargetDigit> binary_digits_to_binary_base(
-    const std::vector<SourceDigit>& source) {
-  if constexpr (SOURCE_SHIFT < TARGET_SHIFT)
-    return binary_digits_to_greater_binary_base<SourceDigit, TargetDigit,
-                                                SOURCE_SHIFT, TARGET_SHIFT>(
-        source);
-  else if constexpr (SOURCE_SHIFT > TARGET_SHIFT)
-    return binary_digits_to_lesser_binary_base<SourceDigit, TargetDigit,
-                                               SOURCE_SHIFT, TARGET_SHIFT>(
-        source);
-  else
-    return source;
-}
-
 static int int_to_sign(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
@@ -304,8 +226,7 @@ class Int : public BaseInt {
 };
 
 static std::ostream& operator<<(std::ostream& stream, const Int& value) {
-  return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr(10)
-                << "')";
+  return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr() << "')";
 }
 
 template <class Iterable>
@@ -1113,7 +1034,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           },
           py::is_operator{})
       .def("__repr__", &to_repr<Int>)
-      .def("__str__", [](const Int& self) { return self.repr(10); });
+      .def("__str__", [](const Int& self) { return self.repr(); });
 
   py::class_<List> PyList(m, LIST_NAME);
   PyList.def(py::init<py::iterable>(), py::arg("values"))
