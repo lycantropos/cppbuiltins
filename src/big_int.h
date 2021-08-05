@@ -65,6 +65,24 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
+template <typename Digit>
+bool digits_lesser_than(const std::vector<Digit>& first,
+                        const std::vector<Digit>& second) {
+  return first.size() < second.size() ||
+         (first.size() == second.size() &&
+          std::lexicographical_compare(first.rbegin(), first.rend(),
+                                       second.rbegin(), second.rend()));
+}
+
+template <typename Digit>
+bool digits_lesser_than_or_equal(const std::vector<Digit>& first,
+                                 const std::vector<Digit>& second) {
+  return first.size() < second.size() ||
+         (first.size() == second.size() &&
+          !std::lexicographical_compare(second.rbegin(), second.rend(),
+                                        first.rbegin(), first.rend()));
+}
+
 template <
     class _Digit, char _SEPARATOR,
     std::size_t _BINARY_SHIFT =
@@ -291,32 +309,15 @@ class BigInt {
   bool operator<(const BigInt& other) const {
     return _sign < other._sign ||
            (_sign == other._sign &&
-            (_sign > 0 ? _digits.size() < other._digits.size() ||
-                             (_digits.size() == other._digits.size() &&
-                              std::lexicographical_compare(
-                                  _digits.rbegin(), _digits.rend(),
-                                  other._digits.rbegin(), other._digits.rend()))
-                       : _digits.size() > other._digits.size() ||
-                             (_digits.size() == other._digits.size() &&
-                              std::lexicographical_compare(
-                                  other._digits.rbegin(), other._digits.rend(),
-                                  _digits.rbegin(), _digits.rend()))));
+            (_sign > 0 ? digits_lesser_than(_digits, other._digits)
+                       : digits_lesser_than(other._digits, _digits)));
   }
 
   bool operator<=(const BigInt& other) const {
     return _sign < other._sign ||
            (_sign == other._sign &&
-            (_sign > 0
-                 ? _digits.size() < other._digits.size() ||
-                       (_digits.size() == other._digits.size() &&
-                        !std::lexicographical_compare(
-                            other._digits.rbegin(), other._digits.rend(),
-                            _digits.rbegin(), _digits.rend()))
-                 : _digits.size() > other._digits.size() ||
-                       (_digits.size() == other._digits.size() &&
-                        !std::lexicographical_compare(
-                            _digits.rbegin(), _digits.rend(),
-                            other._digits.rbegin(), other._digits.rend()))));
+            (_sign > 0 ? digits_lesser_than_or_equal(_digits, other._digits)
+                       : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
   BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
