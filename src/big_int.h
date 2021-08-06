@@ -231,6 +231,77 @@ class BigInt {
 
   BigInt() : _sign(0), _digits({0}) {}
 
+  template <class T, std::enable_if_t<std::is_same<T, Digit>::value, T> = 0>
+  explicit BigInt(T value) {
+    if (value == 0) {
+      _sign = 0;
+      _digits = {0};
+    } else {
+      Digit remainder = value >> BINARY_SHIFT;
+      if (remainder) {
+        _digits.push_back(value & BINARY_DIGIT_MASK);
+        _digits.push_back(remainder);
+      } else
+        _digits.push_back(value);
+    }
+  }
+
+  template <class T,
+            std::enable_if_t<std::is_same<T, DoubleDigit>::value, T> = 0>
+  explicit BigInt(T value) {
+    if (value == 0) {
+      _sign = 0;
+      _digits = {0};
+    } else {
+      _sign = 1;
+      while (value) {
+        _digits.push_back(static_cast<Digit>(value & BINARY_DIGIT_MASK));
+        value >>= BINARY_SHIFT;
+      }
+    }
+  }
+
+  template <class T,
+            std::enable_if_t<std::is_same<T, SignedDigit>::value, T> = 0>
+  explicit BigInt(T value) {
+    Digit modulus;
+    if (value < 0) {
+      modulus = -static_cast<Digit>(value);
+      _sign = -1;
+    } else {
+      modulus = static_cast<Digit>(value);
+      _sign = value == 0 ? 0 : 1;
+    }
+    Digit remainder = modulus >> BINARY_SHIFT;
+    if (remainder) {
+      _digits.push_back(modulus & BINARY_DIGIT_MASK);
+      _digits.push_back(remainder);
+    } else
+      _digits.push_back(modulus);
+  }
+
+  template <class T,
+            std::enable_if_t<std::is_same<T, SignedDoubleDigit>::value, T> = 0>
+  explicit BigInt(T value) {
+    DoubleDigit modulus;
+    if (value < 0) {
+      _sign = -1;
+      modulus = static_cast<DoubleDigit>(-1 - value) + 1;
+    } else if (value > 0) {
+      _sign = 1;
+      modulus = static_cast<DoubleDigit>(value);
+    } else {
+      _sign = 0;
+      _digits = {0};
+      return;
+    }
+    DoubleDigit accumulator = modulus;
+    while (accumulator) {
+      _digits.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
+      accumulator >>= BINARY_SHIFT;
+    }
+  }
+
   BigInt(const BigInt& value) : _sign(value._sign), _digits(value._digits) {}
 
   BigInt(const char* characters, std::size_t base = 10) {
@@ -299,8 +370,8 @@ class BigInt {
     std::vector<Digit> largest_digits = _digits,
                        smallest_digits = other._digits;
     if (largest_digits.size() <= 2 && smallest_digits.size() <= 2)
-      return from_double_digit(euclidean_algorithm(
-          reduce_digits(largest_digits), reduce_digits(smallest_digits)));
+      return BigInt(euclidean_algorithm(reduce_digits(largest_digits),
+                                        reduce_digits(smallest_digits)));
     if (digits_lesser_than(largest_digits, smallest_digits))
       std::swap(largest_digits, smallest_digits);
     std::size_t largest_digits_count, smallest_digits_count;
@@ -407,8 +478,8 @@ class BigInt {
       largest_digits = next_largest_digits;
       smallest_digits = next_smallest_digits;
     }
-    return from_double_digit(euclidean_algorithm(
-        reduce_digits(largest_digits), reduce_digits(smallest_digits)));
+    return BigInt(euclidean_algorithm(reduce_digits(largest_digits),
+                                      reduce_digits(smallest_digits)));
   }
 
   void divmod(const BigInt& divisor, BigInt& quotient,
@@ -436,8 +507,7 @@ class BigInt {
         Digit remainder_digit = divmod_digits_by_digit(
             _digits, divisor._digits[0], quotient_digits);
         quotient = BigInt(_sign * divisor._sign, quotient_digits);
-        remainder = from_signed_digit(
-            _sign * static_cast<SignedDigit>(remainder_digit));
+        remainder = BigInt(_sign * static_cast<SignedDigit>(remainder_digit));
       } else {
         std::vector<Digit> quotient_digits, remainder_digits;
         divmod_two_or_more_digits(_digits, divisor._digits, quotient_digits,
@@ -460,7 +530,7 @@ class BigInt {
 
   BigInt operator+(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
-      return from_signed_digit(signed_digit() + other.signed_digit());
+      return BigInt(signed_digit() + other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0)
         return BigInt(-1, sum_digits(_digits, other._digits));
@@ -489,8 +559,7 @@ class BigInt {
 
   BigInt operator*(const BigInt& other) const {
     return _digits.size() == 1 && other._digits.size() == 1
-               ? from_signed_double_digit(signed_double_digit() *
-                                          other.signed_double_digit())
+               ? BigInt(signed_double_digit() * other.signed_double_digit())
                : BigInt(_sign * other._sign,
                         multiply_digits(_digits, other._digits));
   }
@@ -498,7 +567,7 @@ class BigInt {
   BigInt operator-() const { return BigInt(-_sign, _digits); }
 
   BigInt operator~() const {
-    if (_digits.size() == 1) return from_signed_digit(-signed_digit() - 1);
+    if (_digits.size() == 1) return BigInt(-signed_digit() - 1);
     if (_sign > 0)
       return BigInt(-1, sum_digits(_digits, {1}));
     else {
@@ -510,7 +579,7 @@ class BigInt {
 
   BigInt operator-(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
-      return from_signed_digit(signed_digit() - other.signed_digit());
+      return BigInt(signed_digit() - other.signed_digit());
     if (_sign < 0) {
       if (other._sign < 0) {
         int sign = 1;
@@ -696,56 +765,6 @@ class BigInt {
 
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
-
-  static BigInt from_double_digit(DoubleDigit value) {
-    if (value == 0) return BigInt();
-    std::vector<Digit> digits;
-    while (value) {
-      digits.push_back(static_cast<Digit>(value & BINARY_DIGIT_MASK));
-      value >>= BINARY_SHIFT;
-    }
-    return BigInt(1, digits);
-  }
-
-  static BigInt from_signed_digit(SignedDigit value) {
-    Digit modulus;
-    int sign;
-    if (value < 0) {
-      modulus = -static_cast<Digit>(value);
-      sign = -1;
-    } else {
-      modulus = static_cast<Digit>(value);
-      sign = value == 0 ? 0 : 1;
-    }
-    Digit remainder = modulus >> BINARY_SHIFT;
-    std::vector<Digit> digits;
-    if (remainder) {
-      digits.push_back(modulus & BINARY_DIGIT_MASK);
-      digits.push_back(remainder);
-    } else
-      digits.push_back(modulus);
-    return BigInt(sign, digits);
-  }
-
-  static BigInt from_signed_double_digit(SignedDoubleDigit value) {
-    DoubleDigit modulus;
-    int sign;
-    if (value < 0) {
-      sign = -1;
-      modulus = static_cast<DoubleDigit>(-1 - value) + 1;
-    } else if (value > 0) {
-      sign = 1;
-      modulus = static_cast<DoubleDigit>(value);
-    } else
-      return BigInt();
-    DoubleDigit accumulator = modulus;
-    std::vector<Digit> digits;
-    while (accumulator) {
-      digits.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
-      accumulator >>= BINARY_SHIFT;
-    }
-    return BigInt(sign, digits);
-  }
 
   static DoubleDigit reduce_digits(const std::vector<Digit>& digits) {
     DoubleDigit result = 0;
