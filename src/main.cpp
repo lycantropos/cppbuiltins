@@ -143,9 +143,9 @@ class Int : public BaseInt {
  public:
   Int() : BaseInt() {}
 
-  Int(const BaseInt& value) : BaseInt(value) {}
+  explicit Int(const BaseInt& value) : BaseInt(value) {}
 
-  Int(py::int_ value) : BaseInt(int_to_sign(value), int_to_digits(value)) {}
+  explicit Int(py::int_ value) : BaseInt(int_to_sign(value), int_to_digits(value)) {}
 
   Int(const py::str& value, std::size_t base)
       : BaseInt(pystr_to_ascii_c_str(value), base) {}
@@ -156,16 +156,10 @@ class Int : public BaseInt {
     return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
   }
 
-  Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
-
-  void divmod(const BigInt& divisor, BigInt& quotient,
-              BigInt& remainder) const {
-    try {
-      BaseInt::divmod(divisor, quotient, remainder);
-    } catch (const std::range_error& exception) {
-      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-      throw py::error_already_set();
-    }
+  Int operator%(const Int& divisor) const {
+    Int quotient, result;
+    divmod(divisor, quotient, result);
+    return result;
   }
 
   const Int& operator+() const { return *this; }
@@ -199,6 +193,24 @@ class Int : public BaseInt {
     Py_SET_SIZE(result, Py_SIZE(result) * sign);
     return result;
   }
+
+  void divmod(const BigInt& divisor, BigInt& quotient,
+              BigInt& remainder) const {
+    try {
+      BaseInt::divmod(divisor, quotient, remainder);
+    } catch (const std::range_error& exception) {
+      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+      throw py::error_already_set();
+    }
+  }
+
+  Int floor_divide(const Int& divisor) const {
+    Int result, remainder;
+    divmod(divisor, result, remainder);
+    return result;
+  }
+
+  Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
 
   Py_hash_t hash() const {
     int sign = this->sign();
@@ -995,6 +1007,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self <= py::self)
       .def(py::self < py::self)
       .def(py::self + py::self)
+      .def(py::self % py::self)
       .def(~py::self)
       .def(+py::self)
       .def(py::self * py::self)
@@ -1017,22 +1030,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__int__", &Int::to_state)
       .def("__float__", &Int::operator double)
-      .def(
-          "__floordiv__",
-          [](const Int& self, const Int& other) {
-            Int quotient, remainder;
-            self.divmod(other, quotient, remainder);
-            return quotient;
-          },
-          py::is_operator{})
-      .def(
-          "__mod__",
-          [](const Int& self, const Int& other) {
-            Int quotient, remainder;
-            self.divmod(other, quotient, remainder);
-            return remainder;
-          },
-          py::is_operator{})
+      .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(); });
 
