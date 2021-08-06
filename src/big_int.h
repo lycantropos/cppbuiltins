@@ -91,7 +91,7 @@ static std::vector<SourceDigit> binary_digits_to_greater_binary_base(
       accumulator_bits_count -= TARGET_SHIFT;
     }
   }
-  if (accumulator_bits_count) result.push_back(accumulator);
+  if (accumulator) result.push_back(accumulator);
   return result;
 }
 
