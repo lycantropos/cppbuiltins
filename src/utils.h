@@ -29,7 +29,7 @@ template <class T>
 using double_precision_t = typename double_precision<T>::type;
 
 template <class T>
-T euclidean_algorithm(T first, T second) {
+T to_gcd(T first, T second) {
   while (second != 0) {
     const T step = second;
     second = first % second;

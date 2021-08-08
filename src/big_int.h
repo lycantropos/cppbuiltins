@@ -370,9 +370,6 @@ class BigInt {
   BigInt gcd(const BigInt& other) const {
     std::vector<Digit> largest_digits = _digits,
                        smallest_digits = other._digits;
-    if (largest_digits.size() <= 2 && smallest_digits.size() <= 2)
-      return BigInt(euclidean_algorithm(reduce_digits(largest_digits),
-                                        reduce_digits(smallest_digits)));
     if (digits_lesser_than(largest_digits, smallest_digits))
       std::swap(largest_digits, smallest_digits);
     std::size_t largest_digits_count, smallest_digits_count;
@@ -479,8 +476,8 @@ class BigInt {
       largest_digits = next_largest_digits;
       smallest_digits = next_smallest_digits;
     }
-    return BigInt(euclidean_algorithm(reduce_digits(largest_digits),
-                                      reduce_digits(smallest_digits)));
+    return BigInt(
+        to_gcd(reduce_digits(largest_digits), reduce_digits(smallest_digits)));
   }
 
   void divmod(const BigInt& divisor, BigInt& quotient,
