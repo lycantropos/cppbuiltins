@@ -252,17 +252,15 @@ class Fraction {
   Fraction(const Int& numerator, const Int& denominator = Int(1))
       : Fraction(numerator, denominator, std::true_type{}) {}
 
-  const Fraction& operator+() const {
-    return *this;
-  }
+  const Fraction& operator+() const { return *this; }
 
   Fraction operator-() const {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
 
   static Fraction from_state(const py::tuple& state) {
-      if (state.size() != 2) throw std::runtime_error("Invalid state.");
-      return Fraction(state[0].cast<Int>(), state[1].cast<Int>());
+    if (state.size() != 2) throw std::runtime_error("Invalid state.");
+    return Fraction(state[0].cast<Int>(), state[1].cast<Int>());
   }
 
   static py::tuple to_state(const Fraction& value) {
