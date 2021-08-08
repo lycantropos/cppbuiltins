@@ -256,6 +256,15 @@ class Fraction {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
 
+  static Fraction from_state(const py::tuple& state) {
+      if (state.size() != 2) throw std::runtime_error("Invalid state.");
+      return Fraction(state[0].cast<Int>(), state[1].cast<Int>());
+  }
+
+  static py::tuple to_state(const Fraction& value) {
+    return py::make_tuple(value.numerator(), value.denominator());
+  }
+
   operator bool() const { return bool(_numerator); }
 
   const Int& denominator() const { return _denominator; }
@@ -1089,6 +1098,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
       .def(-py::self)
+      .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
       .def("__repr__", &to_repr<Fraction>)
       .def_property_readonly("denominator", &Fraction::denominator)
