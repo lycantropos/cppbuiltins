@@ -145,7 +145,8 @@ class Int : public BaseInt {
 
   explicit Int(const BaseInt& value) : BaseInt(value) {}
 
-  explicit Int(py::int_ value) : BaseInt(int_to_sign(value), int_to_digits(value)) {}
+  explicit Int(py::int_ value)
+      : BaseInt(int_to_sign(value), int_to_digits(value)) {}
 
   Int(const py::str& value, std::size_t base)
       : BaseInt(pystr_to_ascii_c_str(value), base) {}

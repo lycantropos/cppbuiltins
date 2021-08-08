@@ -120,9 +120,10 @@ static std::vector<SourceDigit> binary_digits_to_lesser_binary_base(
           static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
       accumulator_bits_count -= TARGET_SHIFT;
       accumulator >>= TARGET_SHIFT;
-    } while (accumulator_bits_count >= TARGET_SHIFT);
+    } while (index == source.size() - 1
+                 ? accumulator != 0
+                 : accumulator_bits_count >= TARGET_SHIFT);
   }
-  if (accumulator) result.push_back(accumulator);
   return result;
 }
 
