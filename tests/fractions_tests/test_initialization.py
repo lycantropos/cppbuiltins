@@ -19,3 +19,19 @@ def test_basic(numerators_pair: AlternativeNativeIntsPair,
                                           native_denominator))
 
     assert are_alternative_native_fractions_equal(alternative, native)
+
+
+@given(strategies.numerators_pairs)
+def test_numerator(numerators_pair: AlternativeNativeIntsPair) -> None:
+    alternative_numerator, native_numerator = numerators_pair
+
+    alternative, native = (AlternativeFraction(alternative_numerator),
+                           NativeFraction(native_numerator))
+
+    assert are_alternative_native_fractions_equal(alternative, native)
+
+
+def test_no_argument() -> None:
+    alternative, native = AlternativeFraction(), NativeFraction()
+
+    assert are_alternative_native_fractions_equal(alternative, native)
