@@ -22,6 +22,7 @@ namespace py = pybind11;
 #define MODULE_NAME cppbuiltins
 #define C_STR_HELPER(a) #a
 #define C_STR(a) C_STR_HELPER(a)
+#define FRACTION_NAME "Fraction"
 #define INT_NAME "int"
 #define LIST_ITERATOR_NAME "list_iterator"
 #define LIST_NAME "list"
@@ -236,10 +237,45 @@ class Int : public BaseInt {
     result -= (result == std::numeric_limits<std::size_t>::max());
     return static_cast<Py_hash_t>(result);
   }
+
+  int sign() const { return BaseInt::sign(); }
 };
 
 static std::ostream& operator<<(std::ostream& stream, const Int& value) {
   return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr() << "')";
+}
+
+class Fraction {
+ public:
+  Fraction() : _numerator(Int()), _denominator(Int(1)) {}
+
+  Fraction(const Int& numerator, const Int& denominator = Int(1))
+      : _numerator(numerator), _denominator(denominator) {
+    if (_denominator.sign() == 0) {
+      PyErr_SetString(PyExc_ZeroDivisionError,
+                      "Denominator should not be zero.");
+      throw py::error_already_set();
+    }
+    if (_denominator.sign() < 0) {
+      _numerator = -_numerator;
+      _denominator = -_denominator;
+    }
+    Int gcd = _numerator.gcd(_denominator);
+    _denominator = _denominator.floor_divide(gcd);
+    _numerator = _numerator.floor_divide(gcd);
+  }
+
+  const Int& denominator() const { return _denominator; }
+
+  const Int& numerator() const { return _numerator; }
+
+ private:
+  Int _numerator, _denominator;
+};
+
+static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
+  return stream << C_STR(MODULE_NAME) "." FRACTION_NAME "(" << value.numerator()
+                << ", " << value.denominator() << ")";
 }
 
 template <class Iterable>
@@ -1034,6 +1070,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", [](const Int& self) { return self.repr(); });
+
+  py::class_<Fraction> PyFraction(m, FRACTION_NAME);
+  PyFraction.def(py::init<>())
+      .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
+           py::arg("denominator") = Int(1))
+      .def("__repr__", &to_repr<Fraction>)
+      .def_property_readonly("denominator", &Fraction::denominator)
+      .def_property_readonly("numerator", &Fraction::numerator);
 
   py::class_<List> PyList(m, LIST_NAME);
   PyList.def(py::init<py::iterable>(), py::arg("values"))
