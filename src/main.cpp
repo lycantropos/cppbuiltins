@@ -265,6 +265,8 @@ class Fraction {
     _numerator = _numerator.floor_divide(gcd);
   }
 
+  operator bool() const { return bool(_numerator); }
+
   const Int& denominator() const { return _denominator; }
 
   const Int& numerator() const { return _numerator; }
@@ -1075,6 +1077,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   PyFraction.def(py::init<>())
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
+      .def("__bool__", &Fraction::operator bool)
       .def("__repr__", &to_repr<Fraction>)
       .def_property_readonly("denominator", &Fraction::denominator)
       .def_property_readonly("numerator", &Fraction::numerator);
