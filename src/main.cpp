@@ -252,6 +252,10 @@ class Fraction {
   Fraction(const Int& numerator, const Int& denominator = Int(1))
       : Fraction(numerator, denominator, std::true_type{}) {}
 
+  const Fraction& operator+() const {
+    return *this;
+  }
+
   Fraction operator-() const {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
@@ -1097,6 +1101,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   PyFraction.def(py::init<>())
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
+      .def(+py::self)
       .def(-py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
