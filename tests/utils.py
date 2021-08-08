@@ -1,4 +1,5 @@
 import builtins
+import fractions
 import math
 import pickle
 from functools import partial
@@ -20,12 +21,15 @@ from hypothesis.strategies import SearchStrategy as Strategy
 Domain = TypeVar('Domain')
 Range = TypeVar('Range')
 Strategy = Strategy
+AlternativeFraction = cppbuiltins.Fraction
 AlternativeInt = cppbuiltins.int
 AlternativeList = cppbuiltins.list
 AlternativeSet = cppbuiltins.set
+NativeFraction = fractions.Fraction
 NativeInt = builtins.int
 NativeList = builtins.list
 NativeSet = builtins.set
+AlternativeNativeFractionsPair = Tuple[AlternativeFraction, NativeFraction]
 AlternativeNativeIntsPair = Tuple[AlternativeInt, NativeInt]
 AlternativeNativeListsPair = Tuple[AlternativeList, NativeList]
 AlternativeNativeSetsPair = Tuple[AlternativeSet, NativeSet]
@@ -41,6 +45,14 @@ def are_iterators_equal(left: Iterator[Any],
     return all(left_value == right_value
                for left_value, right_value in zip_longest(left, right,
                                                           fillvalue=_sentinel))
+
+
+def are_alternative_native_fractions_equal(alternative: AlternativeFraction,
+                                           native: NativeFraction) -> bool:
+    return (are_alternative_native_ints_equal(alternative.denominator,
+                                              native.denominator)
+            and are_alternative_native_ints_equal(alternative.numerator,
+                                                  native.numerator))
 
 
 def are_alternative_native_ints_equal(alternative: AlternativeInt,
@@ -76,6 +88,18 @@ def apply(function: Callable[..., Range], args: Tuple[Domain, ...]) -> Range:
 
 def pickle_round_trip(value: Domain) -> Domain:
     return pickle.loads(pickle.dumps(value))
+
+
+def to_alternative_native_fractions_pair(numerators_pair
+                                         : AlternativeNativeIntsPair,
+                                         denominators_pair
+                                         : AlternativeNativeIntsPair
+                                         ) -> AlternativeNativeFractionsPair:
+    alternative_numerator, native_numerator = numerators_pair
+    alternative_denominator, native_denominator = denominators_pair
+    return (AlternativeFraction(alternative_numerator,
+                                alternative_denominator),
+            NativeFraction(native_numerator, native_denominator))
 
 
 def to_alternative_native_ints_pair(characters: str,
