@@ -250,19 +250,10 @@ class Fraction {
   Fraction() : _numerator(Int()), _denominator(Int(1)) {}
 
   Fraction(const Int& numerator, const Int& denominator = Int(1))
-      : _numerator(numerator), _denominator(denominator) {
-    if (_denominator.sign() == 0) {
-      PyErr_SetString(PyExc_ZeroDivisionError,
-                      "Denominator should not be zero.");
-      throw py::error_already_set();
-    }
-    if (_denominator.sign() < 0) {
-      _numerator = -_numerator;
-      _denominator = -_denominator;
-    }
-    Int gcd = _numerator.gcd(_denominator);
-    _denominator = _denominator.floor_divide(gcd);
-    _numerator = _numerator.floor_divide(gcd);
+      : Fraction(numerator, denominator, std::true_type{}) {}
+
+  Fraction operator-() const {
+    return Fraction(-_numerator, _denominator, std::false_type{});
   }
 
   operator bool() const { return bool(_numerator); }
@@ -273,6 +264,26 @@ class Fraction {
 
  private:
   Int _numerator, _denominator;
+
+  template <bool NORMALIZE>
+  Fraction(const Int& numerator, const Int& denominator,
+           std::bool_constant<NORMALIZE>)
+      : _numerator(numerator), _denominator(denominator) {
+    if constexpr (NORMALIZE) {
+      if (_denominator.sign() == 0) {
+        PyErr_SetString(PyExc_ZeroDivisionError,
+                        "Denominator should not be zero.");
+        throw py::error_already_set();
+      }
+      if (_denominator.sign() < 0) {
+        _numerator = -_numerator;
+        _denominator = -_denominator;
+      }
+      Int gcd = _numerator.gcd(_denominator);
+      _denominator = _denominator.floor_divide(gcd);
+      _numerator = _numerator.floor_divide(gcd);
+    }
+  };
 };
 
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
@@ -1077,6 +1088,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   PyFraction.def(py::init<>())
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
+      .def(-py::self)
       .def("__bool__", &Fraction::operator bool)
       .def("__repr__", &to_repr<Fraction>)
       .def_property_readonly("denominator", &Fraction::denominator)
