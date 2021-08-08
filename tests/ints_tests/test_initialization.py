@@ -8,6 +8,12 @@ from tests.utils import (AlternativeInt,
 from . import strategies
 
 
+def test_no_argument() -> None:
+    alternative, native = AlternativeInt(), NativeInt()
+
+    assert are_alternative_native_ints_equal(alternative, native)
+
+
 @given(strategies.decimal_int_strings_with_leading_zeros)
 def test_decimal_string(string: str) -> None:
     alternative, native = AlternativeInt(string), NativeInt(string)
