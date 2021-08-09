@@ -260,13 +260,12 @@ class Int : public BaseInt {
     throw std::invalid_argument("Not invertible.");
   }
 
-  int sign() const { return BaseInt::sign(); }
-
- private:
   bool is_one() const {
     const std::vector<BaseInt::Digit>& digits = this->digits();
     return sign() > 0 && digits.size() == 1 && digits[0] == 1;
   }
+
+  int sign() const { return BaseInt::sign(); }
 };
 
 static std::ostream& operator<<(std::ostream& stream, const Int& value) {
@@ -1147,6 +1146,13 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__bool__", &Fraction::operator bool)
       .def("__hash__", &Fraction::hash)
       .def("__repr__", &to_repr<Fraction>)
+      .def("__str__",
+           [](const Fraction& self) {
+             return self.denominator().is_one()
+                        ? self.numerator().repr()
+                        : self.numerator().repr() + "/" +
+                              self.denominator().repr();
+           })
       .def_property_readonly("denominator", &Fraction::denominator)
       .def_property_readonly("numerator", &Fraction::numerator);
 
