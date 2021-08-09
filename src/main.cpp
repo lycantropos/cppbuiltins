@@ -302,6 +302,12 @@ class Fraction {
 
   const Fraction& operator+() const { return *this; }
 
+  Fraction operator-(const Fraction& other) const {
+    return Fraction(
+        _numerator * other._denominator - _denominator * other._numerator,
+        _denominator * other._denominator);
+  }
+
   const Int& denominator() const { return _denominator; }
 
   Py_hash_t hash() const {
@@ -1149,6 +1155,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self + py::self)
       .def(-py::self)
       .def(+py::self)
+      .def(py::self - py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
       .def("__hash__", &Fraction::hash)
