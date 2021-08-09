@@ -238,7 +238,35 @@ class Int : public BaseInt {
     return static_cast<Py_hash_t>(result);
   }
 
+  Int invmod(const Int& divisor) const {
+    Int candidate, result{1u}, step_dividend = *this, step_divisor = divisor;
+    while (step_divisor) {
+      Int quotient, remainder;
+      step_dividend.divmod(step_divisor, quotient, remainder);
+      step_dividend = step_divisor;
+      step_divisor = remainder;
+      const Int next_candidate = result - quotient * candidate;
+      result = candidate;
+      candidate = next_candidate;
+    }
+    if (step_dividend.is_one()) {
+      if (result.sign() < 0) {
+        Int quotient, remainder;
+        result.divmod(divisor, quotient, remainder);
+        result = remainder;
+      }
+      return result;
+    }
+    throw std::invalid_argument("Not invertible.");
+  }
+
   int sign() const { return BaseInt::sign(); }
+
+ private:
+  bool is_one() const {
+    const std::vector<BaseInt::Digit>& digits = this->digits();
+    return sign() > 0 && digits.size() == 1 && digits[0] == 1;
+  }
 };
 
 static std::ostream& operator<<(std::ostream& stream, const Int& value) {
@@ -270,6 +298,20 @@ class Fraction {
   operator bool() const { return bool(_numerator); }
 
   const Int& denominator() const { return _denominator; }
+
+  Py_hash_t hash() const {
+    static const Int HASH_MODULUS{_PyHASH_MODULUS};
+    Py_hash_t result;
+    try {
+      result =
+          (Int(_numerator.abs().hash()) * _denominator.invmod(HASH_MODULUS))
+              .hash();
+    } catch (const std::invalid_argument&) {
+      result = _PyHASH_INF;
+    }
+    if (_numerator.sign() < 0) result = -result;
+    return result - (result == -1);
+  }
 
   const Int& numerator() const { return _numerator; }
 
@@ -1103,6 +1145,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(-py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
+      .def("__hash__", &Fraction::hash)
       .def("__repr__", &to_repr<Fraction>)
       .def_property_readonly("denominator", &Fraction::denominator)
       .def_property_readonly("numerator", &Fraction::numerator);
