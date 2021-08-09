@@ -1118,7 +1118,6 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self - py::self)
       .def(py::pickle(&Int::to_state, &Int::from_state))
       .def("__abs__", &Int::abs)
-      .def("__hash__", &Int::hash)
       .def("__bool__", &Int::operator bool)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
       .def(
@@ -1131,11 +1130,12 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           py::is_operator{})
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
-      .def("__int__", &Int::to_state)
       .def("__float__", &Int::operator double)
       .def("__floordiv__", &Int::floor_divide, py::is_operator{})
+      .def("__hash__", &Int::hash)
+      .def("__int__", &Int::to_state)
       .def("__repr__", &to_repr<Int>)
-      .def("__str__", [](const Int& self) { return self.repr(); });
+      .def("__str__", &Int::repr<10>);
 
   py::class_<Fraction> PyFraction(m, FRACTION_NAME);
   PyFraction.def(py::init<>())
