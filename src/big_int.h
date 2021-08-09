@@ -761,9 +761,6 @@ class BigInt {
     return static_cast<Digit>(remainder);
   }
 
-  static constexpr Digit KARATSUBA_CUTOFF = 70;
-  static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
-
   static DoubleDigit reduce_digits(const std::vector<Digit>& digits) {
     DoubleDigit result = 0;
     for (auto position = digits.rbegin(); position != digits.rend(); ++position)
@@ -890,6 +887,9 @@ class BigInt {
     normalize_digits(high);
     normalize_digits(low);
   }
+
+  static constexpr Digit KARATSUBA_CUTOFF = 70;
+  static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
 
   static std::vector<Digit> multiply_digits(const std::vector<Digit>& first,
                                             const std::vector<Digit>& second) {
