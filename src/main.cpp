@@ -296,6 +296,10 @@ class Fraction {
 
   operator bool() const { return bool(_numerator); }
 
+  bool operator==(const Fraction& other) const {
+    return _numerator == other._numerator && _denominator == other._denominator;
+  }
+
   Fraction operator-() const {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
@@ -1153,6 +1157,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
       .def(py::self + py::self)
+      .def(py::self == py::self)
       .def(-py::self)
       .def(+py::self)
       .def(py::self - py::self)
