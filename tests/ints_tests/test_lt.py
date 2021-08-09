@@ -8,8 +8,8 @@ from . import strategies
 @given(strategies.ints_pairs, strategies.ints_pairs)
 def test_basic(first_pair: AlternativeNativeIntsPair,
                second_pair: AlternativeNativeIntsPair) -> None:
-    first_alternative, first_native = first_pair
-    second_alternative, second_native = second_pair
+    alternative_first, native_first = first_pair
+    alternative_second, native_second = second_pair
 
-    assert equivalence(first_alternative < second_alternative,
-                       first_native < second_native)
+    assert equivalence(alternative_first < alternative_second,
+                       native_first < native_second)

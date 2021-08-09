@@ -8,10 +8,10 @@ from . import strategies
 @given(strategies.sets_pairs, strategies.sets_pairs)
 def test_basic(first_pair: AlternativeNativeSetsPair,
                second_pair: AlternativeNativeSetsPair) -> None:
-    first_alternative, first_native = first_pair
-    second_alternative, second_native = second_pair
+    alternative_first, native_first = first_pair
+    alternative_second, native_second = second_pair
 
-    first_alternative |= second_alternative
-    first_native |= second_native
+    alternative_first |= alternative_second
+    native_first |= native_second
 
-    assert are_alternative_native_sets_equal(first_alternative, first_native)
+    assert are_alternative_native_sets_equal(alternative_first, native_first)
