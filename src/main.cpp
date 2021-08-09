@@ -279,12 +279,6 @@ class Fraction {
   Fraction(const Int& numerator, const Int& denominator = Int(1))
       : Fraction(numerator, denominator, std::true_type{}) {}
 
-  const Fraction& operator+() const { return *this; }
-
-  Fraction operator-() const {
-    return Fraction(-_numerator, _denominator, std::false_type{});
-  }
-
   static Fraction from_state(const py::tuple& state) {
     if (state.size() != 2) throw std::runtime_error("Invalid state.");
     return Fraction(state[0].cast<Int>(), state[1].cast<Int>());
@@ -294,7 +288,19 @@ class Fraction {
     return py::make_tuple(value.numerator(), value.denominator());
   }
 
+  Fraction operator+(const Fraction& other) const {
+    return Fraction(
+        _numerator * other._denominator + _denominator * other._numerator,
+        _denominator * other._denominator);
+  }
+
   operator bool() const { return bool(_numerator); }
+
+  Fraction operator-() const {
+    return Fraction(-_numerator, _denominator, std::false_type{});
+  }
+
+  const Fraction& operator+() const { return *this; }
 
   const Int& denominator() const { return _denominator; }
 
@@ -1140,8 +1146,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   PyFraction.def(py::init<>())
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
-      .def(+py::self)
+      .def(py::self + py::self)
       .def(-py::self)
+      .def(+py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
       .def("__hash__", &Fraction::hash)
