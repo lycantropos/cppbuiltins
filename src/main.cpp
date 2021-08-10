@@ -157,7 +157,12 @@ class Int : public BaseInt {
   }
 
   Int operator%(const Int& divisor) const {
-    return Int(BaseInt::operator%(divisor));
+    try {
+      return Int(BaseInt::operator%(divisor));
+    } catch (const std::range_error& exception) {
+      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+      throw py::error_already_set();
+    }
   }
 
   const Int& operator+() const { return *this; }
@@ -212,7 +217,12 @@ class Int : public BaseInt {
   }
 
   Int floor_divide(const Int& divisor) const {
-    return Int(BaseInt::floor_divide(divisor));
+    try {
+      return Int(BaseInt::floor_divide(divisor));
+    } catch (const std::range_error& exception) {
+      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+      throw py::error_already_set();
+    }
   }
 
   Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
@@ -246,14 +256,13 @@ class Int : public BaseInt {
   bool is_one() const { return BaseInt::is_one(); }
 
   py::object pow(const Int& other, const Int* maybe_modulus) const {
-    try {
-      return py::cast(Int(BaseInt::pow(other, maybe_modulus)));
-    } catch (const std::range_error&) {
+    if (maybe_modulus == nullptr && other.sign() < 0) {
       PyObject* result = PyFloat_Type.tp_as_number->nb_power(
           (PyObject*)as_PyLong(), (PyObject*)other.as_PyLong(), Py_None);
       if (!result) throw py::error_already_set();
       return py::reinterpret_steal<py::object>(result);
     }
+    return py::cast(Int(BaseInt::pow(other, maybe_modulus)));
   }
 
   int sign() const { return BaseInt::sign(); }
