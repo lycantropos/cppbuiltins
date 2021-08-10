@@ -631,13 +631,13 @@ class BigInt {
         dividend_digits_count - divisor_digits_count;
     if (digits_count_difference >
         static_cast<std::make_signed_t<std::size_t>>(
-            std::numeric_limits<std::size_t>::max() / PyLong_SHIFT) -
+            std::numeric_limits<std::size_t>::max() / BINARY_SHIFT) -
             1)
       throw std::overflow_error(
           "Division result too large to be expressed as floating point.");
     else if (digits_count_difference <
              1 - static_cast<std::make_signed_t<std::size_t>>(
-                     std::numeric_limits<std::size_t>::max() / PyLong_SHIFT))
+                     std::numeric_limits<std::size_t>::max() / BINARY_SHIFT))
       return negate ? -0.0 : 0.0;
     std::make_signed_t<std::size_t> bit_lengths_difference =
         digits_count_difference * BINARY_SHIFT +
@@ -661,7 +661,8 @@ class BigInt {
     if (shift <= 0) {
       std::size_t shift_digits = (-shift) / BINARY_SHIFT;
       if (dividend_digits_count >=
-          std::numeric_limits<Py_ssize_t>::max() - 1 - shift_digits)
+          std::numeric_limits<std::make_signed_t<std::size_t>>::max() - 1 -
+              shift_digits)
         throw std::overflow_error(
             "Division result too large to be expressed as floating point.");
       quotient_digits_count = dividend_digits_count + shift_digits + 1;
