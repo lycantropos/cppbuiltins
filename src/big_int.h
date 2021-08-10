@@ -613,13 +613,13 @@ class BigInt {
                        : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
-  double operator/(const BigInt& other) const {
-    if (other._sign == 0)
+  double operator/(const BigInt& divisor) const {
+    if (divisor._sign == 0)
       throw std::range_error("Division by zero is undefined.");
-    bool negate = (_sign < 0) ^ (other._sign < 0);
+    bool negate = (_sign < 0) ^ (divisor._sign < 0);
     if (sign() == 0) return negate ? -0.0 : 0.0;
     const std::vector<Digit>& dividend_digits = digits();
-    const std::vector<Digit>& divisor_digits = other.digits();
+    const std::vector<Digit>& divisor_digits = divisor.digits();
     std::size_t dividend_digits_count = dividend_digits.size();
     std::size_t divisor_digits_count = divisor_digits.size();
     bool dividend_is_small =
