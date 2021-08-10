@@ -323,6 +323,18 @@ class Fraction {
             _numerator * other._denominator < _denominator * other._numerator);
   }
 
+  Fraction operator*(const Fraction& other) const {
+    const Int numerator_other_denominator_gcd =
+        _numerator.gcd(other._denominator);
+    const Int other_numerator_denominator_gcd =
+        _denominator.gcd(other._numerator);
+    return Fraction(
+        _numerator.floor_divide(numerator_other_denominator_gcd) *
+            other._numerator.floor_divide(other_numerator_denominator_gcd),
+        _denominator.floor_divide(other_numerator_denominator_gcd) *
+            other._denominator.floor_divide(numerator_other_denominator_gcd));
+  }
+
   Fraction operator-() const {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
@@ -1186,6 +1198,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self == py::self)
       .def(py::self <= py::self)
       .def(py::self < py::self)
+      .def(py::self * py::self)
       .def(-py::self)
       .def(+py::self)
       .def(py::self - py::self)
