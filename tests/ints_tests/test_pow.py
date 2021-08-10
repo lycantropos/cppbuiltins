@@ -23,7 +23,7 @@ def test_basic(bases_pair: AlternativeNativeIntsPair,
     try:
         alternative_result = pow(alternative_base, alternative_exponent,
                                  alternative_modulus)
-    except (ZeroDivisionError, ValueError) as error:
+    except (ValueError, ZeroDivisionError) as error:
         with pytest.raises(type(error)):
             pow(native_base, native_exponent, native_modulus)
     else:
