@@ -753,7 +753,7 @@ class BigInt {
                                       std::vector<Digit>& quotient) {
     DoubleDigit remainder = 0;
     std::size_t digits_count = dividend.size();
-    Digit* quotient_data = new Digit[digits_count]();
+    Digit* const quotient_data = new Digit[digits_count]();
     for (std::size_t offset = 1; offset <= digits_count; ++offset) {
       remainder = (remainder << BINARY_SHIFT) | dividend[digits_count - offset];
       Digit quotient_digit = quotient_data[digits_count - offset] =
@@ -762,6 +762,7 @@ class BigInt {
     }
     quotient =
         std::vector<Digit>(quotient_data, quotient_data + dividend.size());
+    delete[] quotient_data;
     normalize_digits(quotient);
     return static_cast<Digit>(remainder);
   }
