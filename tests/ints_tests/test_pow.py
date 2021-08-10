@@ -23,11 +23,13 @@ def test_basic(bases_pair: AlternativeNativeIntsPair,
     try:
         alternative_result = pow(alternative_base, alternative_exponent,
                                  alternative_modulus)
-    except ValueError:
-        with pytest.raises(ValueError):
+    except (ZeroDivisionError, ValueError) as error:
+        with pytest.raises(type(error)):
             pow(native_base, native_exponent, native_modulus)
     else:
         native_result = pow(native_base, native_exponent, native_modulus)
 
-        assert are_alternative_native_ints_equal(alternative_result,
-                                                 native_result)
+        assert (alternative_result == native_result
+                if isinstance(alternative_result, float)
+                else are_alternative_native_ints_equal(alternative_result,
+                                                       native_result))
