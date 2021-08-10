@@ -97,8 +97,7 @@ static std::vector<SourceDigit> binary_digits_to_greater_binary_base(
 
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT,
-          std::size_t TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
-                                          1>
+          std::size_t TARGET_DIGIT_MASK = (TargetDigit(1) << TARGET_SHIFT) - 1>
 static std::vector<SourceDigit> binary_digits_to_lesser_binary_base(
     const std::vector<SourceDigit>& source) {
   static_assert(SOURCE_SHIFT > TARGET_SHIFT,
@@ -779,19 +778,22 @@ class BigInt {
         bit = static_cast<Digit>(1) << (BINARY_SHIFT - 1);
       }
     } else {
-      BigInt cache[32];
+      BigInt cache[FIVEARY_BASE];
       cache[0] = result;
-      for (std::size_t index = 1; index < 32; ++index)
+      for (std::size_t index = 1; index < FIVEARY_BASE; ++index)
         cache[index] = make_step(cache[index - 1], base);
       for (auto exponent_digits_position = exponent_digits.rbegin();
            exponent_digits_position != exponent_digits.rend();
            ++exponent_digits_position) {
         const Digit exponent_digit = *exponent_digits_position;
-        for (std::make_signed_t<std::size_t> shift = BINARY_SHIFT - 5;
-             shift >= 0; shift -= 5) {
-          for (std::size_t iteration = 0; iteration < 5; ++iteration)
+        for (std::make_signed_t<std::size_t> shift =
+                 BINARY_SHIFT - FIVEARY_SHIFT;
+             shift >= 0; shift -= FIVEARY_SHIFT) {
+          for (std::size_t iteration = 0; iteration < FIVEARY_SHIFT;
+               ++iteration)
             result = make_step(result, result);
-          const std::size_t index = (exponent_digit >> shift) & 0x1f;
+          const std::size_t index =
+              (exponent_digit >> shift) & FIVEARY_DIGIT_MASK;
           if (index) result = make_step(result, cache[index]);
         }
       }
@@ -866,6 +868,11 @@ class BigInt {
       MANTISSA_BITS / BINARY_SHIFT;
   static constexpr std::make_signed_t<std::size_t> MANTISSA_EXTRA_BITS =
       MANTISSA_BITS % BINARY_SHIFT;
+  static constexpr std::size_t FIVEARY_SHIFT = 5;
+  static_assert(FIVEARY_SHIFT < BINARY_SHIFT,
+                "Binary shift should be greater than 5-ary shift.");
+  static constexpr std::size_t FIVEARY_BASE = 1 << FIVEARY_SHIFT;
+  static constexpr std::size_t FIVEARY_DIGIT_MASK = FIVEARY_BASE - 1;
 
   static void divmod_two_or_more_digits(const std::vector<Digit>& dividend,
                                         const std::vector<Digit>& divisor,
