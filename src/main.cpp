@@ -249,9 +249,9 @@ class Int : public BaseInt {
     try {
       return py::cast(Int(BaseInt::pow(other, maybe_modulus)));
     } catch (const std::range_error&) {
-      PyObject* result = PyFloat_Type.tp_as_number->nb_power((PyObject*)as_PyLong(), (PyObject*)other.as_PyLong(), Py_None);
-      if (!result)
-        throw py::error_already_set();
+      PyObject* result = PyFloat_Type.tp_as_number->nb_power(
+          (PyObject*)as_PyLong(), (PyObject*)other.as_PyLong(), Py_None);
+      if (!result) throw py::error_already_set();
       return py::reinterpret_steal<py::object>(result);
     }
   }

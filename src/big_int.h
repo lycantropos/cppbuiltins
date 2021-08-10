@@ -743,7 +743,8 @@ class BigInt {
         return (first * second) % modulus;
       };
     } else if (exponent.sign() < 0)
-      throw std::range_error("Exponent should be positive or modulus should be specified.");
+      throw std::range_error(
+          "Exponent should be positive or modulus should be specified.");
     else
       make_step = [](const BigInt& first, const BigInt& second) {
         return first * second;
