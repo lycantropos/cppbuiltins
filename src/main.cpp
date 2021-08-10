@@ -245,6 +245,10 @@ class Int : public BaseInt {
 
   bool is_one() const { return BaseInt::is_one(); }
 
+  Int pow(const Int& other, const Int* maybe_modulus) const {
+    return Int(BaseInt::pow(other, maybe_modulus));
+  }
+
   int sign() const { return BaseInt::sign(); }
 };
 
@@ -1158,6 +1162,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__hash__", &Int::hash)
       .def("__int__", &Int::to_state)
+      .def("__pow__", &Int::pow, py::arg("exponent"),
+           py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>);
 

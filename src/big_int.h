@@ -724,6 +724,82 @@ class BigInt {
 
   BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
 
+  BigInt pow(const BigInt& other, const BigInt* maybe_modulus) const {
+    BigInt base = *this, exponent = other, modulus;
+    bool is_negative = false;
+    std::function<BigInt(const BigInt&, const BigInt&)> make_step;
+    if (maybe_modulus != nullptr) {
+      if (maybe_modulus->sign() == 0)
+        throw std::invalid_argument("Modulus cannot be zero.");
+      is_negative = maybe_modulus->sign() < 0;
+      modulus = maybe_modulus->abs();
+      if (modulus.is_one()) return BigInt();
+      if (exponent.sign() < 0) {
+        exponent = -exponent;
+        base = base.invmod(modulus);
+      }
+      if (base.sign() < 0 || base.digits().size() > modulus.digits().size())
+        base = base % modulus;
+      make_step = [&modulus](const BigInt& first, const BigInt& second) {
+        return (first * second) % modulus;
+      };
+    } else if (exponent.sign() < 0)
+      throw std::invalid_argument(
+          "Exponent should be positive or modulus should be specified.");
+    else
+      make_step = [](const BigInt& first, const BigInt& second) {
+        return first * second;
+      };
+    const std::vector<Digit>& exponent_digits = exponent.digits();
+    Digit exponent_digit = exponent_digits.back();
+    std::size_t exponent_digits_count = exponent_digits.size();
+    BigInt result = BigInt(1u);
+    if (exponent_digits_count == 1 && exponent_digit <= 3) {
+      if (exponent_digit >= 2) {
+        result = make_step(base, base);
+        if (exponent_digit == 3) result = make_step(result, base);
+      } else if (exponent_digit == 1)
+        result = make_step(base, result);
+    } else if (exponent_digits_count <= FIVEARY_CUTOFF) {
+      result = base;
+      Digit bit = 2;
+      for (;; bit <<= 1)
+        if (bit > exponent_digit) {
+          bit >>= 1;
+          break;
+        }
+      bit >>= 1;
+      for (auto exponent_digits_position = exponent_digits.rbegin();;) {
+        for (; bit != 0; bit >>= 1) {
+          result = make_step(result, result);
+          if (exponent_digit & bit) result = make_step(result, base);
+        }
+        if (++exponent_digits_position == exponent_digits.rend()) break;
+        exponent_digit = *exponent_digits_position;
+        bit = static_cast<Digit>(1) << (BINARY_SHIFT - 1);
+      }
+    } else {
+      BigInt cache[32];
+      cache[0] = result;
+      for (std::size_t index = 1; index < 32; ++index)
+        cache[index] = make_step(cache[index - 1], base);
+      for (auto exponent_digits_position = exponent_digits.rbegin();
+           exponent_digits_position != exponent_digits.rend();
+           ++exponent_digits_position) {
+        const Digit exponent_digit = *exponent_digits_position;
+        for (std::make_signed_t<std::size_t> shift = BINARY_SHIFT - 5;
+             shift >= 0; shift -= 5) {
+          for (std::size_t iteration = 0; iteration < 5; ++iteration)
+            result = make_step(result, result);
+          const std::size_t index = (exponent_digit >> shift) & 0x1f;
+          if (index) result = make_step(result, cache[index]);
+        }
+      }
+    }
+    if (is_negative && result) result = result - modulus;
+    return result;
+  }
+
   template <std::size_t BASE = 10,
             std::size_t TARGET_SHIFT = floor_log<BASE>(BINARY_BASE),
             std::size_t TARGET_BASE = power(BASE, TARGET_SHIFT)>
@@ -779,6 +855,7 @@ class BigInt {
   int _sign;
   std::vector<Digit> _digits;
 
+  static constexpr std::size_t FIVEARY_CUTOFF = 8;
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
   static constexpr std::size_t MANTISSA_BITS =
