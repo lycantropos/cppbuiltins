@@ -1,3 +1,5 @@
+import sys
+
 from hypothesis import strategies
 
 from tests.strategies import (decimal_int_strings_with_leading_zeros,
@@ -13,6 +15,9 @@ exponents_with_moduli_pairs = (
         strategies.tuples(strategies.integers(-100, 100)
                           .map(to_alternative_native_ints_pair),
                           strategies.tuples(strategies.none(),
-                                            strategies.none())
-                          | non_zero_ints_pairs)
-        | strategies.tuples(ints_pairs, non_zero_ints_pairs))
+                                            strategies.none()))
+        | strategies.tuples((strategies.integers(0)
+                             if sys.version_info < (3, 8)
+                             else strategies.integers())
+                            .map(to_alternative_native_ints_pair),
+                            non_zero_ints_pairs))
