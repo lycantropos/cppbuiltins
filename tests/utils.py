@@ -2,16 +2,12 @@ import builtins
 import fractions
 import math
 import pickle
-from functools import partial
 from itertools import zip_longest
 from operator import eq
 from typing import (Any,
-                    Callable,
                     Hashable,
-                    Iterable,
                     Iterator,
                     List,
-                    Optional,
                     Tuple,
                     TypeVar)
 
@@ -77,15 +73,6 @@ def equivalence(left: bool, right: bool) -> bool:
     return left is right
 
 
-def pack(function: Callable[..., Range]
-         ) -> Callable[[Iterable[Domain]], Range]:
-    return partial(apply, function)
-
-
-def apply(function: Callable[..., Range], args: Tuple[Domain, ...]) -> Range:
-    return function(*args)
-
-
 def pickle_round_trip(value: Domain) -> Domain:
     return pickle.loads(pickle.dumps(value))
 
@@ -102,13 +89,8 @@ def to_alternative_native_fractions_pair(numerators_pair
             NativeFraction(native_numerator, native_denominator))
 
 
-def to_alternative_native_ints_pair(characters: str,
-                                    base: Optional[int] = None
-                                    ) -> AlternativeNativeIntsPair:
-    return ((AlternativeInt(characters), NativeInt(characters))
-            if base is None
-            else (AlternativeInt(characters, base),
-                  NativeInt(characters, base)))
+def to_alternative_native_ints_pair(native: int) -> AlternativeNativeIntsPair:
+    return AlternativeInt(native), native
 
 
 def to_alternative_native_lists_pair(values: List[Any]
