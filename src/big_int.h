@@ -737,11 +737,14 @@ class BigInt {
     quotient = quotient_size ? std::vector<Digit>(quotient_data,
                                                   quotient_data + quotient_size)
                              : std::vector<Digit>({0});
+    delete[] quotient_data;
     normalize_digits(quotient);
     shift_digits_right(dividend_normalized, divisor_digits_count, shift,
                        divisor_normalized);
+    delete[] dividend_normalized;
     remainder = std::vector<Digit>(divisor_normalized,
                                    divisor_normalized + divisor_digits_count);
+    delete[] divisor_normalized;
     normalize_digits(remainder);
   }
 
