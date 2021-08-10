@@ -124,11 +124,9 @@ static std::vector<BaseInt::Digit> int_to_digits(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
   std::size_t size = Py_ABS(signed_size) + (signed_size == 0);
-  std::vector<BaseInt::Digit> result =
-      binary_digits_to_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
-                                   BaseInt::BINARY_SHIFT>(
-          std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size));
-  return result;
+  return binary_digits_to_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
+                                      BaseInt::BINARY_SHIFT>(
+      std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size));
 }
 
 static const char* pystr_to_ascii_c_str(const py::str& string) {
