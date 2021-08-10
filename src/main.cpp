@@ -245,8 +245,15 @@ class Int : public BaseInt {
 
   bool is_one() const { return BaseInt::is_one(); }
 
-  Int pow(const Int& other, const Int* maybe_modulus) const {
-    return Int(BaseInt::pow(other, maybe_modulus));
+  py::object pow(const Int& other, const Int* maybe_modulus) const {
+    try {
+      return py::cast(Int(BaseInt::pow(other, maybe_modulus)));
+    } catch (const std::range_error&) {
+      PyObject* result = PyFloat_Type.tp_as_number->nb_power((PyObject*)as_PyLong(), (PyObject*)other.as_PyLong(), Py_None);
+      if (!result)
+        throw py::error_already_set();
+      return py::reinterpret_steal<py::object>(result);
+    }
   }
 
   int sign() const { return BaseInt::sign(); }
