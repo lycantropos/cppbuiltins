@@ -476,8 +476,8 @@ class BigInt {
       largest_digits = next_largest_digits;
       smallest_digits = next_smallest_digits;
     }
-    return BigInt(
-        to_gcd(reduce_digits(largest_digits), reduce_digits(smallest_digits)));
+    return BigInt(to_gcd(reduce_digits<DoubleDigit>(largest_digits),
+                         reduce_digits<DoubleDigit>(smallest_digits)));
   }
 
   void divmod(const BigInt& divisor, BigInt& quotient,
@@ -613,6 +613,125 @@ class BigInt {
                        : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
+  double operator/(const BigInt& other) const {
+    if (other._sign == 0)
+      throw std::range_error("Division by zero is undefined.");
+    bool negate = (_sign < 0) ^ (other._sign < 0);
+    if (sign() == 0) return negate ? -0.0 : 0.0;
+    const std::vector<Digit>& dividend_digits = digits();
+    const std::vector<Digit>& divisor_digits = other.digits();
+    std::size_t dividend_digits_count = dividend_digits.size();
+    std::size_t divisor_digits_count = divisor_digits.size();
+    bool dividend_is_small =
+        dividend_digits_count <= MANTISSA_BINARY_DIGITS_COUNT ||
+        (dividend_digits_count == MANTISSA_BINARY_DIGITS_COUNT + 1 &&
+         (dividend_digits[MANTISSA_BINARY_DIGITS_COUNT] >>
+          MANTISSA_EXTRA_BITS) == 0);
+    bool divisor_is_small =
+        divisor_digits_count <= MANTISSA_BINARY_DIGITS_COUNT ||
+        (divisor_digits_count == MANTISSA_BINARY_DIGITS_COUNT + 1 &&
+         (divisor_digits[MANTISSA_BINARY_DIGITS_COUNT] >>
+          MANTISSA_EXTRA_BITS) == 0);
+    if (dividend_is_small && divisor_is_small) {
+      double reduced_dividend = reduce_digits<double>(dividend_digits);
+      double reduced_divisor = reduce_digits<double>(divisor_digits);
+      double result = reduced_dividend / reduced_divisor;
+      return negate ? -result : result;
+    }
+    std::make_signed_t<std::size_t> digits_count_difference =
+        dividend_digits_count - divisor_digits_count;
+    if (digits_count_difference >
+        static_cast<std::make_signed_t<std::size_t>>(
+            std::numeric_limits<std::size_t>::max() / PyLong_SHIFT) -
+            1)
+      throw std::overflow_error(
+          "Division result too large to be expressed as floating point.");
+    else if (digits_count_difference <
+             1 - static_cast<std::make_signed_t<std::size_t>>(
+                     std::numeric_limits<std::size_t>::max() / PyLong_SHIFT))
+      return negate ? -0.0 : 0.0;
+    std::make_signed_t<std::size_t> bit_lengths_difference =
+        digits_count_difference * BINARY_SHIFT +
+        (to_bit_length(dividend_digits.back()) -
+         to_bit_length(divisor_digits.back()));
+    if (bit_lengths_difference > std::numeric_limits<double>::max_exponent)
+      throw std::overflow_error(
+          "Division result too large to be expressed as floating point.");
+    else if (bit_lengths_difference <
+             static_cast<std::make_signed_t<std::size_t>>(
+                 std::numeric_limits<double>::min_exponent - MANTISSA_BITS - 1))
+      return negate ? -0.0 : 0.0;
+    std::make_signed_t<std::size_t> shift =
+        std::max(bit_lengths_difference,
+                 static_cast<std::make_signed_t<std::size_t>>(
+                     std::numeric_limits<double>::min_exponent)) -
+        MANTISSA_BITS - 2;
+    bool inexact = false;
+    Digit* quotient_data;
+    std::size_t quotient_digits_count;
+    if (shift <= 0) {
+      std::size_t shift_digits = (-shift) / BINARY_SHIFT;
+      if (dividend_digits_count >=
+          std::numeric_limits<Py_ssize_t>::max() - 1 - shift_digits)
+        throw std::overflow_error(
+            "Division result too large to be expressed as floating point.");
+      quotient_digits_count = dividend_digits_count + shift_digits + 1;
+      quotient_data = new Digit[quotient_digits_count]();
+      Digit remainder = shift_digits_left(
+          dividend_digits.data(), dividend_digits_count,
+          (-shift) % BINARY_SHIFT, quotient_data + shift_digits);
+      quotient_data[dividend_digits_count + shift_digits] = remainder;
+    } else {
+      std::size_t shift_digits = shift / BINARY_SHIFT;
+      quotient_digits_count = dividend_digits_count - shift_digits;
+      quotient_data = new Digit[quotient_digits_count]();
+      Digit remainder = shift_digits_right(
+          dividend_digits.data() + shift_digits, quotient_digits_count,
+          shift % BINARY_SHIFT, quotient_data);
+      if (remainder) inexact = true;
+      while (!inexact && shift_digits > 0)
+        if (dividend_digits[--shift_digits]) inexact = true;
+    }
+    std::vector<Digit> quotient_digits(quotient_data,
+                                       quotient_data + quotient_digits_count);
+    normalize_digits(quotient_digits);
+    if (divisor_digits_count == 1) {
+      std::vector<Digit> next_quotient_digits;
+      Digit remainder = divmod_digits_by_digit(
+          quotient_digits, divisor_digits[0], next_quotient_digits);
+      std::swap(quotient_digits, next_quotient_digits);
+      if (remainder) inexact = true;
+    } else {
+      std::vector<Digit> next_quotient_digits, remainder;
+      divmod_two_or_more_digits(quotient_digits, divisor_digits,
+                                next_quotient_digits, remainder);
+      std::swap(quotient_digits, next_quotient_digits);
+      if (remainder.size() > 1 || remainder[0] != 0) inexact = true;
+    }
+    std::make_signed_t<std::size_t> quotient_bit_length =
+        (quotient_digits.size() - 1) * BINARY_SHIFT +
+        to_bit_length(quotient_digits.back());
+    std::make_signed_t<std::size_t> extra_bits =
+        std::max(quotient_bit_length,
+                 std::numeric_limits<double>::min_exponent - shift) -
+        MANTISSA_BITS;
+    const Digit mask = static_cast<Digit>(1) << (extra_bits - 1);
+    Digit quotient_low_digit = quotient_digits[0] | inexact;
+    if ((quotient_low_digit & mask) && (quotient_low_digit & (3U * mask - 1U)))
+      quotient_low_digit += mask;
+    quotient_digits[0] = quotient_low_digit & ~(2U * mask - 1U);
+    double reduced_quotient = reduce_digits<double>(quotient_digits);
+    if (shift + quotient_bit_length >=
+            std::numeric_limits<double>::max_exponent &&
+        (shift + quotient_bit_length >
+             std::numeric_limits<double>::max_exponent ||
+         reduced_quotient == ldexp(1.0, static_cast<int>(quotient_bit_length))))
+      throw std::overflow_error(
+          "Division result too large to be expressed as floating point.");
+    double result = ldexp(reduced_quotient, static_cast<int>(shift));
+    return negate ? -result : result;
+  }
+
   BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
 
   template <std::size_t BASE = 10,
@@ -665,6 +784,17 @@ class BigInt {
  private:
   int _sign;
   std::vector<Digit> _digits;
+
+  static constexpr Digit KARATSUBA_CUTOFF = 70;
+  static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
+  static constexpr std::size_t MANTISSA_BITS =
+      std::numeric_limits<double>::digits;
+  static constexpr double MANTISSA_BITS_POWER_OF_TWO =
+      power(2.0, MANTISSA_BITS);
+  static constexpr std::size_t MANTISSA_BINARY_DIGITS_COUNT =
+      MANTISSA_BITS / BINARY_SHIFT;
+  static constexpr std::make_signed_t<std::size_t> MANTISSA_EXTRA_BITS =
+      MANTISSA_BITS % BINARY_SHIFT;
 
   static void divmod_two_or_more_digits(const std::vector<Digit>& dividend,
                                         const std::vector<Digit>& divisor,
@@ -767,10 +897,14 @@ class BigInt {
     return static_cast<Digit>(remainder);
   }
 
-  static DoubleDigit reduce_digits(const std::vector<Digit>& digits) {
-    DoubleDigit result = 0;
+  template <class Result>
+  static Result reduce_digits(const std::vector<Digit>& digits) {
+    Result result = 0;
     for (auto position = digits.rbegin(); position != digits.rend(); ++position)
-      result = (result << BINARY_SHIFT) | *position;
+      if constexpr (std::is_integral<Result>())
+        result = (result << BINARY_SHIFT) | *position;
+      else
+        result = (result * BINARY_BASE) + *position;
     return result;
   }
 
@@ -893,9 +1027,6 @@ class BigInt {
     normalize_digits(high);
     normalize_digits(low);
   }
-
-  static constexpr Digit KARATSUBA_CUTOFF = 70;
-  static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
 
   static std::vector<Digit> multiply_digits(const std::vector<Digit>& first,
                                             const std::vector<Digit>& second) {
@@ -1082,11 +1213,6 @@ class BigInt {
     }
     return accumulator;
   }
-
-  static constexpr std::size_t MANTISSA_BITS =
-      std::numeric_limits<double>::digits;
-  static constexpr double MANTISSA_BITS_POWER_OF_TWO =
-      power(2.0, MANTISSA_BITS);
 
   double frexp(int& exponent) const {
     Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {

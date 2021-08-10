@@ -182,6 +182,15 @@ class Int : public BaseInt {
     return Int(BaseInt::operator-(other));
   }
 
+  double operator/(const BigInt& divisor) const {
+    try {
+      return BaseInt::operator/(divisor);
+    } catch (const std::range_error& exception) {
+      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+      throw py::error_already_set();
+    }
+  }
+
   Int abs() const { return Int(BaseInt::abs()); }
 
   PyLongObject* as_PyLong() const {
@@ -1145,6 +1154,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(-py::self)
       .def(+py::self)
       .def(py::self - py::self)
+      .def(py::self / py::self)
       .def(py::pickle(&Int::to_state, &Int::from_state))
       .def("__abs__", &Int::abs)
       .def("__bool__", &Int::operator bool)
