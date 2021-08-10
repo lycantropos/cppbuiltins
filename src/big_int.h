@@ -238,6 +238,7 @@ class BigInt {
       _sign = 0;
       _digits = {0};
     } else {
+      _sign = 1;
       Digit remainder = value >> BINARY_SHIFT;
       if (remainder) {
         _digits.push_back(value & BINARY_DIGIT_MASK);
