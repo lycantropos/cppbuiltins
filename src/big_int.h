@@ -641,7 +641,9 @@ class BigInt {
       *--stop = '0';
     else if (_sign < 0)
       *--stop = '-';
-    return std::string(characters, characters_count);
+    std::string result(characters, characters_count);
+    delete[] characters;
+    return result;
   }
 
  protected:
