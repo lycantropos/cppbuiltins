@@ -157,9 +157,7 @@ class Int : public BaseInt {
   }
 
   Int operator%(const Int& divisor) const {
-    Int quotient, result;
-    divmod(divisor, quotient, result);
-    return result;
+    return Int(BaseInt::operator%(divisor));
   }
 
   const Int& operator+() const { return *this; }
@@ -214,9 +212,7 @@ class Int : public BaseInt {
   }
 
   Int floor_divide(const Int& divisor) const {
-    Int result, remainder;
-    divmod(divisor, result, remainder);
-    return result;
+    return Int(BaseInt::floor_divide(divisor));
   }
 
   Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
@@ -245,32 +241,9 @@ class Int : public BaseInt {
     return static_cast<Py_hash_t>(result);
   }
 
-  Int invmod(const Int& divisor) const {
-    Int candidate, result{1u}, step_dividend = *this, step_divisor = divisor;
-    while (step_divisor) {
-      Int quotient, remainder;
-      step_dividend.divmod(step_divisor, quotient, remainder);
-      step_dividend = step_divisor;
-      step_divisor = remainder;
-      const Int next_candidate = result - quotient * candidate;
-      result = candidate;
-      candidate = next_candidate;
-    }
-    if (step_dividend.is_one()) {
-      if (result.sign() < 0) {
-        Int quotient, remainder;
-        result.divmod(divisor, quotient, remainder);
-        result = remainder;
-      }
-      return result;
-    }
-    throw std::invalid_argument("Not invertible.");
-  }
+  Int invmod(const Int& divisor) const { return Int(BaseInt::invmod(divisor)); }
 
-  bool is_one() const {
-    const std::vector<BaseInt::Digit>& digits = this->digits();
-    return sign() > 0 && digits.size() == 1 && digits[0] == 1;
-  }
+  bool is_one() const { return BaseInt::is_one(); }
 
   int sign() const { return BaseInt::sign(); }
 };

@@ -483,48 +483,31 @@ class BigInt {
 
   void divmod(const BigInt& divisor, BigInt& quotient,
               BigInt& remainder) const {
-    std::size_t digits_count = _digits.size(),
-                divisor_digits_count = divisor._digits.size();
-    if (divisor._sign == 0)
-      throw std::range_error("Division by zero is undefined.");
-    else if (_sign == 0) {
-      quotient = BigInt();
-      remainder = *this;
-    } else if (digits_count < divisor_digits_count ||
-               (digits_count == divisor_digits_count &&
-                _digits.back() < divisor._digits.back())) {
-      if (_sign != divisor._sign) {
-        quotient = BigInt(-1, std::vector<Digit>({1}));
-        remainder = *this + divisor;
-      } else {
-        quotient = BigInt();
-        remainder = *this;
-      }
-    } else {
-      if (divisor_digits_count == 1) {
-        std::vector<Digit> quotient_digits;
-        Digit remainder_digit = divmod_digits_by_digit(
-            _digits, divisor._digits[0], quotient_digits);
-        quotient = BigInt(_sign * divisor._sign, quotient_digits);
-        remainder = BigInt(_sign * static_cast<SignedDigit>(remainder_digit));
-      } else {
-        std::vector<Digit> quotient_digits, remainder_digits;
-        divmod_two_or_more_digits(_digits, divisor._digits, quotient_digits,
-                                  remainder_digits);
-        quotient =
-            BigInt(_sign * divisor._sign *
-                       (quotient_digits.size() > 1 || quotient_digits[0] != 0),
-                   quotient_digits);
-        remainder = BigInt(
-            _sign * (remainder_digits.size() > 1 || remainder_digits[0] != 0),
-            remainder_digits);
-      }
-      if ((divisor._sign < 0 && remainder._sign > 0) ||
-          (divisor._sign > 0 && remainder._sign < 0)) {
-        quotient = quotient - BigInt(1, std::vector<Digit>({1}));
-        remainder = remainder + divisor;
-      }
+    divmod<true, true>(divisor, &quotient, &remainder);
+  }
+
+  BigInt floor_divide(const BigInt& divisor) const {
+    BigInt result;
+    divmod<true, false>(divisor, &result, nullptr);
+    return result;
+  }
+
+  BigInt invmod(const BigInt& divisor) const {
+    BigInt candidate, result{1u}, step_dividend = *this, step_divisor = divisor;
+    while (step_divisor) {
+      BigInt quotient, remainder;
+      step_dividend.divmod(step_divisor, quotient, remainder);
+      step_dividend = step_divisor;
+      step_divisor = remainder;
+      const BigInt next_candidate = result - quotient * candidate;
+      result = candidate;
+      candidate = next_candidate;
     }
+    if (step_dividend.is_one()) {
+      if (result.sign() < 0) result = result % divisor;
+      return result;
+    }
+    throw std::invalid_argument("Not invertible.");
   }
 
   BigInt operator+(const BigInt& other) const {
@@ -612,6 +595,12 @@ class BigInt {
            (_sign == other._sign &&
             (_sign > 0 ? digits_lesser_than_or_equal(_digits, other._digits)
                        : digits_lesser_than_or_equal(other._digits, _digits)));
+  }
+
+  BigInt operator%(const BigInt& divisor) const {
+    BigInt result;
+    divmod<false, true>(divisor, nullptr, &result);
+    return result;
   }
 
   double operator/(const BigInt& divisor) const {
@@ -771,6 +760,10 @@ class BigInt {
       : _sign(sign), _digits(digits) {}
 
   const std::vector<Digit>& digits() const { return _digits; }
+
+  bool is_one() const {
+    return _sign > 0 && _digits.size() == 1 && _digits[0] == 1;
+  }
 
   int sign() const { return _sign; }
 
@@ -1158,6 +1151,64 @@ class BigInt {
     std::size_t digits_count = digits.size();
     while (digits_count > 1 && digits[digits_count - 1] == 0) --digits_count;
     if (digits_count != digits.size()) digits.resize(digits_count);
+  }
+
+  template <bool WITH_QUOTIENT, bool WITH_REMAINDER>
+  void divmod(const BigInt& divisor, BigInt* quotient,
+              BigInt* remainder) const {
+    static_assert(WITH_QUOTIENT || WITH_REMAINDER,
+                  "Quotient or remainder or both should be requested.");
+    std::size_t digits_count = _digits.size(),
+                divisor_digits_count = divisor._digits.size();
+    if (divisor._sign == 0)
+      throw std::range_error("Division by zero is undefined.");
+    else if (_sign == 0) {
+      if constexpr (WITH_QUOTIENT) *quotient = BigInt();
+      if constexpr (WITH_REMAINDER) *remainder = *this;
+    } else if (digits_count < divisor_digits_count ||
+               (digits_count == divisor_digits_count &&
+                _digits.back() < divisor._digits.back())) {
+      if (_sign != divisor._sign) {
+        if constexpr (WITH_QUOTIENT)
+          *quotient = BigInt(-1, std::vector<Digit>({1}));
+        if constexpr (WITH_REMAINDER) *remainder = *this + divisor;
+      } else {
+        if constexpr (WITH_QUOTIENT) *quotient = BigInt();
+        if constexpr (WITH_REMAINDER) *remainder = *this;
+      }
+    } else {
+      int remainder_sign = _sign;
+      if (divisor_digits_count == 1) {
+        std::vector<Digit> quotient_digits;
+        Digit remainder_digit = divmod_digits_by_digit(
+            _digits, divisor._digits[0], quotient_digits);
+        remainder_sign *= remainder_digit != 0;
+        if constexpr (WITH_QUOTIENT)
+          *quotient = BigInt(_sign * divisor._sign, quotient_digits);
+        if constexpr (WITH_REMAINDER)
+          *remainder =
+              BigInt(_sign * static_cast<SignedDigit>(remainder_digit));
+      } else {
+        std::vector<Digit> quotient_digits, remainder_digits;
+        divmod_two_or_more_digits(_digits, divisor._digits, quotient_digits,
+                                  remainder_digits);
+        remainder_sign *=
+            remainder_digits.size() > 1 || remainder_digits[0] != 0;
+        if constexpr (WITH_QUOTIENT)
+          *quotient = BigInt(
+              _sign * divisor._sign *
+                  (quotient_digits.size() > 1 || quotient_digits[0] != 0),
+              quotient_digits);
+        if constexpr (WITH_REMAINDER)
+          *remainder = BigInt(remainder_sign, remainder_digits);
+      }
+      if ((divisor._sign < 0 && remainder_sign > 0) ||
+          (divisor._sign > 0 && remainder_sign < 0)) {
+        if constexpr (WITH_QUOTIENT)
+          *quotient = *quotient - BigInt(1, std::vector<Digit>({1}));
+        if constexpr (WITH_REMAINDER) *remainder = *remainder + divisor;
+      }
+    }
   }
 
   void parse_binary_base_digits(const char* start, const char* stop,
