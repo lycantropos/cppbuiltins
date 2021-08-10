@@ -305,6 +305,8 @@ class Fraction {
 
   operator bool() const { return bool(_numerator); }
 
+  operator double() const { return _numerator / _denominator; }
+
   bool operator==(const Fraction& other) const {
     return _numerator == other._numerator && _denominator == other._denominator;
   }
@@ -1189,6 +1191,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self - py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
+      .def("__float__", &Fraction::operator double)
       .def("__hash__", &Fraction::hash)
       .def("__repr__", &to_repr<Fraction>)
       .def("__str__",
