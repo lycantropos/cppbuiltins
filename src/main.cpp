@@ -333,6 +333,12 @@ class Fraction {
             other._denominator.floor_divide(numerator_other_denominator_gcd));
   }
 
+  Fraction operator*(const Int& other) const {
+    const Int denominator_other_gcd = _denominator.gcd(other);
+    return Fraction(_numerator * other.floor_divide(denominator_other_gcd),
+                    _denominator.floor_divide(denominator_other_gcd));
+  }
+
   Fraction operator-() const {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
@@ -1226,6 +1232,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self < py::self)
       .def(py::self % py::self)
       .def(py::self * py::self)
+      .def(py::self * Int{})
       .def(-py::self)
       .def(+py::self)
       .def(py::self - py::self)
