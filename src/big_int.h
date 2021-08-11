@@ -99,7 +99,7 @@ static std::vector<SourceDigit> binary_digits_to_greater_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT,
           std::size_t TARGET_DIGIT_MASK = (TargetDigit(1) << TARGET_SHIFT) - 1>
-static std::vector<SourceDigit> binary_digits_to_lesser_binary_base(
+static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
     const std::vector<SourceDigit>& source) {
   static_assert(SOURCE_SHIFT > TARGET_SHIFT,
                 "Target base should be lesser than a source one.");
@@ -109,10 +109,10 @@ static std::vector<SourceDigit> binary_digits_to_lesser_binary_base(
       (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
   result.reserve(result_digits_count);
-  double_precision_t<TargetDigit> accumulator = 0;
+  double_precision_t<SourceDigit> accumulator = 0;
   std::size_t accumulator_bits_count = 0;
   for (std::size_t index = 0; index < source.size(); ++index) {
-    accumulator |= static_cast<double_precision_t<TargetDigit>>(source[index])
+    accumulator |= static_cast<double_precision_t<SourceDigit>>(source[index])
                    << accumulator_bits_count;
     accumulator_bits_count += SOURCE_SHIFT;
     do {
