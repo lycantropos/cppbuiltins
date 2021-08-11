@@ -346,6 +346,11 @@ class Fraction {
 
   const Int& denominator() const { return _denominator; }
 
+  Int floor_divide(const Fraction& other) const {
+    return (_numerator * other._denominator)
+        .floor_divide(other._numerator * _denominator);
+  }
+
   Py_hash_t hash() const {
     static const Int HASH_MODULUS{_PyHASH_MODULUS};
     Py_hash_t result;
@@ -1205,6 +1210,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
       .def("__float__", &Fraction::operator double)
+      .def("__floordiv__", &Fraction::floor_divide, py::is_operator{})
       .def("__hash__", &Fraction::hash)
       .def("__repr__", &to_repr<Fraction>)
       .def("__str__",
