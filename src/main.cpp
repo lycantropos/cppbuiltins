@@ -354,6 +354,12 @@ class Fraction {
                         _denominator.floor_divide(denominators_gcd));
   }
 
+  Fraction operator/(const Int& other) const {
+    const Int numerators_gcd = _numerator.gcd(other);
+    return Fraction(_numerator.floor_divide(numerators_gcd),
+                    other.floor_divide(numerators_gcd) * _denominator);
+  }
+
   const Int& denominator() const { return _denominator; }
 
   py::tuple divmod(const Fraction& divisor) const {
@@ -408,6 +414,13 @@ class Fraction {
     }
   };
 };
+
+static Fraction operator/(const Int& self, const Fraction& other) {
+  const Int numerators_gcd = self.gcd(other.denominator());
+  return Fraction(self.floor_divide(numerators_gcd) *
+                      other.denominator().floor_divide(numerators_gcd),
+                  other.numerator());
+}
 
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
   return stream << C_STR(MODULE_NAME) "." FRACTION_NAME "(" << value.numerator()
@@ -1217,6 +1230,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(+py::self)
       .def(py::self - py::self)
       .def(py::self / py::self)
+      .def(py::self / Int{})
+      .def(Int{} / py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
       .def("__divmod__", &Fraction::divmod, py::is_operator{})
