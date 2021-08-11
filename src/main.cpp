@@ -1301,9 +1301,12 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::is_operator{})
       .def("__hash__", &Fraction::hash)
       .def("__repr__", &to_repr<Fraction>)
-      .def("__rfloordiv__",
-           py::overload_cast<const Int&, const Fraction&>(&floor_divide),
-           py::is_operator{})
+      .def(
+          "__rfloordiv__",
+          [](const Fraction& divisor, const Int& dividend) {
+            return floor_divide(dividend, divisor);
+          },
+          py::is_operator{})
       .def("__str__",
            [](const Fraction& self) {
              return self.denominator().is_one()
