@@ -206,14 +206,15 @@ class Int : public BaseInt {
     return result;
   }
 
-  void divmod(const BigInt& divisor, BigInt& quotient,
-              BigInt& remainder) const {
+  py::tuple divmod(const Int& divisor) const {
+    Int quotient, remainder;
     try {
       BaseInt::divmod(divisor, quotient, remainder);
     } catch (const std::range_error& exception) {
       PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
       throw py::error_already_set();
     }
+    return py::make_tuple(quotient, remainder);
   }
 
   Int floor_divide(const Int& divisor) const {
@@ -1184,14 +1185,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__abs__", &Int::abs)
       .def("__bool__", &Int::operator bool)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
-      .def(
-          "__divmod__",
-          [](const Int& self, const Int& other) {
-            Int quotient, remainder;
-            self.divmod(other, quotient, remainder);
-            return py::make_tuple(quotient, remainder);
-          },
-          py::is_operator{})
+      .def("__divmod__", &Int::divmod, py::is_operator{})
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__float__", &Int::operator double)
