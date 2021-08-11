@@ -430,6 +430,11 @@ static Fraction operator+(const Int& self, const Fraction& other) {
                   other.denominator());
 }
 
+static Fraction operator-(const Int& self, const Fraction& other) {
+  return Fraction(self * other.denominator() - other.numerator(),
+                  other.denominator());
+}
+
 static Fraction operator*(const Int& self, const Fraction& other) {
   const Int self_other_denominator_gcd = self.gcd(other.denominator());
   return Fraction(
@@ -1254,6 +1259,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(+py::self)
       .def(Int{} + py::self)
       .def(Int{} * py::self)
+      .def(Int{} - py::self)
       .def(Int{} / py::self)
       .def(py::self - py::self)
       .def(py::self / py::self)
