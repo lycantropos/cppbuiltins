@@ -7,7 +7,7 @@ from tests.utils import (AlternativeFraction,
 from . import strategies
 
 
-@given(strategies.numerators_pairs, strategies.denominators_pairs)
+@given(strategies.ints_pairs, strategies.non_zero_ints_pairs)
 def test_basic(numerators_pair: AlternativeNativeIntsPair,
                denominators_pair: AlternativeNativeIntsPair) -> None:
     alternative_numerator, native_numerator = numerators_pair
@@ -21,7 +21,7 @@ def test_basic(numerators_pair: AlternativeNativeIntsPair,
     assert are_alternative_native_fractions_equal(alternative, native)
 
 
-@given(strategies.numerators_pairs)
+@given(strategies.ints_pairs)
 def test_numerator(numerators_pair: AlternativeNativeIntsPair) -> None:
     alternative_numerator, native_numerator = numerators_pair
 
