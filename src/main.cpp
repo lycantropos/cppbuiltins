@@ -314,6 +314,12 @@ class Fraction {
             _numerator * other._denominator < _denominator * other._numerator);
   }
 
+  Fraction operator%(const Fraction& other) const {
+    return Fraction(
+        (_numerator * other._denominator) % (other._numerator * _denominator),
+        _denominator * other._denominator);
+  }
+
   Fraction operator*(const Fraction& other) const {
     const Int numerator_other_denominator_gcd =
         _numerator.gcd(other._denominator);
@@ -1191,6 +1197,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self == py::self)
       .def(py::self <= py::self)
       .def(py::self < py::self)
+      .def(py::self % py::self)
       .def(py::self * py::self)
       .def(-py::self)
       .def(+py::self)
