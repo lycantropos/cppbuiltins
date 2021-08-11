@@ -356,6 +356,12 @@ class Fraction {
 
   const Int& denominator() const { return _denominator; }
 
+  py::tuple divmod(const Fraction& divisor) const {
+    Int quotient = floor_divide(divisor);
+    Fraction remainder = operator%(divisor);
+    return py::make_tuple(quotient, remainder);
+  }
+
   Int floor_divide(const Fraction& other) const {
     return (_numerator * other._denominator)
         .floor_divide(other._numerator * _denominator);
@@ -1213,6 +1219,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self / py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
+      .def("__divmod__", &Fraction::divmod, py::is_operator{})
       .def("__float__", &Fraction::operator double)
       .def("__floordiv__", &Fraction::floor_divide, py::is_operator{})
       .def("__hash__", &Fraction::hash)
