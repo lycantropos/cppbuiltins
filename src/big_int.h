@@ -761,7 +761,7 @@ class BigInt {
         if (exponent_digit == 3) result = make_step(result, base);
       } else if (exponent_digit == 1)
         result = make_step(base, result);
-    } else if (exponent_digits_count <= FIVEARY_CUTOFF) {
+    } else if (exponent_digits_count <= QUINARY_CUTOFF) {
       result = base;
       Digit bit = 2;
       for (;; bit <<= 1)
@@ -780,24 +780,20 @@ class BigInt {
         bit = static_cast<Digit>(1) << (BINARY_SHIFT - 1);
       }
     } else {
-      BigInt cache[FIVEARY_BASE];
+      BigInt cache[QUINARY_BASE];
       cache[0] = result;
-      for (std::size_t index = 1; index < FIVEARY_BASE; ++index)
+      for (std::size_t index = 1; index < QUINARY_BASE; ++index)
         cache[index] = make_step(cache[index - 1], base);
-      for (auto exponent_digits_position = exponent_digits.rbegin();
-           exponent_digits_position != exponent_digits.rend();
+      std::vector<std::uint8_t> exponent_quintary_digits =
+          binary_digits_to_binary_base<Digit, std::uint8_t, BINARY_SHIFT,
+                                       QUINARY_SHIFT>(exponent_digits);
+      for (auto exponent_digits_position = exponent_quintary_digits.rbegin();
+           exponent_digits_position != exponent_quintary_digits.rend();
            ++exponent_digits_position) {
-        const Digit exponent_digit = *exponent_digits_position;
-        for (std::make_signed_t<std::size_t> shift =
-                 BINARY_SHIFT - FIVEARY_SHIFT;
-             shift >= 0; shift -= FIVEARY_SHIFT) {
-          for (std::size_t iteration = 0; iteration < FIVEARY_SHIFT;
-               ++iteration)
-            result = make_step(result, result);
-          const std::size_t index =
-              (exponent_digit >> shift) & FIVEARY_DIGIT_MASK;
-          if (index) result = make_step(result, cache[index]);
-        }
+        const auto index = *exponent_digits_position;
+        for (std::size_t iteration = 0; iteration < QUINARY_SHIFT; ++iteration)
+          result = make_step(result, result);
+        if (index) result = make_step(result, cache[index]);
       }
     }
     if (is_negative && result) result = result - modulus;
@@ -859,7 +855,6 @@ class BigInt {
   int _sign;
   std::vector<Digit> _digits;
 
-  static constexpr std::size_t FIVEARY_CUTOFF = 8;
   static constexpr Digit KARATSUBA_CUTOFF = 70;
   static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
   static constexpr std::size_t MANTISSA_BITS =
@@ -870,11 +865,12 @@ class BigInt {
       MANTISSA_BITS / BINARY_SHIFT;
   static constexpr std::make_signed_t<std::size_t> MANTISSA_EXTRA_BITS =
       MANTISSA_BITS % BINARY_SHIFT;
-  static constexpr std::size_t FIVEARY_SHIFT = 5;
-  static_assert(FIVEARY_SHIFT < BINARY_SHIFT,
+  static constexpr std::size_t QUINARY_CUTOFF = 8;
+  static constexpr std::size_t QUINARY_SHIFT = 5;
+  static_assert(QUINARY_SHIFT < BINARY_SHIFT,
                 "Binary shift should be greater than 5-ary shift.");
-  static constexpr std::size_t FIVEARY_BASE = 1 << FIVEARY_SHIFT;
-  static constexpr std::size_t FIVEARY_DIGIT_MASK = FIVEARY_BASE - 1;
+  static constexpr std::size_t QUINARY_BASE = 1 << QUINARY_SHIFT;
+  static constexpr std::size_t QUINARY_DIGIT_MASK = QUINARY_BASE - 1;
 
   static void divmod_two_or_more_digits(const std::vector<Digit>& dividend,
                                         const std::vector<Digit>& divisor,
