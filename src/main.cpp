@@ -466,6 +466,10 @@ static Fraction operator/(const Int& self, const Fraction& other) {
       other.numerator().floor_divide(self_other_numerator_gcd));
 }
 
+Int floor_divide(const Int& self, const Fraction& other) {
+  return (self * other.denominator()).floor_divide(other.numerator());
+}
+
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
   return stream << C_STR(MODULE_NAME) "." FRACTION_NAME "(" << value.numerator()
                 << ", " << value.denominator() << ")";
@@ -1297,6 +1301,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::is_operator{})
       .def("__hash__", &Fraction::hash)
       .def("__repr__", &to_repr<Fraction>)
+      .def("__rfloordiv__",
+           py::overload_cast<const Int&, const Fraction&>(&floor_divide),
+           py::is_operator{})
       .def("__str__",
            [](const Fraction& self) {
              return self.denominator().is_one()
