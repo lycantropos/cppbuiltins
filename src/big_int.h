@@ -761,7 +761,7 @@ class BigInt {
         if (exponent_digit == 3) result = make_step(result, base);
       } else if (exponent_digit == 1)
         result = make_step(base, result);
-    } else if (exponent_digits_count <= QUINARY_CUTOFF) {
+    } else if (exponent_digits_count <= WINDOW_CUTOFF) {
       result = base;
       Digit bit = 2;
       for (;; bit <<= 1)
@@ -770,30 +770,30 @@ class BigInt {
           break;
         }
       bit >>= 1;
-      for (auto exponent_digits_position = exponent_digits.rbegin();;) {
+      for (auto exponent_digit_position = exponent_digits.rbegin();;) {
         for (; bit != 0; bit >>= 1) {
           result = make_step(result, result);
           if (exponent_digit & bit) result = make_step(result, base);
         }
-        if (++exponent_digits_position == exponent_digits.rend()) break;
-        exponent_digit = *exponent_digits_position;
+        if (++exponent_digit_position == exponent_digits.rend()) break;
+        exponent_digit = *exponent_digit_position;
         bit = static_cast<Digit>(1) << (BINARY_SHIFT - 1);
       }
     } else {
-      BigInt cache[QUINARY_BASE];
+      BigInt cache[WINDOW_BASE];
       cache[0] = result;
-      for (std::size_t index = 1; index < QUINARY_BASE; ++index)
+      for (std::size_t index = 1; index < WINDOW_BASE; ++index)
         cache[index] = make_step(cache[index - 1], base);
-      std::vector<std::uint8_t> exponent_quintary_digits =
-          binary_digits_to_binary_base<Digit, std::uint8_t, BINARY_SHIFT,
-                                       QUINARY_SHIFT>(exponent_digits);
-      for (auto exponent_digits_position = exponent_quintary_digits.rbegin();
-           exponent_digits_position != exponent_quintary_digits.rend();
-           ++exponent_digits_position) {
-        const auto index = *exponent_digits_position;
-        for (std::size_t iteration = 0; iteration < QUINARY_SHIFT; ++iteration)
+      std::vector<WindowDigit> exponent_window_digits =
+          binary_digits_to_binary_base<Digit, WindowDigit, BINARY_SHIFT,
+                                       WINDOW_SHIFT>(exponent_digits);
+      for (auto exponent_digit_position = exponent_window_digits.rbegin();
+           exponent_digit_position != exponent_window_digits.rend();
+           ++exponent_digit_position) {
+        const WindowDigit digit = *exponent_digit_position;
+        for (std::size_t iteration = 0; iteration < WINDOW_SHIFT; ++iteration)
           result = make_step(result, result);
-        if (index) result = make_step(result, cache[index]);
+        if (digit) result = make_step(result, cache[digit]);
       }
     }
     if (is_negative && result) result = result - modulus;
@@ -865,12 +865,13 @@ class BigInt {
       MANTISSA_BITS / BINARY_SHIFT;
   static constexpr std::make_signed_t<std::size_t> MANTISSA_EXTRA_BITS =
       MANTISSA_BITS % BINARY_SHIFT;
-  static constexpr std::size_t QUINARY_CUTOFF = 8;
-  static constexpr std::size_t QUINARY_SHIFT = 5;
-  static_assert(QUINARY_SHIFT < BINARY_SHIFT,
-                "Binary shift should be greater than 5-ary shift.");
-  static constexpr std::size_t QUINARY_BASE = 1 << QUINARY_SHIFT;
-  static constexpr std::size_t QUINARY_DIGIT_MASK = QUINARY_BASE - 1;
+  static constexpr std::size_t WINDOW_CUTOFF = 8;
+  static constexpr std::size_t WINDOW_SHIFT = 5;
+  static constexpr std::size_t WINDOW_BASE = 1 << WINDOW_SHIFT;
+  static constexpr std::size_t WINDOW_DIGIT_MASK = WINDOW_BASE - 1;
+  using WindowDigit = std::uint8_t;
+  static_assert(WINDOW_SHIFT <= std::numeric_limits<WindowDigit>::digits,
+                "Window digit type should be able to contain window digits.");
 
   static void divmod_two_or_more_digits(const std::vector<Digit>& dividend,
                                         const std::vector<Digit>& divisor,
