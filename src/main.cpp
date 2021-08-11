@@ -1266,6 +1266,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(Int{} - py::self)
       .def(Int{} / py::self)
       .def(py::self - py::self)
+      .def(py::self - Int{})
       .def(py::self / py::self)
       .def(py::self / Int{})
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
