@@ -421,6 +421,13 @@ class Fraction {
   };
 };
 
+static Fraction operator*(const Int& self, const Fraction& other) {
+  const Int self_other_denominator_gcd = self.gcd(other.denominator());
+  return Fraction(
+      self.floor_divide(self_other_denominator_gcd) * other.numerator(),
+      other.denominator().floor_divide(self_other_denominator_gcd));
+}
+
 static Fraction operator/(const Int& self, const Fraction& other) {
   const Int self_other_numerator_gcd = self.gcd(other.numerator());
   return Fraction(
@@ -1235,10 +1242,11 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self * Int{})
       .def(-py::self)
       .def(+py::self)
+      .def(Int{} * py::self)
+      .def(Int{} / py::self)
       .def(py::self - py::self)
       .def(py::self / py::self)
       .def(py::self / Int{})
-      .def(Int{} / py::self)
       .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
       .def("__bool__", &Fraction::operator bool)
       .def("__divmod__", &Fraction::divmod, py::is_operator{})
