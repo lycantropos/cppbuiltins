@@ -295,6 +295,10 @@ class Fraction {
         _denominator * other._denominator);
   }
 
+  Fraction operator+(const Int& other) const {
+    return Fraction(_numerator + _denominator * other, _denominator);
+  }
+
   operator bool() const { return bool(_numerator); }
 
   operator double() const { return _numerator / _denominator; }
@@ -1234,6 +1238,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = Int(1))
       .def(py::self + py::self)
+      .def(py::self + Int{})
       .def(py::self == py::self)
       .def(py::self <= py::self)
       .def(py::self < py::self)
