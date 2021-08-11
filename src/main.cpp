@@ -416,10 +416,10 @@ class Fraction {
 };
 
 static Fraction operator/(const Int& self, const Fraction& other) {
-  const Int numerators_gcd = self.gcd(other.denominator());
-  return Fraction(self.floor_divide(numerators_gcd) *
-                      other.denominator().floor_divide(numerators_gcd),
-                  other.numerator());
+  const Int self_other_numerator_gcd = self.gcd(other.numerator());
+  return Fraction(
+      self.floor_divide(self_other_numerator_gcd) * other.denominator(),
+      other.numerator().floor_divide(self_other_numerator_gcd));
 }
 
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
