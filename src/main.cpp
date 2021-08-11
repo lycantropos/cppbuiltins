@@ -355,6 +355,10 @@ class Fraction {
         _denominator * other._denominator);
   }
 
+  Fraction operator-(const Int& other) const {
+    return Fraction(_numerator - _denominator * other, _denominator);
+  }
+
   Fraction operator/(const Fraction& other) const {
     const Int numerators_gcd = _numerator.gcd(other._numerator);
     const Int denominators_gcd = _denominator.gcd(other._denominator);
