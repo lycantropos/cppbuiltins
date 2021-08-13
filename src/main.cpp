@@ -412,6 +412,42 @@ class Fraction {
 
   const Int& numerator() const { return _numerator; }
 
+  Fraction pow(const Int& exponent) const {
+    if (exponent.sign() < 0) {
+      if (_numerator.sign() == 0) {
+        PyErr_SetString(PyExc_ZeroDivisionError,
+                        "Denominator should not be zero.");
+        throw py::error_already_set();
+      }
+      Int exponent_modulus = -exponent;
+      return _numerator.sign() < 0
+                 ? Fraction(Int(static_cast<BaseInt>(-_denominator)
+                                    .pow(exponent_modulus)),
+                            Int(static_cast<BaseInt>(-_numerator)
+                                    .pow(exponent_modulus)),
+                            std::false_type{})
+                 : Fraction(Int(static_cast<BaseInt>(_denominator)
+                                    .pow(exponent_modulus)),
+                            Int(static_cast<BaseInt>(_numerator)
+                                    .pow(exponent_modulus)),
+                            std::false_type{});
+    }
+    return Fraction(Int(static_cast<BaseInt>(_numerator).pow(exponent)),
+                    Int(static_cast<BaseInt>(_denominator).pow(exponent)),
+                    std::false_type{});
+  }
+
+  py::object pow(const Fraction& exponent) const {
+    if (exponent._denominator.is_one())
+      return py::cast(pow(exponent._numerator));
+    py::float_ pyfloat_base(double{*this});
+    py::float_ pyfloat_exponent(double{exponent});
+    PyObject* result =
+        PyNumber_Power(pyfloat_base.ptr(), pyfloat_exponent.ptr(), Py_None);
+    if (!result) throw py::error_already_set();
+    return py::reinterpret_steal<py::object>(result);
+  }
+
   int sign() const { return _numerator.sign(); }
 
  private:
@@ -1301,6 +1337,11 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::overload_cast<const Int&>(&Fraction::floor_divide, py::const_),
            py::is_operator{})
       .def("__hash__", &Fraction::hash)
+      .def("__pow__", py::overload_cast<const Int&>(&Fraction::pow, py::const_),
+           py::arg("exponent"), py::is_operator{})
+      .def("__pow__",
+           py::overload_cast<const Fraction&>(&Fraction::pow, py::const_),
+           py::arg("exponent"), py::is_operator{})
       .def("__repr__", &to_repr<Fraction>)
       .def(
           "__rfloordiv__",
