@@ -8,6 +8,7 @@ from typing import (Any,
                     Hashable,
                     Iterator,
                     List,
+                    Optional,
                     Tuple,
                     TypeVar)
 
@@ -80,9 +81,13 @@ def pickle_round_trip(value: Domain) -> Domain:
 def to_alternative_native_fractions_pair(numerators_pair
                                          : AlternativeNativeIntsPair,
                                          denominators_pair
-                                         : AlternativeNativeIntsPair
+                                         : Optional[AlternativeNativeIntsPair]
+                                         = None
                                          ) -> AlternativeNativeFractionsPair:
     alternative_numerator, native_numerator = numerators_pair
+    if denominators_pair is None:
+        return (AlternativeFraction(alternative_numerator),
+                NativeFraction(native_numerator))
     alternative_denominator, native_denominator = denominators_pair
     return (AlternativeFraction(alternative_numerator,
                                 alternative_denominator),
