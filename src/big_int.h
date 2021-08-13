@@ -725,8 +725,8 @@ class BigInt {
 
   BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
 
-  BigInt pow(const BigInt& other, const BigInt* maybe_modulus) const {
-    BigInt base = *this, exponent = other, modulus;
+  BigInt pow(BigInt exponent, const BigInt* maybe_modulus = nullptr) const {
+    BigInt base = *this, modulus;
     bool is_negative = false;
     std::function<BigInt(const BigInt&, const BigInt&)> make_step;
     if (maybe_modulus != nullptr) {

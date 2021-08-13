@@ -256,14 +256,15 @@ class Int : public BaseInt {
 
   bool is_one() const { return BaseInt::is_one(); }
 
-  py::object pow(const Int& other, const Int* maybe_modulus) const {
-    if (maybe_modulus == nullptr && other.sign() < 0) {
+  py::object pow(const Int& exponent,
+                 const Int* maybe_modulus = nullptr) const {
+    if (maybe_modulus == nullptr && exponent.sign() < 0) {
       PyObject* result = PyFloat_Type.tp_as_number->nb_power(
-          (PyObject*)as_PyLong(), (PyObject*)other.as_PyLong(), Py_None);
+          (PyObject*)as_PyLong(), (PyObject*)exponent.as_PyLong(), Py_None);
       if (!result) throw py::error_already_set();
       return py::reinterpret_steal<py::object>(result);
     }
-    return py::cast(Int(BaseInt::pow(other, maybe_modulus)));
+    return py::cast(Int(BaseInt::pow(exponent, maybe_modulus)));
   }
 
   int sign() const { return BaseInt::sign(); }
