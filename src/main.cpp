@@ -385,6 +385,8 @@ class Fraction {
 
   Int ceil() const { return -(-_numerator).floor_divide(_denominator); }
 
+  Int floor() const { return _numerator.floor_divide(_denominator); }
+
   const Int& denominator() const { return _denominator; }
 
   py::tuple divmod(const Fraction& divisor) const {
@@ -1340,6 +1342,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__ceil__", &Fraction::ceil)
       .def("__divmod__", &Fraction::divmod, py::is_operator{})
       .def("__float__", &Fraction::operator double)
+      .def("__floor__", &Fraction::floor)
       .def("__floordiv__",
            py::overload_cast<const Fraction&>(&Fraction::floor_divide,
                                               py::const_),
