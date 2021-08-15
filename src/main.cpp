@@ -444,6 +444,8 @@ class Fraction {
 
   int sign() const { return _numerator.sign(); }
 
+  operator Int() const { return sign() < 0 ? ceil() : floor(); }
+
  private:
   Int _numerator, _denominator;
 
@@ -1375,6 +1377,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
                         : self.numerator().repr() + "/" +
                               self.denominator().repr();
            })
+      .def("__trunc__", &Fraction::operator Int)
       .def_property_readonly("denominator", &Fraction::denominator)
       .def_property_readonly("numerator", &Fraction::numerator);
 
