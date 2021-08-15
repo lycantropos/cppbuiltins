@@ -1352,6 +1352,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::overload_cast<const Int&>(&Fraction::floor_divide, py::const_),
            py::is_operator{})
       .def("__hash__", &Fraction::hash)
+      .def("__int__", [](const Fraction& self) { return py::int_(Int(self)); })
       .def("__pow__", py::overload_cast<const Int&>(&Fraction::pow, py::const_),
            py::arg("exponent"), py::is_operator{})
       .def("__pow__",
