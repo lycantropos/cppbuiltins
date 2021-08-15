@@ -1295,6 +1295,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::pickle(&Int::to_state, &Int::from_state))
       .def("__abs__", &Int::abs)
       .def("__bool__", &Int::operator bool)
+      .def("__ceil__", &identity<const Int&>)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
       .def("__divmod__", &Int::divmod, py::is_operator{})
       .def("__deepcopy__",
