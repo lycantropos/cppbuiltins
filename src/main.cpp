@@ -274,6 +274,12 @@ static std::ostream& operator<<(std::ostream& stream, const Int& value) {
   return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr() << "')";
 }
 
+static py::object pow(const py::float_& base, const py::float_& exponent) {
+  PyObject* result = PyNumber_Power(base.ptr(), exponent.ptr(), Py_None);
+  if (!result) throw py::error_already_set();
+  return py::reinterpret_steal<py::object>(result);
+}
+
 class Fraction {
  public:
   Fraction() : _numerator(Int()), _denominator(Int(1)) {}
@@ -438,14 +444,9 @@ class Fraction {
   }
 
   py::object pow(const Fraction& exponent) const {
-    if (exponent._denominator.is_one())
-      return py::cast(pow(exponent._numerator));
-    py::float_ pyfloat_base(double{*this});
-    py::float_ pyfloat_exponent(double{exponent});
-    PyObject* result =
-        PyNumber_Power(pyfloat_base.ptr(), pyfloat_exponent.ptr(), Py_None);
-    if (!result) throw py::error_already_set();
-    return py::reinterpret_steal<py::object>(result);
+    return exponent._denominator.is_one()
+               ? py::cast(pow(exponent._numerator))
+               : ::pow(py::float_{double{*this}}, py::float_{double{exponent}});
   }
 
   int sign() const { return _numerator.sign(); }
@@ -505,6 +506,12 @@ static Fraction operator/(const Int& self, const Fraction& other) {
 
 Int floor_divide(const Int& self, const Fraction& other) {
   return (self * other.denominator()).floor_divide(other.numerator());
+}
+
+py::object pow(const Int& base, const Fraction& exponent) {
+  return exponent.denominator().is_one()
+             ? py::cast(Fraction(base).pow(exponent.numerator()))
+             : pow(py::float_(double{base}), py::float_(double{exponent}));
 }
 
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
@@ -1347,6 +1354,12 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           "__rfloordiv__",
           [](const Fraction& divisor, const Int& dividend) {
             return floor_divide(dividend, divisor);
+          },
+          py::is_operator{})
+      .def(
+          "__rpow__",
+          [](const Fraction& exponent, const Int& base) {
+            return pow(base, exponent);
           },
           py::is_operator{})
       .def("__str__",
