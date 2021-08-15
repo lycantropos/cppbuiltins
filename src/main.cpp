@@ -150,10 +150,8 @@ class Int : public BaseInt {
   Int(const py::str& value, std::size_t base)
       : BaseInt(pystr_to_ascii_c_str(value), base) {}
 
-  static Int from_state(const py::int_& value) { return Int(value); }
-
-  static py::int_ to_state(const Int& value) {
-    return py::reinterpret_steal<py::int_>((PyObject*)value.as_PyLong());
+  operator py::int_() const {
+    return py::reinterpret_steal<py::int_>((PyObject*)as_PyLong());
   }
 
   Int operator%(const Int& divisor) const {
@@ -1292,7 +1290,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(+py::self)
       .def(py::self - py::self)
       .def(py::self / py::self)
-      .def(py::pickle(&Int::to_state, &Int::from_state))
+      .def(py::pickle([](const Int& self) { return py::int_(self); },
+                      [](const py::int_& state) { return Int(state); }))
       .def("__abs__", &Int::abs)
       .def("__bool__", &Int::operator bool)
       .def("__ceil__", &identity<const Int&>)
@@ -1303,7 +1302,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__float__", &Int::operator double)
       .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__hash__", &Int::hash)
-      .def("__int__", &Int::to_state)
+      .def("__int__", &Int::operator py::int_)
       .def("__pow__", &Int::pow, py::arg("exponent"),
            py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
