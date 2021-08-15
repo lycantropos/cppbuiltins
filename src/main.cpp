@@ -1300,6 +1300,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__float__", &Int::operator double)
+      .def("__floor__", &identity<const Int&>)
       .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__hash__", &Int::hash)
       .def("__int__", &Int::operator py::int_)
