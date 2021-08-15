@@ -285,15 +285,6 @@ class Fraction {
   Fraction(const Int& numerator, const Int& denominator = Int(1))
       : Fraction(numerator, denominator, std::true_type{}) {}
 
-  static Fraction from_state(const py::tuple& state) {
-    if (state.size() != 2) throw std::runtime_error("Invalid state.");
-    return Fraction(state[0].cast<Int>(), state[1].cast<Int>());
-  }
-
-  static py::tuple to_state(const Fraction& value) {
-    return py::make_tuple(value.numerator(), value.denominator());
-  }
-
   Fraction operator+(const Fraction& other) const {
     return Fraction(
         _numerator * other._denominator + _denominator * other._numerator,
@@ -1337,7 +1328,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self - Int{})
       .def(py::self / py::self)
       .def(py::self / Int{})
-      .def(py::pickle(&Fraction::to_state, &Fraction::from_state))
+      .def(py::pickle(
+          [](const Fraction& value) {
+            return py::make_tuple(value.numerator(), value.denominator());
+          },
+          [](const py::tuple& state) {
+            if (state.size() != 2) throw std::runtime_error("Invalid state.");
+            return Fraction(state[0].cast<Int>(), state[1].cast<Int>());
+          }))
       .def("__bool__", &Fraction::operator bool)
       .def("__ceil__", &Fraction::ceil)
       .def("__divmod__", &Fraction::divmod, py::is_operator{})
