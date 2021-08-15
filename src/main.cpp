@@ -472,7 +472,7 @@ class Fraction {
       _denominator = _denominator.floor_divide(gcd);
       _numerator = _numerator.floor_divide(gcd);
     }
-  };
+  }
 };
 
 static Fraction operator+(const Int& self, const Fraction& other) {
