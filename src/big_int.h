@@ -58,6 +58,10 @@ constexpr unsigned char ASCII_CODES_DIGIT_VALUES[256] = {
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
     37, 37, 37, 37, 37, 37, 37, 37, 37,
 };
+constexpr char DIGIT_VALUES_ASCII_CODES[MAX_REPRESENTABLE_BASE] = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
+    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
 static constexpr unsigned char mask_char(char character) {
   return static_cast<unsigned char>(character & 0xff);
@@ -815,13 +819,13 @@ class BigInt {
     for (std::size_t index = 0; index < base_digits.size() - 1; index++) {
       Digit remainder = base_digits[index];
       for (std::size_t step = 0; step < TARGET_SHIFT; step++) {
-        *--stop = '0' + (remainder % BASE);
+        *--stop = DIGIT_VALUES_ASCII_CODES[remainder % BASE];
         remainder /= BASE;
       }
     }
     for (Digit remainder = base_digits.back(); remainder != 0;
          remainder /= BASE)
-      *--stop = '0' + (remainder % BASE);
+      *--stop = DIGIT_VALUES_ASCII_CODES[remainder % BASE];
     if (_sign == 0)
       *--stop = '0';
     else if (_sign < 0)
