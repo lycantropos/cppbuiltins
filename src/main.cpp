@@ -246,7 +246,7 @@ class Int : public BaseInt {
       if (result >= _PyHASH_MODULUS) result -= _PyHASH_MODULUS;
     }
     result = result * sign;
-    result -= (result == std::numeric_limits<std::size_t>::max());
+    result -= (result == std::numeric_limits<Py_uhash_t>::max());
     return static_cast<Py_hash_t>(result);
   }
 
