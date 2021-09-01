@@ -808,7 +808,7 @@ class BigInt {
             std::size_t TARGET_SHIFT = floor_log<BASE>(BINARY_BASE),
             std::size_t TARGET_BASE = power(BASE, TARGET_SHIFT)>
   std::string repr() const {
-    static_assert(1 < BASE && BASE < MAX_REPRESENTABLE_BASE,
+    static_assert(1 < BASE && BASE <= MAX_REPRESENTABLE_BASE,
                   "Base should be range from 2 to 36.");
     const std::vector<Digit> base_digits = to_base_digits<TARGET_BASE>();
     const std::size_t characters_count =
