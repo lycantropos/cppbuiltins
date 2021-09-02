@@ -1189,11 +1189,10 @@ class BigInt {
     std::vector<Digit> result(first_size + second_size, 0);
     if (&first == &second)
       for (std::size_t index = 0; index < first_size; ++index) {
-        DoubleDigit accumulator;
         DoubleDigit digit = first[index];
         auto result_position = result.begin() + (index << 1);
         auto first_position = first.begin() + (index + 1);
-        accumulator = *result_position + digit * digit;
+        DoubleDigit accumulator = *result_position + digit * digit;
         *(result_position++) =
             static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
         accumulator >>= BINARY_SHIFT;
