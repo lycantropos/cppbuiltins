@@ -859,8 +859,8 @@ class BigInt {
   int _sign;
   std::vector<Digit> _digits;
 
-  static constexpr Digit KARATSUBA_CUTOFF = 70;
-  static constexpr Digit KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
+  static constexpr std::size_t KARATSUBA_CUTOFF = 70;
+  static constexpr std::size_t KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
   static constexpr std::size_t MANTISSA_BITS =
       std::numeric_limits<double>::digits;
   static constexpr double MANTISSA_BITS_POWER_OF_TWO =
