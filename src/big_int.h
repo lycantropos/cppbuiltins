@@ -219,7 +219,7 @@ class BigInt {
   static_assert(_BINARY_SHIFT <= std::numeric_limits<SignedDigit>::digits - 1,
                 "Digit should be able to hold all integers lesser than double "
                 "signed base.");
-  static constexpr Digit BINARY_SHIFT = _BINARY_SHIFT;
+  static constexpr std::size_t BINARY_SHIFT = _BINARY_SHIFT;
 
   using DoubleDigit = double_precision_t<Digit>;
   static_assert(!std::is_same<DoubleDigit, undefined>(),
