@@ -1120,7 +1120,7 @@ class BigInt {
     }
     if (size_shortest <=
         ((shortest == longest) ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF)) {
-      return size_shortest == 1 && *shortest[0] == 0
+      return size_shortest == 1 && (*shortest)[0] == 0
                  ? std::vector<Digit>({0})
                  : multiply_digits_plain(*shortest, *longest);
     }
