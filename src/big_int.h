@@ -880,10 +880,10 @@ class BigInt {
                                         std::vector<Digit>& quotient,
                                         std::vector<Digit>& remainder) {
     std::size_t dividend_digits_count = dividend.size();
-    std::size_t divisor_digits_count = divisor.size();
-    Digit* dividend_normalized = new Digit[dividend_digits_count + 1]();
-    Digit* divisor_normalized = new Digit[divisor_digits_count]();
-    std::size_t shift = BINARY_SHIFT - to_bit_length(divisor.back());
+    const std::size_t divisor_digits_count = divisor.size();
+    Digit* const dividend_normalized = new Digit[dividend_digits_count + 1]();
+    Digit* const divisor_normalized = new Digit[divisor_digits_count]();
+    const std::size_t shift = BINARY_SHIFT - to_bit_length(divisor.back());
     shift_digits_left(divisor.data(), divisor_digits_count, shift,
                       divisor_normalized);
     Digit accumulator = shift_digits_left(
@@ -891,11 +891,12 @@ class BigInt {
     if (accumulator != 0 || dividend_normalized[dividend_digits_count - 1] >=
                                 divisor_normalized[divisor_digits_count - 1])
       dividend_normalized[dividend_digits_count++] = accumulator;
-    std::size_t quotient_size = dividend_digits_count - divisor_digits_count;
-    Digit* quotient_data = new Digit[quotient_size]();
-    Digit last_divisor_digit_normalized =
+    const std::size_t quotient_size =
+        dividend_digits_count - divisor_digits_count;
+    Digit* const quotient_data = new Digit[quotient_size]();
+    const Digit last_divisor_digit_normalized =
         divisor_normalized[divisor_digits_count - 1];
-    Digit penult_divisor_digit_normalized =
+    const Digit penult_divisor_digit_normalized =
         divisor_normalized[divisor_digits_count - 2];
     for (Digit *digits_normalized_tail = dividend_normalized + quotient_size,
                *quotient_position = quotient_data + quotient_size;
