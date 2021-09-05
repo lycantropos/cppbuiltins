@@ -920,11 +920,11 @@ class BigInt {
       }
       SignedDigit accumulator = 0;
       for (std::size_t index = 0; index < divisor_digits_count; ++index) {
-        SignedDoubleDigit step;
-        step = static_cast<SignedDigit>(digits_normalized_tail[index]) +
-               accumulator -
-               static_cast<SignedDoubleDigit>(quotient_digit) *
-                   static_cast<SignedDoubleDigit>(divisor_normalized[index]);
+        const SignedDoubleDigit step =
+            static_cast<SignedDigit>(digits_normalized_tail[index]) +
+            accumulator -
+            static_cast<SignedDoubleDigit>(quotient_digit) *
+                static_cast<SignedDoubleDigit>(divisor_normalized[index]);
         digits_normalized_tail[index] =
             static_cast<Digit>(step) & BINARY_DIGIT_MASK;
         accumulator = static_cast<SignedDigit>(step >> BINARY_SHIFT);
