@@ -427,13 +427,13 @@ class BigInt {
       if (iterations_count == 0) {
         if (smallest_digits_count == 1) {
           std::vector<Digit> quotient;
-          Digit remainder = divmod_digits_by_digit(
+          Digit remainder = divrem_digits_by_digit(
               largest_digits, smallest_digits[0], quotient);
           largest_digits = smallest_digits;
           smallest_digits = std::vector<Digit>({remainder});
         } else {
           std::vector<Digit> quotient, remainder;
-          divmod_two_or_more_digits(largest_digits, smallest_digits, quotient,
+          divrem_two_or_more_digits(largest_digits, smallest_digits, quotient,
                                     remainder);
           largest_digits = smallest_digits;
           smallest_digits = remainder;
@@ -692,13 +692,13 @@ class BigInt {
     normalize_digits(quotient_digits);
     if (divisor_digits_count == 1) {
       std::vector<Digit> next_quotient_digits;
-      Digit remainder = divmod_digits_by_digit(
+      Digit remainder = divrem_digits_by_digit(
           quotient_digits, divisor_digits[0], next_quotient_digits);
       std::swap(quotient_digits, next_quotient_digits);
       if (remainder) inexact = true;
     } else {
       std::vector<Digit> next_quotient_digits, remainder;
-      divmod_two_or_more_digits(quotient_digits, divisor_digits,
+      divrem_two_or_more_digits(quotient_digits, divisor_digits,
                                 next_quotient_digits, remainder);
       std::swap(quotient_digits, next_quotient_digits);
       if (remainder.size() > 1 || remainder[0] != 0) inexact = true;
@@ -875,7 +875,7 @@ class BigInt {
   static_assert(WINDOW_SHIFT <= std::numeric_limits<WindowDigit>::digits,
                 "Window digit type should be able to contain window digits.");
 
-  static void divmod_two_or_more_digits(const std::vector<Digit>& dividend,
+  static void divrem_two_or_more_digits(const std::vector<Digit>& dividend,
                                         const std::vector<Digit>& divisor,
                                         std::vector<Digit>& quotient,
                                         std::vector<Digit>& remainder) {
@@ -958,7 +958,7 @@ class BigInt {
     normalize_digits(remainder);
   }
 
-  static Digit divmod_digits_by_digit(const std::vector<Digit>& dividend,
+  static Digit divrem_digits_by_digit(const std::vector<Digit>& dividend,
                                       Digit divisor,
                                       std::vector<Digit>& quotient) {
     DoubleDigit remainder = 0;
@@ -1268,17 +1268,17 @@ class BigInt {
       int remainder_sign = _sign;
       if (divisor_digits_count == 1) {
         std::vector<Digit> quotient_digits;
-        Digit remainder_digit = divmod_digits_by_digit(
+        Digit remainder_digit = divrem_digits_by_digit(
             _digits, divisor._digits[0], quotient_digits);
         remainder_sign *= remainder_digit != 0;
         if constexpr (WITH_QUOTIENT)
           *quotient = BigInt(_sign * divisor._sign, quotient_digits);
         if constexpr (WITH_REMAINDER)
           *remainder =
-              BigInt(_sign * static_cast<SignedDigit>(remainder_digit));
+              BigInt(remainder_sign, std::vector<Digit>{remainder_digit});
       } else {
         std::vector<Digit> quotient_digits, remainder_digits;
-        divmod_two_or_more_digits(_digits, divisor._digits, quotient_digits,
+        divrem_two_or_more_digits(_digits, divisor._digits, quotient_digits,
                                   remainder_digits);
         remainder_sign *=
             remainder_digits.size() > 1 || remainder_digits[0] != 0;
@@ -1334,7 +1334,7 @@ class BigInt {
       DoubleDigit step =
           (static_cast<DoubleDigit>(input_digits[index]) << shift) |
           accumulator;
-      output_digits[index] = static_cast<Digit>(step) & BINARY_DIGIT_MASK;
+      output_digits[index] = static_cast<Digit>(step & BINARY_DIGIT_MASK);
       accumulator = static_cast<Digit>(step >> BINARY_SHIFT);
     }
     return accumulator;
@@ -1344,11 +1344,11 @@ class BigInt {
                                   std::size_t input_digits_count,
                                   std::size_t shift, Digit* output_digits) {
     Digit accumulator = 0;
-    Digit mask = (static_cast<Digit>(1) << shift) - 1;
+    DoubleDigit mask = (static_cast<DoubleDigit>(1) << shift) - 1;
     for (std::size_t index = input_digits_count; index-- > 0;) {
       DoubleDigit step = static_cast<DoubleDigit>(accumulator) << BINARY_SHIFT |
                          input_digits[index];
-      accumulator = static_cast<Digit>(step) & mask;
+      accumulator = static_cast<Digit>(step & mask);
       output_digits[index] = static_cast<Digit>(step >> shift);
     }
     return accumulator;
