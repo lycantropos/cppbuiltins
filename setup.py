@@ -12,7 +12,7 @@ from setuptools import (Extension,
                         setup)
 from setuptools.command.build_ext import build_ext
 
-__version__ = '0.4.2-alpha'
+__version__ = '0.4.2'
 
 project_base_url = 'https://github.com/lycantropos/cppbuiltins/'
 
