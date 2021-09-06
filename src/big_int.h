@@ -377,12 +377,12 @@ class BigInt {
                        smallest_digits = other._digits;
     if (digits_lesser_than(largest_digits, smallest_digits))
       std::swap(largest_digits, smallest_digits);
-    std::size_t largest_digits_count, smallest_digits_count;
-    while ((largest_digits_count = largest_digits.size()) > 2) {
-      smallest_digits_count = smallest_digits.size();
+    for (std::size_t largest_digits_count;
+         (largest_digits_count = largest_digits.size()) > 2;) {
+      const std::size_t smallest_digits_count = smallest_digits.size();
       if (smallest_digits_count == 1 && smallest_digits[0] == 0)
         return BigInt(1, largest_digits);
-      std::size_t highest_digit_bit_length =
+      const std::size_t highest_digit_bit_length =
           to_bit_length(largest_digits.back());
       SignedDoubleDigit largest_leading_bits =
           ((static_cast<DoubleDigit>(largest_digits[largest_digits_count - 1])
@@ -406,23 +406,27 @@ class BigInt {
                       smallest_digits[largest_digits_count - 1])
                       << (2 * BINARY_SHIFT - highest_digit_bit_length)
                 : 0));
-      SignedDoubleDigit A = 1, B = 0, C = 0, D = 1;
+      SignedDoubleDigit first_coefficient = 1, second_coefficient = 0,
+                        third_coefficient = 0, fourth_coefficient = 1;
       std::size_t iterations_count = 0;
       for (;; ++iterations_count) {
-        if (smallest_leading_bits == C) break;
-        SignedDoubleDigit q =
-            (largest_leading_bits + (A - 1)) / (smallest_leading_bits - C);
-        SignedDoubleDigit s = B + q * D;
-        SignedDoubleDigit step =
-            largest_leading_bits - q * smallest_leading_bits;
-        if (s > step) break;
+        if (third_coefficient == smallest_leading_bits) break;
+        SignedDoubleDigit scale =
+            (largest_leading_bits + (first_coefficient - 1)) /
+            (smallest_leading_bits - third_coefficient);
+        SignedDoubleDigit next_third_coefficient =
+            second_coefficient + scale * fourth_coefficient;
+        SignedDoubleDigit next_smallest_leading_bits =
+            largest_leading_bits - scale * smallest_leading_bits;
+        if (next_third_coefficient > next_smallest_leading_bits) break;
         largest_leading_bits = smallest_leading_bits;
-        smallest_leading_bits = step;
-        step = A + q * C;
-        A = D;
-        B = C;
-        C = s;
-        D = step;
+        smallest_leading_bits = next_smallest_leading_bits;
+        SignedDoubleDigit next_fourth_coefficient =
+            first_coefficient + scale * third_coefficient;
+        first_coefficient = fourth_coefficient;
+        second_coefficient = third_coefficient;
+        third_coefficient = next_third_coefficient;
+        fourth_coefficient = next_fourth_coefficient;
       }
       if (iterations_count == 0) {
         if (smallest_digits_count == 1) {
@@ -441,12 +445,12 @@ class BigInt {
         continue;
       }
       if (iterations_count & 1) {
-        A = -A;
-        B = -B;
-        C = -C;
-        D = -D;
-        std::swap(A, B);
-        std::swap(C, D);
+        first_coefficient = -first_coefficient;
+        second_coefficient = -second_coefficient;
+        third_coefficient = -third_coefficient;
+        fourth_coefficient = -fourth_coefficient;
+        std::swap(first_coefficient, second_coefficient);
+        std::swap(third_coefficient, fourth_coefficient);
       }
       SignedDoubleDigit next_largest_accumulator = 0;
       SignedDoubleDigit next_smallest_accumulator = 0;
@@ -456,9 +460,11 @@ class BigInt {
       next_smallest_digits.reserve(largest_digits_count);
       for (; index < smallest_digits_count; ++index) {
         next_largest_accumulator +=
-            (A * largest_digits[index]) - (B * smallest_digits[index]);
+            (first_coefficient * largest_digits[index]) -
+            (second_coefficient * smallest_digits[index]);
         next_smallest_accumulator +=
-            (D * smallest_digits[index]) - (C * largest_digits[index]);
+            (fourth_coefficient * smallest_digits[index]) -
+            (third_coefficient * largest_digits[index]);
         next_largest_digits.push_back(
             static_cast<Digit>(next_largest_accumulator & BINARY_DIGIT_MASK));
         next_smallest_digits.push_back(
@@ -467,8 +473,8 @@ class BigInt {
         next_smallest_accumulator >>= BINARY_SHIFT;
       }
       for (; index < largest_digits_count; ++index) {
-        next_largest_accumulator += A * largest_digits[index];
-        next_smallest_accumulator -= C * largest_digits[index];
+        next_largest_accumulator += first_coefficient * largest_digits[index];
+        next_smallest_accumulator -= third_coefficient * largest_digits[index];
         next_largest_digits.push_back(
             static_cast<Digit>(next_largest_accumulator & BINARY_DIGIT_MASK));
         next_smallest_digits.push_back(
