@@ -1117,8 +1117,8 @@ class BigInt {
       std::swap(shortest, longest);
       std::swap(size_shortest, size_longest);
     }
-  static constexpr std::size_t KARATSUBA_CUTOFF = 70;
-  static constexpr std::size_t KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
+    static constexpr std::size_t KARATSUBA_CUTOFF = 70;
+    static constexpr std::size_t KARATSUBA_SQUARE_CUTOFF = KARATSUBA_CUTOFF * 2;
     if (size_shortest <=
         ((shortest == longest) ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF)) {
       return size_shortest == 1 && (*shortest)[0] == 0
