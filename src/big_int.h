@@ -385,43 +385,47 @@ class BigInt {
       const std::size_t highest_digit_bit_length =
           to_bit_length(largest_digits.back());
       SignedDoubleDigit largest_leading_bits =
-          ((static_cast<DoubleDigit>(largest_digits[largest_digits_count - 1])
-            << (2 * BINARY_SHIFT - highest_digit_bit_length)) |
-           (static_cast<DoubleDigit>(largest_digits[largest_digits_count - 2])
-            << (BINARY_SHIFT - highest_digit_bit_length)) |
-           (largest_digits[largest_digits_count - 3] >>
-            highest_digit_bit_length));
+          (static_cast<SignedDoubleDigit>(
+               largest_digits[largest_digits_count - 1])
+           << (2 * BINARY_SHIFT - highest_digit_bit_length)) |
+          (static_cast<SignedDoubleDigit>(
+               largest_digits[largest_digits_count - 2])
+           << (BINARY_SHIFT - highest_digit_bit_length)) |
+          static_cast<SignedDoubleDigit>(
+              largest_digits[largest_digits_count - 3] >>
+              highest_digit_bit_length);
       SignedDoubleDigit smallest_leading_bits =
-          ((smallest_digits_count >= largest_digits_count - 2
-                ? smallest_digits[largest_digits_count - 3] >>
-                      highest_digit_bit_length
-                : 0) |
-           (smallest_digits_count >= largest_digits_count - 1
-                ? static_cast<DoubleDigit>(
-                      smallest_digits[largest_digits_count - 2])
-                      << (BINARY_SHIFT - highest_digit_bit_length)
-                : 0) |
-           (smallest_digits_count >= largest_digits_count
-                ? static_cast<DoubleDigit>(
-                      smallest_digits[largest_digits_count - 1])
-                      << (2 * BINARY_SHIFT - highest_digit_bit_length)
-                : 0));
+          (smallest_digits_count >= largest_digits_count - 2
+               ? static_cast<SignedDoubleDigit>(
+                     smallest_digits[largest_digits_count - 3] >>
+                     highest_digit_bit_length)
+               : 0) |
+          (smallest_digits_count >= largest_digits_count - 1
+               ? static_cast<SignedDoubleDigit>(
+                     smallest_digits[largest_digits_count - 2])
+                     << (BINARY_SHIFT - highest_digit_bit_length)
+               : 0) |
+          (smallest_digits_count >= largest_digits_count
+               ? static_cast<SignedDoubleDigit>(
+                     smallest_digits[largest_digits_count - 1])
+                     << (2 * BINARY_SHIFT - highest_digit_bit_length)
+               : 0);
       SignedDoubleDigit first_coefficient = 1, second_coefficient = 0,
                         third_coefficient = 0, fourth_coefficient = 1;
       std::size_t iterations_count = 0;
       for (;; ++iterations_count) {
         if (third_coefficient == smallest_leading_bits) break;
-        SignedDoubleDigit scale =
+        const SignedDoubleDigit scale =
             (largest_leading_bits + (first_coefficient - 1)) /
             (smallest_leading_bits - third_coefficient);
-        SignedDoubleDigit next_third_coefficient =
+        const SignedDoubleDigit next_third_coefficient =
             second_coefficient + scale * fourth_coefficient;
-        SignedDoubleDigit next_smallest_leading_bits =
+        const SignedDoubleDigit next_smallest_leading_bits =
             largest_leading_bits - scale * smallest_leading_bits;
         if (next_third_coefficient > next_smallest_leading_bits) break;
         largest_leading_bits = smallest_leading_bits;
         smallest_leading_bits = next_smallest_leading_bits;
-        SignedDoubleDigit next_fourth_coefficient =
+        const SignedDoubleDigit next_fourth_coefficient =
             first_coefficient + scale * third_coefficient;
         first_coefficient = fourth_coefficient;
         second_coefficient = third_coefficient;
@@ -431,7 +435,7 @@ class BigInt {
       if (iterations_count == 0) {
         if (smallest_digits_count == 1) {
           std::vector<Digit> quotient;
-          Digit remainder = divrem_digits_by_digit(
+          const Digit remainder = divrem_digits_by_digit(
               largest_digits, smallest_digits[0], quotient);
           largest_digits = smallest_digits;
           smallest_digits = std::vector<Digit>({remainder});
