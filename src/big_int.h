@@ -880,7 +880,6 @@ class BigInt {
   static constexpr std::size_t WINDOW_CUTOFF = 8;
   static constexpr std::size_t WINDOW_SHIFT = 5;
   static constexpr std::size_t WINDOW_BASE = 1 << WINDOW_SHIFT;
-  static constexpr std::size_t WINDOW_DIGIT_MASK = WINDOW_BASE - 1;
   using WindowDigit = std::uint8_t;
   static_assert(WINDOW_SHIFT <= std::numeric_limits<WindowDigit>::digits,
                 "Window digit type should be able to contain window digits.");
