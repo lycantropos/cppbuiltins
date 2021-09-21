@@ -113,21 +113,22 @@ static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
       (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
   result.reserve(result_digits_count);
-  double_precision_t<SourceDigit> accumulator = 0;
-  std::size_t accumulator_bits_count = 0;
-  for (std::size_t index = 0; index < source.size(); ++index) {
-    accumulator |= static_cast<double_precision_t<SourceDigit>>(source[index])
-                   << accumulator_bits_count;
-    accumulator_bits_count += SOURCE_SHIFT;
+  double_precision_t<SourceDigit> accumulator = source[0];
+  for (std::size_t accumulator_bits_count = SOURCE_SHIFT, index = 1;
+       index < source.size(); ++index, accumulator_bits_count += SOURCE_SHIFT) {
     do {
       result.push_back(
           static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
-      accumulator_bits_count -= TARGET_SHIFT;
       accumulator >>= TARGET_SHIFT;
-    } while (index == source.size() - 1
-                 ? accumulator != 0
-                 : accumulator_bits_count >= TARGET_SHIFT);
+      accumulator_bits_count -= TARGET_SHIFT;
+    } while (accumulator_bits_count >= TARGET_SHIFT);
+    accumulator |= static_cast<double_precision_t<SourceDigit>>(source[index])
+                   << accumulator_bits_count;
   }
+  do {
+    result.push_back(static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
+    accumulator >>= TARGET_SHIFT;
+  } while (accumulator != 0);
   return result;
 }
 
