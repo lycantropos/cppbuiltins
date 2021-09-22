@@ -454,6 +454,9 @@ class BigInt {
     while (*cursor != '\0' && is_space(*cursor)) ++cursor;
     if (*cursor != '\0')
       throw std::invalid_argument("Should not end with non-whitespaces.");
+    while (*start == '0' && start + 1 < stop) {
+      ++start;
+    }
     std::vector<unsigned char> digits = parse_digits(start, stop, digits_count);
     _digits = (base & (base - 1)) ? digits_from_non_binary_base(digits, base)
                                   : digits_from_binary_base(digits, base);
@@ -1431,17 +1434,15 @@ class BigInt {
     if (digits_count != digits.size()) digits.resize(digits_count);
   }
 
-  static std::vector<unsigned char> parse_digits(const char* start,
-                                                 const char* const stop,
+  static std::vector<unsigned char> parse_digits(const char* const start,
+                                                 const char* stop,
                                                  std::size_t digits_count) {
     std::vector<unsigned char> result;
     result.reserve(digits_count);
-    while (start < stop) {
-      if (*start == SEPARATOR) {
-        ++start;
-        continue;
+    while (start < stop--) {
+      if (*stop != SEPARATOR) {
+        result.push_back(ASCII_CODES_DIGIT_VALUES[mask_char(*stop)]);
       }
-      result.push_back(ASCII_CODES_DIGIT_VALUES[mask_char(*(start++))]);
     }
     return result;
   }
