@@ -219,7 +219,7 @@ static std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
   }
   for (auto position = source.rbegin(); position != source.rend();) {
     double_precision_t<TargetDigit> digit =
-        static_cast<double_precision_t<TargetDigit>>(*position++);
+        static_cast<double_precision_t<TargetDigit>>(*(position++));
     std::size_t base_exponent = 1;
     for (; base_exponent < infimum_base_exponent && position != source.rend();
          ++base_exponent, ++position) {
@@ -458,8 +458,9 @@ class BigInt {
       ++start;
     }
     std::vector<unsigned char> digits = parse_digits(start, stop, digits_count);
-    _digits = (base & (base - 1)) ? digits_from_non_binary_base(digits, base)
-                                  : digits_from_binary_base(digits, base);
+    _digits = (base & (base - 1))
+                  ? digits_from_non_binary_base(digits, base)
+                  : digits_from_binary_base(digits, floor_log2(base));
     normalize_digits(_digits);
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
@@ -978,19 +979,19 @@ class BigInt {
                 "Window digit type should be able to contain window digits.");
 
   static std::vector<Digit> digits_from_binary_base(
-      const std::vector<unsigned char>& source, std::size_t source_base) {
+      const std::vector<unsigned char>& source, std::size_t source_shift) {
     if constexpr (BINARY_BASE >= MAX_REPRESENTABLE_BASE) {
       return binary_digits_to_greater_binary_base<unsigned char, Digit,
                                                   BINARY_SHIFT>(source,
-                                                                source_base);
+                                                                source_shift);
     } else {
-      return source_base < BINARY_BASE
+      return (source_shift < BINARY_SHIFT)
                  ? binary_digits_to_greater_binary_base<unsigned char, Digit,
                                                         BINARY_SHIFT>(
-                       source, source_base)
+                       source, source_shift)
                  : binary_digits_to_lesser_binary_base<unsigned char, Digit,
                                                        BINARY_SHIFT>(
-                       source, source_base);
+                       source, source_shift);
     }
   }
 
