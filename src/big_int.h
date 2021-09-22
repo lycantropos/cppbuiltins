@@ -71,14 +71,11 @@ static constexpr bool is_space(char character) {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
-template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
-          std::size_t TARGET_SHIFT,
+template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
           TargetDigit TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
                                           1>
 static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
-    const std::vector<SourceDigit>& source) {
-  static_assert(SOURCE_SHIFT < TARGET_SHIFT,
-                "Target base should be greater than a source one.");
+    const std::vector<SourceDigit>& source, std::size_t source_shift) {
   const std::size_t result_digits_count = static_cast<std::size_t>(
       (source.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
@@ -88,7 +85,7 @@ static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
   for (const SourceDigit digit : source) {
     accumulator |= static_cast<double_precision_t<TargetDigit>>(digit)
                    << accumulator_bits_count;
-    accumulator_bits_count += SOURCE_SHIFT;
+    accumulator_bits_count += source_shift;
     if (accumulator_bits_count >= TARGET_SHIFT) {
       result.push_back(
           static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
@@ -101,21 +98,29 @@ static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
 }
 
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
-          std::size_t TARGET_SHIFT,
+          std::size_t TARGET_SHIFT>
+static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
+    const std::vector<SourceDigit>& source) {
+  static_assert(SOURCE_SHIFT < TARGET_SHIFT,
+                "Target base should be greater than a source one.");
+  return binary_digits_to_greater_binary_base<SourceDigit, TargetDigit,
+                                              TARGET_SHIFT>(source,
+                                                            SOURCE_SHIFT);
+}
+
+template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
           std::size_t TARGET_DIGIT_MASK = (TargetDigit(1) << TARGET_SHIFT) - 1>
 static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
-    const std::vector<SourceDigit>& source) {
-  static_assert(SOURCE_SHIFT > TARGET_SHIFT,
-                "Target base should be lesser than a source one.");
+    const std::vector<SourceDigit>& source, std::size_t source_shift) {
   const std::size_t result_digits_bits_count =
-      ((source.size() - 1) * SOURCE_SHIFT + to_bit_length(source.back()));
+      ((source.size() - 1) * source_shift + to_bit_length(source.back()));
   const std::size_t result_digits_count = static_cast<std::size_t>(
       (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
   result.reserve(result_digits_count);
   double_precision_t<SourceDigit> accumulator = source[0];
-  for (std::size_t accumulator_bits_count = SOURCE_SHIFT, index = 1;
-       index < source.size(); ++index, accumulator_bits_count += SOURCE_SHIFT) {
+  for (std::size_t accumulator_bits_count = source_shift, index = 1;
+       index < source.size(); ++index, accumulator_bits_count += source_shift) {
     do {
       result.push_back(
           static_cast<TargetDigit>(accumulator & TARGET_DIGIT_MASK));
@@ -130,6 +135,17 @@ static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
     accumulator >>= TARGET_SHIFT;
   } while (accumulator != 0);
   return result;
+}
+
+template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
+          std::size_t TARGET_SHIFT>
+static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
+    const std::vector<SourceDigit>& source) {
+  static_assert(SOURCE_SHIFT > TARGET_SHIFT,
+                "Target base should be lesser than a source one.");
+  return binary_digits_to_lesser_binary_base<SourceDigit, TargetDigit,
+                                             TARGET_SHIFT>(source,
+                                                           SOURCE_SHIFT);
 }
 
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
@@ -150,7 +166,7 @@ std::vector<TargetDigit> binary_digits_to_binary_base(
 
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_BASE>
-std::vector<TargetDigit> binary_digits_to_non_binary_base(
+static std::vector<TargetDigit> binary_digits_to_non_binary_base(
     const std::vector<SourceDigit>& source) {
   std::size_t result_max_digits_count =
       1 + static_cast<std::size_t>(source.size() * SOURCE_SHIFT /
@@ -175,6 +191,81 @@ std::vector<TargetDigit> binary_digits_to_non_binary_base(
     while (digit) {
       result.push_back(digit % TARGET_BASE);
       digit /= TARGET_BASE;
+    }
+  }
+  if (result.empty()) result.push_back(0);
+  return result;
+}
+
+template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
+          std::size_t TARGET_BASE = power(2, TARGET_SHIFT),
+          std::size_t TARGET_DIGIT_MASK = TARGET_BASE - 1>
+std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
+    const std::vector<SourceDigit>& source, std::size_t source_base) {
+  double result_digits_count_upper_bound =
+      source.size() * log(source_base) / log(TARGET_BASE) + 1.0;
+  if (result_digits_count_upper_bound >
+      std::numeric_limits<std::size_t>::max() / sizeof(TargetDigit))
+    throw std::overflow_error("Too many digits.");
+  std::vector<TargetDigit> result;
+  result.reserve(static_cast<std::size_t>(result_digits_count_upper_bound));
+  std::size_t infimum_base_power = source_base;
+  std::size_t infimum_base_exponent = 1;
+  while (true) {
+    std::size_t candidate = infimum_base_power * source_base;
+    if (candidate > TARGET_BASE) break;
+    infimum_base_power = candidate;
+    ++infimum_base_exponent;
+  }
+  for (auto position = source.begin(); position != source.end(); ++position) {
+    double_precision_t<TargetDigit> digit =
+        static_cast<double_precision_t<TargetDigit>>(*position);
+    std::size_t base_exponent = 1;
+    for (; base_exponent < infimum_base_exponent && position != source.end();
+         ++position) {
+      ++base_exponent;
+      digit = double_precision_t<TargetDigit>(digit * source_base + *position);
+    }
+    std::size_t base_power = infimum_base_power;
+    if (base_exponent != infimum_base_exponent)
+      for (base_power = source_base; base_exponent > 1; --base_exponent)
+        base_power *= source_base;
+    for (std::size_t index = 0; index < result.size(); ++index) {
+      digit += static_cast<double_precision_t<TargetDigit>>(result[index]) *
+               base_power;
+      result[index] = static_cast<TargetDigit>(digit & TARGET_DIGIT_MASK);
+      digit >>= TARGET_SHIFT;
+    }
+    if (digit) result.push_back(digit);
+  }
+  if (result.empty()) result.push_back(0);
+  return result;
+}
+
+template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
+          std::size_t TARGET_BASE = power(2, TARGET_SHIFT),
+          std::size_t TARGET_DIGIT_MASK = TARGET_BASE - 1>
+std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
+    const std::vector<SourceDigit>& source, std::size_t source_base) {
+  double result_digits_count_upper_bound =
+      source.size() * log(source_base) / log(TARGET_BASE) + 1.0;
+  if (result_digits_count_upper_bound >
+      std::numeric_limits<std::size_t>::max() / sizeof(TargetDigit))
+    throw std::overflow_error("Too many digits.");
+  std::vector<TargetDigit> result;
+  result.reserve(static_cast<std::size_t>(result_digits_count_upper_bound));
+  for (auto position = source.begin(); position != source.end(); ++position) {
+    double_precision_t<TargetDigit> digit =
+        static_cast<double_precision_t<TargetDigit>>(*position);
+    for (std::size_t index = 0; index < result.size(); ++index) {
+      digit += static_cast<double_precision_t<TargetDigit>>(result[index]) *
+               source_base;
+      result[index] = static_cast<TargetDigit>(digit & TARGET_DIGIT_MASK);
+      digit >>= TARGET_SHIFT;
+    }
+    while (digit) {
+      result.push_back(digit & TARGET_DIGIT_MASK);
+      digit >>= TARGET_SHIFT;
     }
   }
   if (result.empty()) result.push_back(0);
@@ -310,7 +401,7 @@ class BigInt {
 
   BigInt(const BigInt& value) : _sign(value._sign), _digits(value._digits) {}
 
-  explicit BigInt(const char* characters, std::size_t base = 10) {
+  explicit BigInt(const char* const characters, std::size_t base = 10) {
     if ((base != 0 && base < 2) || base > MAX_REPRESENTABLE_BASE)
       throw std::invalid_argument(
           "Base should be zero or in range from 2 to 36.");
@@ -364,10 +455,9 @@ class BigInt {
     while (*cursor != '\0' && is_space(*cursor)) ++cursor;
     if (*cursor != '\0')
       throw std::invalid_argument("Should not end with non-whitespaces.");
-    if (base & (base - 1))
-      parse_non_binary_base_digits(start, stop, base, digits_count);
-    else
-      parse_binary_base_digits(start, stop, base, digits_count);
+    std::vector<unsigned char> digits = parse_digits(start, stop, digits_count);
+    _digits = (base & (base - 1)) ? digits_from_non_binary_base(digits, base)
+                                  : digits_from_binary_base(digits, base);
     normalize_digits(_digits);
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
@@ -885,6 +975,39 @@ class BigInt {
   static_assert(WINDOW_SHIFT <= std::numeric_limits<WindowDigit>::digits,
                 "Window digit type should be able to contain window digits.");
 
+  static std::vector<Digit> digits_from_binary_base(
+      const std::vector<unsigned char>& source, std::size_t source_base) {
+    if constexpr (BINARY_BASE >= MAX_REPRESENTABLE_BASE) {
+      return binary_digits_to_greater_binary_base<unsigned char, Digit,
+                                                  BINARY_SHIFT>(source,
+                                                                source_base);
+    } else {
+      return source_base < BINARY_BASE
+                 ? binary_digits_to_greater_binary_base<unsigned char, Digit,
+                                                        BINARY_SHIFT>(
+                       source, source_base)
+                 : binary_digits_to_lesser_binary_base<unsigned char, Digit,
+                                                       BINARY_SHIFT>(
+                       source, source_base);
+    }
+  }
+
+  static std::vector<Digit> digits_from_non_binary_base(
+      const std::vector<unsigned char>& source, std::size_t source_base) {
+    if constexpr (BINARY_BASE >= MAX_REPRESENTABLE_BASE) {
+      return non_binary_digits_to_greater_binary_base<unsigned char, Digit,
+                                                      BINARY_SHIFT>(
+          source, source_base);
+    } else {
+      return source_base < BINARY_BASE
+                 ? non_binary_digits_to_greater_binary_base<
+                       unsigned char, Digit, BINARY_SHIFT>(source, source_base)
+                 : non_binary_digits_to_lesser_binary_base<unsigned char, Digit,
+                                                           BINARY_SHIFT>(
+                       source, source_base);
+    }
+  }
+
   static void divrem_two_or_more_digits(const std::vector<Digit>& dividend,
                                         const std::vector<Digit>& divisor,
                                         std::vector<Digit>& quotient,
@@ -985,6 +1108,64 @@ class BigInt {
     delete[] quotient_data;
     normalize_digits(quotient);
     return static_cast<Digit>(remainder);
+  }
+
+  double frexp(int& exponent) const {
+    Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
+        0,
+    };
+    static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
+    std::size_t size = _digits.size();
+    std::size_t bits_count = to_bit_length(_digits.back());
+    if (size >=
+            (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 &&
+        (size >
+             (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 ||
+         bits_count >
+             (std::numeric_limits<std::size_t>::max() - 1) % BINARY_SHIFT + 1))
+      throw std::overflow_error("Too large to convert to floating point.");
+    bits_count = (size - 1) * BINARY_SHIFT + bits_count;
+    std::size_t shift_digits, shift_bits, result_size;
+    if (bits_count <= MANTISSA_BITS + 2) {
+      shift_digits = (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
+      shift_bits = (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
+      result_size = shift_digits;
+      Digit remainder = shift_digits_left(_digits.data(), size, shift_bits,
+                                          result_digits + result_size);
+      result_size += size;
+      result_digits[result_size++] = remainder;
+    } else {
+      shift_digits = (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
+      shift_bits = (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
+      Digit remainder =
+          shift_digits_right(_digits.data() + shift_digits, size - shift_digits,
+                             shift_bits, result_digits);
+      result_size = size - shift_digits;
+      if (remainder)
+        result_digits[0] |= 1;
+      else
+        while (shift_digits > 0)
+          if (_digits[--shift_digits]) {
+            result_digits[0] |= 1;
+            break;
+          }
+    }
+    result_digits[0] += half_even_correction[result_digits[0] & 7];
+    double result_modulus = result_digits[--result_size];
+    while (result_size > 0)
+      result_modulus =
+          result_modulus * BINARY_BASE + result_digits[--result_size];
+    result_modulus /= 4.0 * MANTISSA_BITS_POWER_OF_TWO;
+    if (result_modulus == 1.0) {
+      if (bits_count == std::numeric_limits<std::size_t>::max())
+        throw std::overflow_error("Too large to convert to floating point.");
+      result_modulus = 0.5;
+      bits_count += 1;
+    }
+    exponent = bits_count;
+    if (exponent > std::numeric_limits<double>::max_exponent)
+      throw std::overflow_error("Too large to convert to floating point.");
+    return _sign * result_modulus;
   }
 
   template <class Result>
@@ -1251,6 +1432,49 @@ class BigInt {
     if (digits_count != digits.size()) digits.resize(digits_count);
   }
 
+  static std::vector<unsigned char> parse_digits(const char* start,
+                                                 const char* const stop,
+                                                 std::size_t digits_count) {
+    std::vector<unsigned char> result;
+    result.reserve(digits_count);
+    while (start < stop) {
+      if (*start == SEPARATOR) {
+        ++start;
+        continue;
+      }
+      result.push_back(ASCII_CODES_DIGIT_VALUES[mask_char(*(start++))]);
+    }
+    return result;
+  }
+
+  static Digit shift_digits_left(const Digit* input_digits,
+                                 std::size_t input_digits_count,
+                                 std::size_t shift, Digit* output_digits) {
+    Digit accumulator = 0;
+    for (std::size_t index = 0; index < input_digits_count; index++) {
+      DoubleDigit step =
+          (static_cast<DoubleDigit>(input_digits[index]) << shift) |
+          accumulator;
+      output_digits[index] = static_cast<Digit>(step & BINARY_DIGIT_MASK);
+      accumulator = static_cast<Digit>(step >> BINARY_SHIFT);
+    }
+    return accumulator;
+  }
+
+  static Digit shift_digits_right(const Digit* input_digits,
+                                  std::size_t input_digits_count,
+                                  std::size_t shift, Digit* output_digits) {
+    Digit accumulator = 0;
+    DoubleDigit mask = (static_cast<DoubleDigit>(1) << shift) - 1;
+    for (std::size_t index = input_digits_count; index-- > 0;) {
+      DoubleDigit step = static_cast<DoubleDigit>(accumulator) << BINARY_SHIFT |
+                         input_digits[index];
+      accumulator = static_cast<Digit>(step & mask);
+      output_digits[index] = static_cast<Digit>(step >> shift);
+    }
+    return accumulator;
+  }
+
   template <bool WITH_QUOTIENT, bool WITH_REMAINDER>
   void divmod(const BigInt& divisor, BigInt* quotient,
               BigInt* remainder) const {
@@ -1307,173 +1531,6 @@ class BigInt {
         if constexpr (WITH_REMAINDER) *remainder = *remainder + divisor;
       }
     }
-  }
-
-  void parse_binary_base_digits(const char* start, const char* stop,
-                                std::size_t base, std::size_t digits_count) {
-    const std::size_t bits_per_character = floor_log2(base);
-    if (digits_count >
-        (std::numeric_limits<std::size_t>::max() - (BINARY_SHIFT - 1)) /
-            bits_per_character)
-      throw std::invalid_argument("Too many digits.");
-    const std::size_t result_digits_count =
-        (digits_count * bits_per_character + (BINARY_SHIFT - 1)) / BINARY_SHIFT;
-    _digits.reserve(result_digits_count);
-    DoubleDigit accumulator = 0;
-    std::size_t bits_in_accumulator = 0;
-    while (--stop >= start) {
-      if (*stop == SEPARATOR) continue;
-      accumulator |=
-          static_cast<DoubleDigit>(ASCII_CODES_DIGIT_VALUES[mask_char(*stop)])
-          << bits_in_accumulator;
-      bits_in_accumulator += bits_per_character;
-      if (bits_in_accumulator >= BINARY_SHIFT) {
-        _digits.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
-        accumulator >>= BINARY_SHIFT;
-        bits_in_accumulator -= BINARY_SHIFT;
-      }
-    }
-    if (bits_in_accumulator) _digits.push_back(static_cast<Digit>(accumulator));
-  }
-
-  static Digit shift_digits_left(const Digit* input_digits,
-                                 std::size_t input_digits_count,
-                                 std::size_t shift, Digit* output_digits) {
-    Digit accumulator = 0;
-    for (std::size_t index = 0; index < input_digits_count; index++) {
-      DoubleDigit step =
-          (static_cast<DoubleDigit>(input_digits[index]) << shift) |
-          accumulator;
-      output_digits[index] = static_cast<Digit>(step & BINARY_DIGIT_MASK);
-      accumulator = static_cast<Digit>(step >> BINARY_SHIFT);
-    }
-    return accumulator;
-  }
-
-  static Digit shift_digits_right(const Digit* input_digits,
-                                  std::size_t input_digits_count,
-                                  std::size_t shift, Digit* output_digits) {
-    Digit accumulator = 0;
-    DoubleDigit mask = (static_cast<DoubleDigit>(1) << shift) - 1;
-    for (std::size_t index = input_digits_count; index-- > 0;) {
-      DoubleDigit step = static_cast<DoubleDigit>(accumulator) << BINARY_SHIFT |
-                         input_digits[index];
-      accumulator = static_cast<Digit>(step & mask);
-      output_digits[index] = static_cast<Digit>(step >> shift);
-    }
-    return accumulator;
-  }
-
-  double frexp(int& exponent) const {
-    Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
-        0,
-    };
-    static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
-    std::size_t size = _digits.size();
-    std::size_t bits_count = to_bit_length(_digits.back());
-    if (size >=
-            (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 &&
-        (size >
-             (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 ||
-         bits_count >
-             (std::numeric_limits<std::size_t>::max() - 1) % BINARY_SHIFT + 1))
-      throw std::overflow_error("Too large to convert to floating point.");
-    bits_count = (size - 1) * BINARY_SHIFT + bits_count;
-    std::size_t shift_digits, shift_bits, result_size;
-    if (bits_count <= MANTISSA_BITS + 2) {
-      shift_digits = (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
-      shift_bits = (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
-      result_size = shift_digits;
-      Digit remainder = shift_digits_left(_digits.data(), size, shift_bits,
-                                          result_digits + result_size);
-      result_size += size;
-      result_digits[result_size++] = remainder;
-    } else {
-      shift_digits = (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
-      shift_bits = (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
-      Digit remainder =
-          shift_digits_right(_digits.data() + shift_digits, size - shift_digits,
-                             shift_bits, result_digits);
-      result_size = size - shift_digits;
-      if (remainder)
-        result_digits[0] |= 1;
-      else
-        while (shift_digits > 0)
-          if (_digits[--shift_digits]) {
-            result_digits[0] |= 1;
-            break;
-          }
-    }
-    result_digits[0] += half_even_correction[result_digits[0] & 7];
-    double result_modulus = result_digits[--result_size];
-    while (result_size > 0)
-      result_modulus =
-          result_modulus * BINARY_BASE + result_digits[--result_size];
-    result_modulus /= 4.0 * MANTISSA_BITS_POWER_OF_TWO;
-    if (result_modulus == 1.0) {
-      if (bits_count == std::numeric_limits<std::size_t>::max())
-        throw std::overflow_error("Too large to convert to floating point.");
-      result_modulus = 0.5;
-      bits_count += 1;
-    }
-    exponent = bits_count;
-    if (exponent > std::numeric_limits<double>::max_exponent)
-      throw std::overflow_error("Too large to convert to floating point.");
-    return _sign * result_modulus;
-  }
-
-  void parse_non_binary_base_digits(const char* start, const char* stop,
-                                    std::size_t base,
-                                    std::size_t digits_count) {
-    static double bases_logs[37] = {0.0};
-    static std::size_t infimum_bases_exponents[37] = {0};
-    static std::size_t infimum_bases_powers[37] = {0};
-    if (bases_logs[base] == 0.0) {
-      std::size_t infimum_base_power = base;
-      std::size_t infimum_base_exponent = 1;
-      bases_logs[base] = log(base) / log(BINARY_BASE);
-      while (true) {
-        std::size_t candidate = infimum_base_power * base;
-        if (candidate > BINARY_BASE) break;
-        infimum_base_power = candidate;
-        ++infimum_base_exponent;
-      }
-      infimum_bases_powers[base] = infimum_base_power;
-      infimum_bases_exponents[base] = infimum_base_exponent;
-    }
-    double digits_count_upper_bound = digits_count * bases_logs[base] + 1.0;
-    if (digits_count_upper_bound >
-        std::numeric_limits<std::size_t>::max() / sizeof(Digit))
-      throw std::overflow_error("Too many digits.");
-    _digits.reserve(static_cast<std::size_t>(digits_count_upper_bound));
-    std::size_t infimum_base_exponent = infimum_bases_exponents[base];
-    std::size_t infimum_base_power = infimum_bases_powers[base];
-    while (start < stop) {
-      if (*start == SEPARATOR) {
-        ++start;
-        continue;
-      }
-      DoubleDigit digit = static_cast<DoubleDigit>(
-          ASCII_CODES_DIGIT_VALUES[mask_char(*(start++))]);
-      std::size_t base_exponent = 1;
-      for (; base_exponent < infimum_base_exponent && start != stop; ++start) {
-        if (*start == SEPARATOR) continue;
-        ++base_exponent;
-        digit = static_cast<DoubleDigit>(
-            digit * base + ASCII_CODES_DIGIT_VALUES[mask_char(*start)]);
-      }
-      std::size_t base_power = infimum_base_power;
-      if (base_exponent != infimum_base_exponent)
-        for (base_power = base; base_exponent > 1; --base_exponent)
-          base_power *= base;
-      for (std::size_t index = 0; index < _digits.size(); ++index) {
-        digit += static_cast<DoubleDigit>(_digits[index]) * base_power;
-        _digits[index] = static_cast<Digit>(digit & BINARY_DIGIT_MASK);
-        digit >>= BINARY_SHIFT;
-      }
-      if (digit) _digits.push_back(digit);
-    }
-    if (_digits.empty()) _digits.push_back(0);
   }
 
   template <std::size_t BASE>
