@@ -157,10 +157,9 @@ std::vector<TargetDigit> binary_digits_to_non_binary_base(
                                    std::log2(TARGET_BASE));
   std::vector<TargetDigit> result;
   result.reserve(result_max_digits_count);
-  using Digit =
-      std::conditional_t <
-      std::numeric_limits<SourceDigit>::digits<
-          std::numeric_limits<TargetDigit>::digits, TargetDigit, SourceDigit>;
+  using Digit = std::conditional_t<(std::numeric_limits<SourceDigit>::digits <
+                                    std::numeric_limits<TargetDigit>::digits),
+                                   TargetDigit, SourceDigit>;
   for (auto iterator = source.rbegin(); iterator != source.rend(); ++iterator) {
     Digit digit = *iterator;
     for (std::size_t index = 0; index < result.size(); ++index) {
