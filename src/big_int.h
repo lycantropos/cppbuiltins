@@ -816,7 +816,8 @@ class BigInt {
   }
 
   template <std::size_t BASE = 10,
-            std::size_t TARGET_SHIFT = floor_log<BASE>(BINARY_BASE),
+            std::size_t TARGET_SHIFT =
+                (BINARY_BASE < BASE ? 1 : floor_log<BASE>(BINARY_BASE)),
             std::size_t TARGET_BASE = power(BASE, TARGET_SHIFT)>
   std::string repr() const {
     static_assert(1 < BASE && BASE <= MAX_REPRESENTABLE_BASE,
