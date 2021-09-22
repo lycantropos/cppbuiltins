@@ -75,7 +75,7 @@ template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT,
           TargetDigit TARGET_DIGIT_MASK = power(TargetDigit(2), TARGET_SHIFT) -
                                           1>
-static std::vector<SourceDigit> binary_digits_to_greater_binary_base(
+static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
     const std::vector<SourceDigit>& source) {
   static_assert(SOURCE_SHIFT < TARGET_SHIFT,
                 "Target base should be greater than a source one.");
