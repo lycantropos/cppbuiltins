@@ -138,13 +138,24 @@ static const char* pystr_to_ascii_c_str(const py::str& string) {
   return result;
 }
 
+static py::int_ object_to_py_long(const py::object& value) {
+    PyObject* result_ptr = PyNumber_Index(value.ptr());
+    if (!result_ptr) {
+        throw py::error_already_set();
+    }
+    return py::reinterpret_steal<py::int_>(result_ptr);
+}
+
 class Int : public BaseInt {
  public:
   Int() : BaseInt() {}
 
   explicit Int(const BaseInt& value) : BaseInt(value) {}
 
-  explicit Int(py::int_ value)
+  explicit Int(const py::object& value)
+      : Int(object_to_py_long(value)) {}
+
+  explicit Int(const py::int_& value)
       : BaseInt(int_to_sign(value), int_to_digits(value)) {}
 
   Int(const py::str& value, std::size_t base)
@@ -1275,7 +1286,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   PyInt.def(py::init<>())
       .def(py::init<const py::str&, std::size_t>(), py::arg("string"),
            py::arg("base") = 10)
-      .def(py::init<const py::int_&>(), py::arg("value"))
+      .def(py::init<const py::object&>(), py::arg("value"))
       .def(py::self + py::self)
       .def(py::self == py::self)
       .def(~py::self)
