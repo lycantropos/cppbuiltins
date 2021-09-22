@@ -200,7 +200,7 @@ static std::vector<TargetDigit> binary_digits_to_non_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
           std::size_t TARGET_BASE = power(2, TARGET_SHIFT),
           std::size_t TARGET_DIGIT_MASK = TARGET_BASE - 1>
-std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
+static std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
     const std::vector<SourceDigit>& source, std::size_t source_base) {
   double result_digits_count_upper_bound =
       source.size() * log(source_base) / log(TARGET_BASE) + 1.0;
@@ -217,13 +217,12 @@ std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
     infimum_base_power = candidate;
     ++infimum_base_exponent;
   }
-  for (auto position = source.begin(); position != source.end(); ++position) {
+  for (auto position = source.begin(); position != source.end();) {
     double_precision_t<TargetDigit> digit =
-        static_cast<double_precision_t<TargetDigit>>(*position);
+        static_cast<double_precision_t<TargetDigit>>(*position++);
     std::size_t base_exponent = 1;
     for (; base_exponent < infimum_base_exponent && position != source.end();
-         ++position) {
-      ++base_exponent;
+         ++base_exponent, ++position) {
       digit = double_precision_t<TargetDigit>(digit * source_base + *position);
     }
     std::size_t base_power = infimum_base_power;
@@ -245,7 +244,7 @@ std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
           std::size_t TARGET_BASE = power(2, TARGET_SHIFT),
           std::size_t TARGET_DIGIT_MASK = TARGET_BASE - 1>
-std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
+static std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
     const std::vector<SourceDigit>& source, std::size_t source_base) {
   double result_digits_count_upper_bound =
       source.size() * log(source_base) / log(TARGET_BASE) + 1.0;
