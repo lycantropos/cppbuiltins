@@ -217,11 +217,11 @@ static std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
     infimum_base_power = candidate;
     ++infimum_base_exponent;
   }
-  for (auto position = source.begin(); position != source.end();) {
+  for (auto position = source.rbegin(); position != source.rend();) {
     double_precision_t<TargetDigit> digit =
         static_cast<double_precision_t<TargetDigit>>(*position++);
     std::size_t base_exponent = 1;
-    for (; base_exponent < infimum_base_exponent && position != source.end();
+    for (; base_exponent < infimum_base_exponent && position != source.rend();
          ++base_exponent, ++position) {
       digit = double_precision_t<TargetDigit>(digit * source_base + *position);
     }
@@ -253,7 +253,7 @@ static std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
     throw std::overflow_error("Too many digits.");
   std::vector<TargetDigit> result;
   result.reserve(static_cast<std::size_t>(result_digits_count_upper_bound));
-  for (auto position = source.begin(); position != source.end(); ++position) {
+  for (auto position = source.rbegin(); position != source.rend(); ++position) {
     double_precision_t<TargetDigit> digit =
         static_cast<double_precision_t<TargetDigit>>(*position);
     for (std::size_t index = 0; index < result.size(); ++index) {
