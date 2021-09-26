@@ -611,7 +611,7 @@ class BigInt {
       candidate = next_candidate;
     }
     if (step_dividend.is_one()) {
-      if (result.sign() < 0) result = result % divisor;
+      if (result.is_negative()) result = divisor + result;
       return result;
     }
     throw std::invalid_argument("Not invertible.");
@@ -620,8 +620,8 @@ class BigInt {
   BigInt operator+(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt(signed_digit() + other.signed_digit());
-    if (_sign < 0) {
-      if (other._sign < 0)
+    if (is_negative()) {
+      if (other.is_negative())
         return BigInt(-1, sum_digits(_digits, other._digits));
       else {
         int sign = 1;
@@ -629,7 +629,7 @@ class BigInt {
             subtract_digits(other._digits, _digits, sign);
         return BigInt(sign, digits);
       }
-    } else if (other._sign < 0) {
+    } else if (other.is_negative()) {
       int sign = 1;
       std::vector<Digit> digits = subtract_digits(_digits, other._digits, sign);
       return BigInt(sign, digits);
@@ -657,7 +657,7 @@ class BigInt {
 
   BigInt operator~() const {
     if (_digits.size() == 1) return BigInt(-signed_digit() - 1);
-    if (_sign > 0)
+    if (is_positive())
       return BigInt(-1, sum_digits(_digits, {1}));
     else {
       int sign = 1;
@@ -669,15 +669,15 @@ class BigInt {
   BigInt operator-(const BigInt& other) const {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt(signed_digit() - other.signed_digit());
-    if (_sign < 0) {
-      if (other._sign < 0) {
+    if (is_negative()) {
+      if (other.is_negative()) {
         int sign = 1;
         std::vector<Digit> digits =
             subtract_digits(other._digits, _digits, sign);
         return BigInt(sign, digits);
       } else
         return BigInt(-1, sum_digits(_digits, other._digits));
-    } else if (other._sign < 0)
+    } else if (other.is_negative())
       return BigInt(1, sum_digits(_digits, other._digits));
     else {
       int sign = _sign | other._sign;
@@ -693,15 +693,16 @@ class BigInt {
   bool operator<(const BigInt& other) const {
     return _sign < other._sign ||
            (_sign == other._sign &&
-            (_sign > 0 ? digits_lesser_than(_digits, other._digits)
-                       : digits_lesser_than(other._digits, _digits)));
+            (is_positive() ? digits_lesser_than(_digits, other._digits)
+                           : digits_lesser_than(other._digits, _digits)));
   }
 
   bool operator<=(const BigInt& other) const {
     return _sign < other._sign ||
            (_sign == other._sign &&
-            (_sign > 0 ? digits_lesser_than_or_equal(_digits, other._digits)
-                       : digits_lesser_than_or_equal(other._digits, _digits)));
+            (is_positive()
+                 ? digits_lesser_than_or_equal(_digits, other._digits)
+                 : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
   BigInt operator%(const BigInt& divisor) const {
@@ -711,10 +712,10 @@ class BigInt {
   }
 
   double operator/(const BigInt& divisor) const {
-    if (divisor._sign == 0)
+    if (divisor.is_zero())
       throw std::range_error("Division by zero is undefined.");
-    bool negate = (_sign < 0) ^ (divisor._sign < 0);
-    if (sign() == 0) return negate ? -0.0 : 0.0;
+    bool negate = is_negative() ^ divisor.is_negative();
+    if (is_zero()) return negate ? -0.0 : 0.0;
     const std::vector<Digit>& dividend_digits = digits();
     const std::vector<Digit>& divisor_digits = divisor.digits();
     std::size_t dividend_digits_count = dividend_digits.size();
@@ -830,30 +831,42 @@ class BigInt {
     return negate ? -result : result;
   }
 
-  BigInt abs() const { return _sign < 0 ? BigInt(1, _digits) : *this; }
+  BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
+
+  bool is_negative() const { return _sign < 0; }
+
+  bool is_one() const {
+    return is_positive() && _digits.size() == 1 && _digits[0] == 1;
+  }
+
+  bool is_positive() const { return _sign > 0; }
+
+  bool is_zero() const { return _sign == 0; }
 
   BigInt pow(BigInt exponent, const BigInt* maybe_modulus = nullptr) const {
     BigInt base = *this, modulus;
     bool is_negative = false;
     std::function<BigInt(const BigInt&, const BigInt&)> make_step;
     if (maybe_modulus != nullptr) {
-      if (maybe_modulus->sign() == 0)
+      if (maybe_modulus->is_zero())
         throw std::invalid_argument("Modulus cannot be zero.");
-      is_negative = maybe_modulus->sign() < 0;
+      is_negative = maybe_modulus->is_negative();
       modulus = maybe_modulus->abs();
       if (modulus.is_one()) return BigInt();
-      if (exponent.sign() < 0) {
+      if (exponent.is_negative()) {
         exponent = -exponent;
         base = base.invmod(modulus);
       }
-      if (base.sign() < 0 || base.digits().size() > modulus.digits().size())
+      if (base.is_negative() || base.digits().size() > modulus.digits().size())
         base = base % modulus;
       make_step = [&modulus](const BigInt& first, const BigInt& second) {
+        printf("(%s * %s) %% %s\n", first.repr().c_str(), second.repr().c_str(),
+               modulus.repr().c_str());
         return (first * second) % modulus;
       };
-    } else if (exponent.sign() < 0)
+    } else if (exponent.is_negative())
       throw std::range_error(
-          "Exponent should be positive or modulus should be specified.");
+          "Either exponent should be positive or modulus should be specified.");
     else
       make_step = [](const BigInt& first, const BigInt& second) {
         return first * second;
@@ -916,7 +929,7 @@ class BigInt {
                   "Base should be range from 2 to 36.");
     const std::vector<Digit> base_digits = to_base_digits<TARGET_BASE>();
     const std::size_t characters_count =
-        (_sign < 0) + (base_digits.size() - 1) * TARGET_SHIFT +
+        (is_negative()) + (base_digits.size() - 1) * TARGET_SHIFT +
         floor_log<BASE>(base_digits.back()) + 1;
     char* characters = new char[characters_count + 1]();
     char* stop = &characters[characters_count];
@@ -930,9 +943,9 @@ class BigInt {
     for (Digit remainder = base_digits.back(); remainder != 0;
          remainder /= BASE)
       *--stop = DIGIT_VALUES_ASCII_CODES[remainder % BASE];
-    if (_sign == 0)
+    if (is_zero())
       *--stop = '0';
-    else if (_sign < 0)
+    else if (is_negative())
       *--stop = '-';
     std::string result(characters, characters_count);
     delete[] characters;
@@ -944,12 +957,6 @@ class BigInt {
       : _sign(sign), _digits(digits) {}
 
   const std::vector<Digit>& digits() const { return _digits; }
-
-  bool is_one() const {
-    return _sign > 0 && _digits.size() == 1 && _digits[0] == 1;
-  }
-
-  int sign() const { return _sign; }
 
   SignedDigit signed_digit() const {
     return _sign * static_cast<SignedDigit>(_digits[0]);
@@ -1483,9 +1490,9 @@ class BigInt {
                   "Quotient or remainder or both should be requested.");
     std::size_t digits_count = _digits.size(),
                 divisor_digits_count = divisor._digits.size();
-    if (divisor._sign == 0)
+    if (divisor.is_zero())
       throw std::range_error("Division by zero is undefined.");
-    else if (_sign == 0) {
+    else if (is_zero()) {
       if constexpr (WITH_QUOTIENT) *quotient = BigInt();
       if constexpr (WITH_REMAINDER) *remainder = *this;
     } else if (digits_count < divisor_digits_count ||
