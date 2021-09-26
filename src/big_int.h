@@ -712,10 +712,10 @@ class BigInt {
   }
 
   double operator/(const BigInt& divisor) const {
-    if (divisor.is_zero())
+    if (!divisor)
       throw std::range_error("Division by zero is undefined.");
     bool negate = is_negative() ^ divisor.is_negative();
-    if (is_zero()) return negate ? -0.0 : 0.0;
+    if (!*this) return negate ? -0.0 : 0.0;
     const std::vector<Digit>& dividend_digits = digits();
     const std::vector<Digit>& divisor_digits = divisor.digits();
     std::size_t dividend_digits_count = dividend_digits.size();
@@ -841,14 +841,12 @@ class BigInt {
 
   bool is_positive() const { return _sign > 0; }
 
-  bool is_zero() const { return _sign == 0; }
-
   BigInt pow(BigInt exponent, const BigInt* maybe_modulus = nullptr) const {
     BigInt base = *this, modulus;
     bool is_negative = false;
     std::function<BigInt(const BigInt&, const BigInt&)> make_step;
-    if (maybe_modulus != nullptr) {
-      if (maybe_modulus->is_zero())
+    if (!!maybe_modulus) {
+      if (!*maybe_modulus)
         throw std::invalid_argument("Modulus cannot be zero.");
       is_negative = maybe_modulus->is_negative();
       modulus = maybe_modulus->abs();
@@ -943,7 +941,7 @@ class BigInt {
     for (Digit remainder = base_digits.back(); remainder != 0;
          remainder /= BASE)
       *--stop = DIGIT_VALUES_ASCII_CODES[remainder % BASE];
-    if (is_zero())
+    if (!*this)
       *--stop = '0';
     else if (is_negative())
       *--stop = '-';
@@ -1490,9 +1488,9 @@ class BigInt {
                   "Quotient or remainder or both should be requested.");
     std::size_t digits_count = _digits.size(),
                 divisor_digits_count = divisor._digits.size();
-    if (divisor.is_zero())
+    if (!divisor)
       throw std::range_error("Division by zero is undefined.");
-    else if (is_zero()) {
+    else if (!*this) {
       if constexpr (WITH_QUOTIENT) *quotient = BigInt();
       if constexpr (WITH_REMAINDER) *remainder = *this;
     } else if (digits_count < divisor_digits_count ||
