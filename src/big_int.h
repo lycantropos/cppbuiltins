@@ -271,6 +271,13 @@ static std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
   return result;
 }
 
+template <class Digit>
+static void trim_leading_zeros(std::vector<Digit>& digits) {
+  std::size_t digits_count = digits.size();
+  while (digits_count > 1 && digits[digits_count - 1] == 0) --digits_count;
+  if (digits_count != digits.size()) digits.resize(digits_count);
+}
+
 template <typename Digit>
 static bool digits_lesser_than(const std::vector<Digit>& first,
                                const std::vector<Digit>& second) {
@@ -461,7 +468,7 @@ class BigInt {
     _digits = (base & (base - 1))
                   ? digits_from_non_binary_base(digits, base)
                   : digits_from_binary_base(digits, floor_log2(base));
-    normalize_digits(_digits);
+    trim_leading_zeros(_digits);
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
 
@@ -579,8 +586,8 @@ class BigInt {
         next_largest_accumulator >>= BINARY_SHIFT;
         next_smallest_accumulator >>= BINARY_SHIFT;
       }
-      normalize_digits(next_largest_digits);
-      normalize_digits(next_smallest_digits);
+      trim_leading_zeros(next_largest_digits);
+      trim_leading_zeros(next_smallest_digits);
       largest_digits = next_largest_digits;
       smallest_digits = next_smallest_digits;
     }
@@ -793,7 +800,7 @@ class BigInt {
     }
     std::vector<Digit> quotient_digits(quotient_data,
                                        quotient_data + quotient_digits_count);
-    normalize_digits(quotient_digits);
+    trim_leading_zeros(quotient_digits);
     if (divisor_digits_count == 1) {
       std::vector<Digit> next_quotient_digits;
       Digit remainder = divrem_digits_by_digit(
@@ -1089,14 +1096,14 @@ class BigInt {
                                                   quotient_data + quotient_size)
                              : std::vector<Digit>({0});
     delete[] quotient_data;
-    normalize_digits(quotient);
+    trim_leading_zeros(quotient);
     shift_digits_right(dividend_normalized, divisor_digits_count, shift,
                        divisor_normalized);
     delete[] dividend_normalized;
     remainder = std::vector<Digit>(divisor_normalized,
                                    divisor_normalized + divisor_digits_count);
     delete[] divisor_normalized;
-    normalize_digits(remainder);
+    trim_leading_zeros(remainder);
   }
 
   static Digit divrem_digits_by_digit(const std::vector<Digit>& dividend,
@@ -1114,7 +1121,7 @@ class BigInt {
     quotient =
         std::vector<Digit>(quotient_data, quotient_data + dividend.size());
     delete[] quotient_data;
-    normalize_digits(quotient);
+    trim_leading_zeros(quotient);
     return static_cast<Digit>(remainder);
   }
 
@@ -1247,7 +1254,7 @@ class BigInt {
       accumulator >>= BINARY_SHIFT;
       accumulator &= 1;
     }
-    normalize_digits(result);
+    trim_leading_zeros(result);
     return result;
   }
 
@@ -1292,7 +1299,7 @@ class BigInt {
       accumulator >>= BINARY_SHIFT;
     }
     result.push_back(accumulator);
-    normalize_digits(result);
+    trim_leading_zeros(result);
     return result;
   }
 
@@ -1303,8 +1310,8 @@ class BigInt {
         digits.begin() + size_low;
     low = std::vector<Digit>(digits.begin(), mid);
     high = std::vector<Digit>(mid, digits.end());
-    normalize_digits(high);
-    normalize_digits(low);
+    trim_leading_zeros(high);
+    trim_leading_zeros(low);
   }
 
   static std::vector<Digit> multiply_digits(const std::vector<Digit>& first,
@@ -1357,7 +1364,7 @@ class BigInt {
         multiply_digits(shortest_components_sum, longest_components_sum);
     (void)sum_digits_in_place(result.data() + shift, digits_after_shift,
                               components_sums_product);
-    normalize_digits(result);
+    trim_leading_zeros(result);
     return result;
   }
 
@@ -1380,7 +1387,7 @@ class BigInt {
       size_longest -= step_digits_count;
       processed_digits_count += step_digits_count;
     }
-    normalize_digits(result);
+    trim_leading_zeros(result);
     return result;
   }
 
@@ -1430,14 +1437,8 @@ class BigInt {
           *result_position +=
               static_cast<Digit>(accumulator & BINARY_DIGIT_MASK);
       }
-    normalize_digits(result);
+    trim_leading_zeros(result);
     return result;
-  }
-
-  static void normalize_digits(std::vector<Digit>& digits) {
-    std::size_t digits_count = digits.size();
-    while (digits_count > 1 && digits[digits_count - 1] == 0) --digits_count;
-    if (digits_count != digits.size()) digits.resize(digits_count);
   }
 
   static std::vector<unsigned char> parse_digits(const char* const start,
