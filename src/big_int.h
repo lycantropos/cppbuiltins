@@ -600,12 +600,6 @@ class BigInt {
     divmod<true, true>(divisor, &quotient, &remainder);
   }
 
-  BigInt floor_divide(const BigInt& divisor) const {
-    BigInt result;
-    divmod<true, false>(divisor, &result, nullptr);
-    return result;
-  }
-
   BigInt invmod(const BigInt& divisor) const {
     BigInt candidate, result{1u}, step_dividend = *this, step_divisor = divisor;
     while (step_divisor) {
@@ -712,15 +706,22 @@ class BigInt {
                  : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
+  BigInt operator/(const BigInt& divisor) const {
+    BigInt result;
+    divmod<true, false>(divisor, &result, nullptr);
+    return result;
+  }
+
   BigInt operator%(const BigInt& divisor) const {
     BigInt result;
     divmod<false, true>(divisor, nullptr, &result);
     return result;
   }
 
-  double operator/(const BigInt& divisor) const {
-    if (!divisor)
-      throw std::range_error("Division by zero is undefined.");
+  BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
+
+  double divide_as_double(const BigInt& divisor) const {
+    if (!divisor) throw std::range_error("Division by zero is undefined.");
     bool negate = is_negative() ^ divisor.is_negative();
     if (!*this) return negate ? -0.0 : 0.0;
     const std::vector<Digit>& dividend_digits = digits();
@@ -838,8 +839,6 @@ class BigInt {
     return negate ? -result : result;
   }
 
-  BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
-
   bool is_negative() const { return _sign < 0; }
 
   bool is_one() const {
@@ -865,8 +864,6 @@ class BigInt {
       if (base.is_negative() || base.digits().size() > modulus.digits().size())
         base = base % modulus;
       make_step = [&modulus](const BigInt& first, const BigInt& second) {
-        printf("(%s * %s) %% %s\n", first.repr().c_str(), second.repr().c_str(),
-               modulus.repr().c_str());
         return (first * second) % modulus;
       };
     } else if (exponent.is_negative())

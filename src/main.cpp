@@ -191,15 +191,6 @@ class Int : public BaseInt {
     return Int(BaseInt::operator-(other));
   }
 
-  double operator/(const BigInt& divisor) const {
-    try {
-      return BaseInt::operator/(divisor);
-    } catch (const std::range_error& exception) {
-      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-      throw py::error_already_set();
-    }
-  }
-
   Int abs() const { return Int(BaseInt::abs()); }
 
   PyLongObject* as_PyLong() const {
@@ -228,9 +219,9 @@ class Int : public BaseInt {
     return py::make_tuple(quotient, remainder);
   }
 
-  Int floor_divide(const Int& divisor) const {
+  Int operator/(const Int& divisor) const {
     try {
-      return Int(BaseInt::floor_divide(divisor));
+      return Int(BaseInt::operator/(divisor));
     } catch (const std::range_error& exception) {
       PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
       throw py::error_already_set();
@@ -282,6 +273,15 @@ static std::ostream& operator<<(std::ostream& stream, const Int& value) {
   return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr() << "')";
 }
 
+double divide_as_double(const Int& dividend, const Int& divisor) {
+  try {
+    return dividend.divide_as_double(divisor);
+  } catch (const std::range_error& exception) {
+    PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+    throw py::error_already_set();
+  }
+}
+
 static py::object pow(const py::float_& base, const py::float_& exponent) {
   PyObject* result = PyNumber_Power(base.ptr(), exponent.ptr(), Py_None);
   if (!result) throw py::error_already_set();
@@ -307,7 +307,7 @@ class Fraction {
 
   operator bool() const { return bool(_numerator); }
 
-  operator double() const { return _numerator / _denominator; }
+  operator double() const { return divide_as_double(_numerator, _denominator); }
 
   bool operator==(const Fraction& other) const {
     return _numerator == other._numerator && _denominator == other._denominator;
@@ -336,18 +336,16 @@ class Fraction {
         _numerator.gcd(other._denominator);
     const Int other_numerator_denominator_gcd =
         _denominator.gcd(other._numerator);
-    return Fraction(
-        _numerator.floor_divide(numerator_other_denominator_gcd) *
-            other._numerator.floor_divide(other_numerator_denominator_gcd),
-        _denominator.floor_divide(other_numerator_denominator_gcd) *
-            other._denominator.floor_divide(numerator_other_denominator_gcd));
+    return Fraction((_numerator / numerator_other_denominator_gcd) *
+                        (other._numerator / other_numerator_denominator_gcd),
+                    (_denominator / other_numerator_denominator_gcd) *
+                        (other._denominator / numerator_other_denominator_gcd));
   }
 
   Fraction operator*(const Int& other) const {
     const Int denominator_other_gcd = _denominator.gcd(other);
-    return Fraction(_numerator * other.floor_divide(denominator_other_gcd),
-                    _denominator.floor_divide(denominator_other_gcd),
-                    std::false_type{});
+    return Fraction(_numerator * (other / denominator_other_gcd),
+                    _denominator / denominator_other_gcd, std::false_type{});
   }
 
   Fraction operator-() const {
@@ -369,21 +367,21 @@ class Fraction {
   Fraction operator/(const Fraction& other) const {
     const Int numerators_gcd = _numerator.gcd(other._numerator);
     const Int denominators_gcd = _denominator.gcd(other._denominator);
-    return Fraction(_numerator.floor_divide(numerators_gcd) *
-                        other._denominator.floor_divide(denominators_gcd),
-                    other._numerator.floor_divide(numerators_gcd) *
-                        _denominator.floor_divide(denominators_gcd));
+    return Fraction(
+        (_numerator / numerators_gcd) * (other._denominator / denominators_gcd),
+        (other._numerator / numerators_gcd) *
+            (_denominator / denominators_gcd));
   }
 
   Fraction operator/(const Int& other) const {
     const Int numerators_gcd = _numerator.gcd(other);
-    return Fraction(_numerator.floor_divide(numerators_gcd),
-                    other.floor_divide(numerators_gcd) * _denominator);
+    return Fraction(_numerator / numerators_gcd,
+                    (other / numerators_gcd) * _denominator);
   }
 
-  Int ceil() const { return -(-_numerator).floor_divide(_denominator); }
+  Int ceil() const { return -((-_numerator) / _denominator); }
 
-  Int floor() const { return _numerator.floor_divide(_denominator); }
+  Int floor() const { return _numerator / _denominator; }
 
   const Int& denominator() const { return _denominator; }
 
@@ -394,12 +392,12 @@ class Fraction {
   }
 
   Int floor_divide(const Fraction& other) const {
-    return (_numerator * other._denominator)
-        .floor_divide(other._numerator * _denominator);
+    return (_numerator * other._denominator) /
+           (other._numerator * _denominator);
   }
 
   Int floor_divide(const Int& other) const {
-    return _numerator.floor_divide(other * _denominator);
+    return _numerator / (other * _denominator);
   }
 
   const Int& numerator() const { return _numerator; }
@@ -459,8 +457,8 @@ class Fraction {
         _denominator = -_denominator;
       }
       Int gcd = _numerator.gcd(_denominator);
-      _denominator = _denominator.floor_divide(gcd);
-      _numerator = _numerator.floor_divide(gcd);
+      _denominator = _denominator / gcd;
+      _numerator = _numerator / gcd;
     }
   }
 };
@@ -496,20 +494,18 @@ static Fraction operator%(const Int& self, const Fraction& other) {
 
 static Fraction operator*(const Int& self, const Fraction& other) {
   const Int self_other_denominator_gcd = self.gcd(other.denominator());
-  return Fraction(
-      self.floor_divide(self_other_denominator_gcd) * other.numerator(),
-      other.denominator().floor_divide(self_other_denominator_gcd));
+  return Fraction((self / self_other_denominator_gcd) * other.numerator(),
+                  other.denominator() / self_other_denominator_gcd);
 }
 
 static Fraction operator/(const Int& self, const Fraction& other) {
   const Int self_other_numerator_gcd = self.gcd(other.numerator());
-  return Fraction(
-      self.floor_divide(self_other_numerator_gcd) * other.denominator(),
-      other.numerator().floor_divide(self_other_numerator_gcd));
+  return Fraction((self / self_other_numerator_gcd) * other.denominator(),
+                  other.numerator() / self_other_numerator_gcd);
 }
 
 Int floor_divide(const Int& self, const Fraction& other) {
-  return (self * other.denominator()).floor_divide(other.numerator());
+  return (self * other.denominator()) / other.numerator();
 }
 
 py::object pow(const Int& base, const Fraction& exponent) {
@@ -1295,7 +1291,6 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(-py::self)
       .def(+py::self)
       .def(py::self - py::self)
-      .def(py::self / py::self)
       .def(py::pickle([](const Int& self) { return py::int_(self); },
                       [](const py::int_& state) { return Int(state); }))
       .def("__abs__", &Int::abs)
@@ -1308,13 +1303,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__float__", &Int::operator double)
       .def("__floor__", &identity<const Int&>)
-      .def("__floordiv__", &Int::floor_divide, py::is_operator{})
+      .def("__floordiv__", &Int::operator/, py::is_operator{})
       .def("__hash__", &Int::hash)
       .def("__int__", &Int::operator py::int_)
       .def("__pow__", &Int::pow, py::arg("exponent"),
            py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>)
+      .def("__truediv__", &Int::divide_as_double, py::is_operator{})
       .def("__trunc__", &identity<const Int&>);
 
   py::class_<Fraction> PyFraction(m, FRACTION_NAME);
