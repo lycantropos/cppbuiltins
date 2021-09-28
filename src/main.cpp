@@ -278,8 +278,6 @@ class Gcd<Int> {
 }  // namespace cppbuiltins
 
 namespace cppbuiltins {
-Int gcd(const Int& first, const Int& second) { return first.gcd(second); }
-
 template <>
 Int power(const Int base, const Int exponent) {
   return base.power(exponent);
@@ -347,13 +345,13 @@ static Fraction operator%(const Int& self, const Fraction& other) {
 }
 
 static Fraction operator*(const Int& self, const Fraction& other) {
-  const Int self_other_denominator_gcd = gcd(self, other.denominator());
+  const Int self_other_denominator_gcd = self.gcd(other.denominator());
   return Fraction((self / self_other_denominator_gcd) * other.numerator(),
                   other.denominator() / self_other_denominator_gcd);
 }
 
 static Fraction operator/(const Int& self, const Fraction& other) {
-  const Int self_other_numerator_gcd = gcd(self, other.numerator());
+  const Int self_other_numerator_gcd = self.gcd(other.numerator());
   return Fraction((self / self_other_numerator_gcd) * other.denominator(),
                   other.numerator() / self_other_numerator_gcd);
 }
