@@ -2,6 +2,7 @@
 #define FRACTION_HPP
 
 #include <stdexcept>
+
 #include "utils.h"
 
 namespace cppbuiltins {
@@ -18,7 +19,8 @@ class Fraction {
  public:
   Fraction() : _numerator(Component()), _denominator(Component(1)) {}
 
-  Fraction(const Component& numerator, const Component& denominator = Component(1))
+  Fraction(const Component& numerator,
+           const Component& denominator = Component(1))
       : Fraction(numerator, denominator, std::true_type{}) {}
 
   Fraction operator+(const Fraction& other) const {
@@ -33,9 +35,13 @@ class Fraction {
 
   explicit operator bool() const { return bool(_numerator); }
 
-  explicit operator double() const { return divide_as_double(_numerator, _denominator); }
+  explicit operator double() const {
+    return divide_as_double(_numerator, _denominator);
+  }
 
-  explicit operator Component() const { return is_negative() ? ceil() : floor(); }
+  explicit operator Component() const {
+    return is_negative() ? ceil() : floor();
+  }
 
   bool operator==(const Fraction& other) const {
     return _numerator == other._numerator && _denominator == other._denominator;
@@ -114,7 +120,8 @@ class Fraction {
 
   const Component& denominator() const { return _denominator; }
 
-  void divmod(const Fraction& divisor, Fraction& quotient, Fraction& remainder) const {
+  void divmod(const Fraction& divisor, Fraction& quotient,
+              Fraction& remainder) const {
     quotient = floor_divide(divisor);
     remainder = operator%(divisor);
   }
