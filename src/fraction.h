@@ -2,6 +2,7 @@
 #define FRACTION_HPP
 
 #include <stdexcept>
+#include <utility>
 
 #include "utils.h"
 
@@ -19,9 +20,9 @@ class Fraction {
  public:
   Fraction() : _numerator(Component()), _denominator(Component(1)) {}
 
-  Fraction(const Component& numerator,
-           const Component& denominator = Component(1))
-      : Fraction(numerator, denominator, std::true_type{}) {}
+  Fraction(Component numerator, Component denominator = Component(1))
+      : Fraction(std::move(numerator), std::move(denominator),
+                 std::true_type{}) {}
 
   Fraction operator+(const Fraction& other) const {
     return Fraction(
