@@ -1310,7 +1310,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>)
-      .def("__truediv__", &Int::divide_as_double, py::is_operator{})
+      .def("__truediv__", &divide_as_double, py::is_operator{})
       .def("__trunc__", &identity<const Int&>);
 
   py::class_<Fraction> PyFraction(m, FRACTION_NAME);
