@@ -30,7 +30,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator+(const Component& other) const {
+  Fraction operator+(Component other) const {
     return Fraction(_numerator + _denominator * other, _denominator);
   }
 
@@ -62,7 +62,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator%(const Component& other) const {
+  Fraction operator%(Component other) const {
     return Fraction(_numerator % (other * _denominator), _denominator);
   }
 
@@ -78,7 +78,7 @@ class Fraction {
                     std::false_type{});
   }
 
-  Fraction operator*(const Component& other) const {
+  Fraction operator*(Component other) const {
     const Component denominator_other_gcd = gcd(_denominator, other);
     return Fraction(_numerator * (other / denominator_other_gcd),
                     _denominator / denominator_other_gcd, std::false_type{});
@@ -96,7 +96,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator-(const Component& other) const {
+  Fraction operator-(Component other) const {
     return Fraction(_numerator - _denominator * other, _denominator);
   }
 
@@ -109,7 +109,7 @@ class Fraction {
             (_denominator / denominators_gcd));
   }
 
-  Fraction operator/(const Component& other) const {
+  Fraction operator/(Component other) const {
     const Component numerators_gcd = gcd(_numerator, other);
     return Fraction(_numerator / numerators_gcd,
                     (other / numerators_gcd) * _denominator);
@@ -138,12 +138,12 @@ class Fraction {
 
   const Component& numerator() const { return _numerator; }
 
-  Fraction power(const Component& exponent) const {
-    if (exponent.is_negative()) {
+  Fraction power(Component exponent) const {
+    if (cppbuiltins::is_negative(exponent)) {
       if (!_numerator)
         throw std::range_error("Denominator should not be zero.");
       Component exponent_modulus = -exponent;
-      return _numerator.is_negative()
+      return cppbuiltins::is_negative(_numerator)
                  ? Fraction(cppbuiltins::power(-_denominator, exponent_modulus),
                             cppbuiltins::power(-_numerator, exponent_modulus),
                             std::false_type{})
