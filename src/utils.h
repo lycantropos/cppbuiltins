@@ -32,7 +32,7 @@ using double_precision_t = typename double_precision<T>::type;
 
 template <class T>
 T gcd(T first, T second) {
-  while (second != 0) {
+  while (!!second) {
     const T step = second;
     second = first % second;
     first = step;
