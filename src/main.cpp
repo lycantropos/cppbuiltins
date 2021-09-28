@@ -1238,7 +1238,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
                                               py::const_),
            py::is_operator{})
       .def("__floordiv__",
-           py::overload_cast<const Int&>(&Fraction::floor_divide, py::const_),
+           py::overload_cast<Int>(&Fraction::floor_divide, py::const_),
            py::is_operator{})
       .def("__hash__", &hash_fraction)
       .def("__int__", [](const Fraction& self) { return py::int_(Int(self)); })

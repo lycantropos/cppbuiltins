@@ -132,7 +132,7 @@ class Fraction {
            (other._numerator * _denominator);
   }
 
-  Component floor_divide(const Component& other) const {
+  Component floor_divide(Component other) const {
     return _numerator / (other * _denominator);
   }
 
