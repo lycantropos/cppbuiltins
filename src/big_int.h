@@ -1556,5 +1556,6 @@ class BigInt {
           _digits);
   }
 };
+}  // namespace cppbuiltins
 
 #endif
