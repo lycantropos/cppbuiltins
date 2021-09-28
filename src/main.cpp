@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "big_int.h"
+#include "fraction.h"
 #include "utils.h"
 
 namespace py = pybind11;
@@ -110,9 +111,8 @@ static std::string to_repr(const Type& value) {
   return {stream.str()};
 }
 
-using BaseInt =
-    BigInt<std::conditional_t<sizeof(void*) == 8, std::uint32_t, std::uint16_t>,
-           '_'>;
+using BigInt = cppbuiltins::BigInt<
+    std::conditional_t<sizeof(void*) == 8, std::uint32_t, std::uint16_t>, '_'>;
 
 static int int_to_sign(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
@@ -120,12 +120,12 @@ static int int_to_sign(const py::int_& value) {
   return signed_size < 0 ? -1 : signed_size > 0;
 }
 
-static std::vector<BaseInt::Digit> int_to_digits(const py::int_& value) {
+static std::vector<BigInt::Digit> int_to_digits(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
   std::size_t size = Py_ABS(signed_size) + (signed_size == 0);
-  return binary_digits_to_binary_base<digit, BaseInt::Digit, PyLong_SHIFT,
-                                      BaseInt::BINARY_SHIFT>(
+  return cppbuiltins::binary_digits_to_binary_base<
+      digit, BigInt::Digit, PyLong_SHIFT, BigInt::BINARY_SHIFT>(
       std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size));
 }
 
@@ -146,19 +146,19 @@ static py::int_ object_to_py_long(const py::object& value) {
   return py::reinterpret_steal<py::int_>(result_ptr);
 }
 
-class Int : public BaseInt {
+class Int : public BigInt {
  public:
-  Int() : BaseInt() {}
+  Int() : BigInt() {}
 
-  explicit Int(const BaseInt& value) : BaseInt(value) {}
+  explicit Int(const BigInt& value) : BigInt(value) {}
 
   explicit Int(const py::object& value) : Int(object_to_py_long(value)) {}
 
   explicit Int(const py::int_& value)
-      : BaseInt(int_to_sign(value), int_to_digits(value)) {}
+      : BigInt(int_to_sign(value), int_to_digits(value)) {}
 
   Int(const py::str& value, std::size_t base)
-      : BaseInt(pystr_to_ascii_c_str(value), base) {}
+      : BigInt(pystr_to_ascii_c_str(value), base) {}
 
   operator py::int_() const {
     return py::reinterpret_steal<py::int_>((PyObject*)as_PyLong());
@@ -166,7 +166,7 @@ class Int : public BaseInt {
 
   Int operator%(const Int& divisor) const {
     try {
-      return Int(BaseInt::operator%(divisor));
+      return Int(BigInt::operator%(divisor));
     } catch (const std::range_error& exception) {
       PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
       throw py::error_already_set();
@@ -176,36 +176,37 @@ class Int : public BaseInt {
   const Int& operator+() const { return *this; }
 
   Int operator+(const Int& other) const {
-    return Int(BaseInt::operator+(other));
+    return Int(BigInt::operator+(other));
   }
 
-  Int operator~() const { return Int(BaseInt::operator~()); }
+  Int operator~() const { return Int(BigInt::operator~()); }
 
   Int operator*(const Int& other) const {
-    return Int(BaseInt::operator*(other));
+    return Int(BigInt::operator*(other));
   }
 
-  Int operator-() const { return Int(BaseInt::operator-()); }
+  Int operator-() const { return Int(BigInt::operator-()); }
 
   Int operator-(const Int& other) const {
-    return Int(BaseInt::operator-(other));
+    return Int(BigInt::operator-(other));
   }
 
   Int operator/(const Int& divisor) const {
     try {
-      return Int(BaseInt::operator/(divisor));
+      return Int(BigInt::operator/(divisor));
     } catch (const std::range_error& exception) {
       PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
       throw py::error_already_set();
     }
   }
 
-  Int abs() const { return Int(BaseInt::abs()); }
+  Int abs() const { return Int(BigInt::abs()); }
 
   PyLongObject* as_PyLong() const {
-    const std::vector<BaseInt::Digit>& digits = this->digits();
-    std::vector<digit> result_digits = binary_digits_to_binary_base<
-        BaseInt::Digit, digit, BaseInt::BINARY_SHIFT, PyLong_SHIFT>(digits);
+    const std::vector<BigInt::Digit>& digits = this->digits();
+    std::vector<digit> result_digits =
+        cppbuiltins::binary_digits_to_binary_base<
+            BigInt::Digit, digit, BigInt::BINARY_SHIFT, PyLong_SHIFT>(digits);
     PyLongObject* result = _PyLong_New(result_digits.size());
     std::memcpy(result->ob_digit, result_digits.data(),
                 sizeof(digit) * result_digits.size());
@@ -217,21 +218,10 @@ class Int : public BaseInt {
     return result;
   }
 
-  py::tuple divmod(const Int& divisor) const {
-    Int quotient, remainder;
-    try {
-      BaseInt::divmod(divisor, quotient, remainder);
-    } catch (const std::range_error& exception) {
-      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-      throw py::error_already_set();
-    }
-    return py::make_tuple(quotient, remainder);
-  }
-
-  Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
+  Int gcd(const Int& other) const { return Int(BigInt::gcd(other)); }
 
   Py_hash_t hash() const {
-    const std::vector<BaseInt::Digit>& digits = this->digits();
+    const std::vector<BigInt::Digit>& digits = this->digits();
     if (digits.size() == 1) {
       if (is_positive())
         return digits[0];
@@ -243,8 +233,8 @@ class Int : public BaseInt {
     Py_uhash_t result = 0;
     for (auto position = digits.rbegin(); position != digits.rend();
          ++position) {
-      result = ((result << BaseInt::BINARY_SHIFT) & _PyHASH_MODULUS) |
-               (result >> (_PyHASH_BITS - BaseInt::BINARY_SHIFT));
+      result = ((result << BigInt::BINARY_SHIFT) & _PyHASH_MODULUS) |
+               (result >> (_PyHASH_BITS - BigInt::BINARY_SHIFT));
       result += *position;
       if (result >= _PyHASH_MODULUS) result -= _PyHASH_MODULUS;
     }
@@ -253,19 +243,14 @@ class Int : public BaseInt {
     return static_cast<Py_hash_t>(result);
   }
 
-  Int invmod(const Int& divisor) const { return Int(BaseInt::invmod(divisor)); }
+  Int invmod(const Int& divisor) const { return Int(BigInt::invmod(divisor)); }
 
-  bool is_one() const { return BaseInt::is_one(); }
+  bool is_one() const { return BigInt::is_one(); }
 
-  py::object pow(const Int& exponent,
-                 const Int* maybe_modulus = nullptr) const {
-    if (maybe_modulus == nullptr && exponent.is_negative()) {
-      PyObject* result = PyFloat_Type.tp_as_number->nb_power(
-          (PyObject*)as_PyLong(), (PyObject*)exponent.as_PyLong(), Py_None);
-      if (!result) throw py::error_already_set();
-      return py::reinterpret_steal<py::object>(result);
-    }
-    return py::cast(Int(BaseInt::pow(exponent, maybe_modulus)));
+  Int power(const Int& exponent) const { return Int(BigInt::power(exponent)); }
+
+  Int power_modulo(const Int& exponent, const Int& modulus) const {
+    return Int(BigInt::power_modulo(exponent, modulus));
   }
 };
 
@@ -282,186 +267,38 @@ double divide_as_double(const Int& dividend, const Int& divisor) {
   }
 }
 
-static py::object pow(const py::float_& base, const py::float_& exponent) {
+namespace cppbuiltins {
+template <>
+class Gcd<Int> {
+ public:
+  Int operator()(const Int& first, const Int& second) {
+    return first.gcd(second);
+  }
+};
+}  // namespace cppbuiltins
+
+namespace cppbuiltins {
+Int gcd(const Int& first, const Int& second) { return first.gcd(second); }
+
+template <>
+Int power(const Int base, const Int exponent) {
+  return base.power(exponent);
+}
+}  // namespace cppbuiltins
+
+using Fraction = cppbuiltins::Fraction<Int>;
+
+static py::object power(const py::float_& base, const py::float_& exponent) {
   PyObject* result = PyNumber_Power(base.ptr(), exponent.ptr(), Py_None);
   if (!result) throw py::error_already_set();
   return py::reinterpret_steal<py::object>(result);
 }
 
-class Fraction {
- public:
-  Fraction() : _numerator(Int()), _denominator(Int(1)) {}
-
-  Fraction(const Int& numerator, const Int& denominator = Int(1))
-      : Fraction(numerator, denominator, std::true_type{}) {}
-
-  Fraction operator+(const Fraction& other) const {
-    return Fraction(
-        _numerator * other._denominator + _denominator * other._numerator,
-        _denominator * other._denominator);
-  }
-
-  Fraction operator+(const Int& other) const {
-    return Fraction(_numerator + _denominator * other, _denominator);
-  }
-
-  operator bool() const { return bool(_numerator); }
-
-  operator double() const { return divide_as_double(_numerator, _denominator); }
-
-  bool operator==(const Fraction& other) const {
-    return _numerator == other._numerator && _denominator == other._denominator;
-  }
-
-  bool operator<=(const Fraction& other) const {
-    return _numerator * other._denominator <= _denominator * other._numerator;
-  }
-
-  bool operator<(const Fraction& other) const {
-    return _numerator * other._denominator < _denominator * other._numerator;
-  }
-
-  Fraction operator%(const Fraction& other) const {
-    return Fraction(
-        (_numerator * other._denominator) % (other._numerator * _denominator),
-        _denominator * other._denominator);
-  }
-
-  Fraction operator%(const Int& other) const {
-    return Fraction(_numerator % (other * _denominator), _denominator);
-  }
-
-  Fraction operator*(const Fraction& other) const {
-    const Int numerator_other_denominator_gcd =
-        _numerator.gcd(other._denominator);
-    const Int other_numerator_denominator_gcd =
-        _denominator.gcd(other._numerator);
-    return Fraction((_numerator / numerator_other_denominator_gcd) *
-                        (other._numerator / other_numerator_denominator_gcd),
-                    (_denominator / other_numerator_denominator_gcd) *
-                        (other._denominator / numerator_other_denominator_gcd));
-  }
-
-  Fraction operator*(const Int& other) const {
-    const Int denominator_other_gcd = _denominator.gcd(other);
-    return Fraction(_numerator * (other / denominator_other_gcd),
-                    _denominator / denominator_other_gcd, std::false_type{});
-  }
-
-  Fraction operator-() const {
-    return Fraction(-_numerator, _denominator, std::false_type{});
-  }
-
-  const Fraction& operator+() const { return *this; }
-
-  Fraction operator-(const Fraction& other) const {
-    return Fraction(
-        _numerator * other._denominator - _denominator * other._numerator,
-        _denominator * other._denominator);
-  }
-
-  Fraction operator-(const Int& other) const {
-    return Fraction(_numerator - _denominator * other, _denominator);
-  }
-
-  Fraction operator/(const Fraction& other) const {
-    const Int numerators_gcd = _numerator.gcd(other._numerator);
-    const Int denominators_gcd = _denominator.gcd(other._denominator);
-    return Fraction(
-        (_numerator / numerators_gcd) * (other._denominator / denominators_gcd),
-        (other._numerator / numerators_gcd) *
-            (_denominator / denominators_gcd));
-  }
-
-  Fraction operator/(const Int& other) const {
-    const Int numerators_gcd = _numerator.gcd(other);
-    return Fraction(_numerator / numerators_gcd,
-                    (other / numerators_gcd) * _denominator);
-  }
-
-  Int ceil() const { return -((-_numerator) / _denominator); }
-
-  Int floor() const { return _numerator / _denominator; }
-
-  const Int& denominator() const { return _denominator; }
-
-  py::tuple divmod(const Fraction& divisor) const {
-    Int quotient = floor_divide(divisor);
-    Fraction remainder = operator%(divisor);
-    return py::make_tuple(quotient, remainder);
-  }
-
-  Int floor_divide(const Fraction& other) const {
-    return (_numerator * other._denominator) /
-           (other._numerator * _denominator);
-  }
-
-  Int floor_divide(const Int& other) const {
-    return _numerator / (other * _denominator);
-  }
-
-  const Int& numerator() const { return _numerator; }
-
-  Fraction pow(const Int& exponent) const {
-    if (exponent.is_negative()) {
-      if (!_numerator) {
-        PyErr_SetString(PyExc_ZeroDivisionError,
-                        "Denominator should not be zero.");
-        throw py::error_already_set();
-      }
-      Int exponent_modulus = -exponent;
-      return _numerator.is_negative()
-                 ? Fraction(Int(static_cast<BaseInt>(-_denominator)
-                                    .pow(exponent_modulus)),
-                            Int(static_cast<BaseInt>(-_numerator)
-                                    .pow(exponent_modulus)),
-                            std::false_type{})
-                 : Fraction(Int(static_cast<BaseInt>(_denominator)
-                                    .pow(exponent_modulus)),
-                            Int(static_cast<BaseInt>(_numerator)
-                                    .pow(exponent_modulus)),
-                            std::false_type{});
-    }
-    return Fraction(Int(static_cast<BaseInt>(_numerator).pow(exponent)),
-                    Int(static_cast<BaseInt>(_denominator).pow(exponent)),
-                    std::false_type{});
-  }
-
-  py::object pow(const Fraction& exponent) const {
-    return exponent._denominator.is_one()
-               ? py::cast(pow(exponent._numerator))
-               : ::pow(py::float_{double{*this}}, py::float_{double{exponent}});
-  }
-
-  int is_negative() const { return _numerator.is_negative(); }
-
-  int is_positive() const { return _numerator.is_positive(); }
-
-  operator Int() const { return is_negative() ? ceil() : floor(); }
-
- private:
-  Int _numerator, _denominator;
-
-  template <bool NORMALIZE>
-  Fraction(const Int& numerator, const Int& denominator,
-           std::bool_constant<NORMALIZE>)
-      : _numerator(numerator), _denominator(denominator) {
-    if constexpr (NORMALIZE) {
-      if (!_denominator) {
-        PyErr_SetString(PyExc_ZeroDivisionError,
-                        "Denominator should not be zero.");
-        throw py::error_already_set();
-      }
-      if (_denominator.is_negative()) {
-        _numerator = -_numerator;
-        _denominator = -_denominator;
-      }
-      Int gcd = _numerator.gcd(_denominator);
-      _denominator = _denominator / gcd;
-      _numerator = _numerator / gcd;
-    }
-  }
-};
+static py::object power(const Int& base, const Fraction& exponent) {
+  return exponent.denominator().is_one()
+             ? py::cast(Fraction(base).power(exponent.numerator()))
+             : power(py::float_(double{base}), py::float_(double{exponent}));
+}
 
 Py_hash_t hash_fraction(const Fraction& value) {
   static const Int HASH_MODULUS{_PyHASH_MODULUS};
@@ -493,25 +330,19 @@ static Fraction operator%(const Int& self, const Fraction& other) {
 }
 
 static Fraction operator*(const Int& self, const Fraction& other) {
-  const Int self_other_denominator_gcd = self.gcd(other.denominator());
+  const Int self_other_denominator_gcd = gcd(self, other.denominator());
   return Fraction((self / self_other_denominator_gcd) * other.numerator(),
                   other.denominator() / self_other_denominator_gcd);
 }
 
 static Fraction operator/(const Int& self, const Fraction& other) {
-  const Int self_other_numerator_gcd = self.gcd(other.numerator());
+  const Int self_other_numerator_gcd = gcd(self, other.numerator());
   return Fraction((self / self_other_numerator_gcd) * other.denominator(),
                   other.numerator() / self_other_numerator_gcd);
 }
 
 Int floor_divide(const Int& self, const Fraction& other) {
   return (self * other.denominator()) / other.numerator();
-}
-
-py::object pow(const Int& base, const Fraction& exponent) {
-  return exponent.denominator().is_one()
-             ? py::cast(Fraction(base).pow(exponent.numerator()))
-             : pow(py::float_(double{base}), py::float_(double{exponent}));
 }
 
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
@@ -1297,7 +1128,19 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__bool__", &Int::operator bool)
       .def("__ceil__", &identity<const Int&>)
       .def("__copy__", [](const Int& self) -> const Int& { return self; })
-      .def("__divmod__", &Int::divmod, py::is_operator{})
+      .def(
+          "__divmod__",
+          [](const Int& dividend, const Int& divisor) {
+            Int quotient, remainder;
+            try {
+              dividend.divmod(divisor, quotient, remainder);
+            } catch (const std::range_error& exception) {
+              PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+              throw py::error_already_set();
+            }
+            return py::make_tuple(quotient, remainder);
+          },
+          py::is_operator{})
       .def("invmod", &Int::invmod)
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
@@ -1306,8 +1149,21 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__floordiv__", &Int::operator/, py::is_operator{})
       .def("__hash__", &Int::hash)
       .def("__int__", &Int::operator py::int_)
-      .def("__pow__", &Int::pow, py::arg("exponent"),
-           py::arg("modulus") = nullptr, py::is_operator{})
+      .def(
+          "__pow__",
+          [](const Int& base, const Int& exponent, const Int* maybe_modulus) {
+            if (maybe_modulus == nullptr && exponent.is_negative()) {
+              PyObject* result = PyFloat_Type.tp_as_number->nb_power(
+                  (PyObject*)base.as_PyLong(), (PyObject*)exponent.as_PyLong(),
+                  Py_None);
+              if (!result) throw py::error_already_set();
+              return py::reinterpret_steal<py::object>(result);
+            }
+            return py::cast(maybe_modulus == nullptr
+                                ? base.power(exponent)
+                                : base.power_modulo(exponent, *maybe_modulus));
+          },
+          py::arg("exponent"), py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>)
       .def("__truediv__", &divide_as_double, py::is_operator{})
@@ -1347,7 +1203,19 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           }))
       .def("__bool__", &Fraction::operator bool)
       .def("__ceil__", &Fraction::ceil)
-      .def("__divmod__", &Fraction::divmod, py::is_operator{})
+      .def(
+          "__divmod__",
+          [](const Fraction& dividend, const Fraction& divisor) {
+            Fraction quotient, remainder;
+            try {
+              dividend.divmod(divisor, quotient, remainder);
+            } catch (const std::range_error& exception) {
+              PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+              throw py::error_already_set();
+            }
+            return py::make_tuple(quotient, remainder);
+          },
+          py::is_operator{})
       .def("__float__", &Fraction::operator double)
       .def("__floor__", &Fraction::floor)
       .def("__floordiv__",
@@ -1359,11 +1227,33 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::is_operator{})
       .def("__hash__", &hash_fraction)
       .def("__int__", [](const Fraction& self) { return py::int_(Int(self)); })
-      .def("__pow__", py::overload_cast<const Int&>(&Fraction::pow, py::const_),
-           py::arg("exponent"), py::is_operator{})
-      .def("__pow__",
-           py::overload_cast<const Fraction&>(&Fraction::pow, py::const_),
-           py::arg("exponent"), py::is_operator{})
+      .def(
+          "__pow__",
+          [](const Fraction& base, const Int& exponent) {
+            try {
+              return base.power(exponent);
+            } catch (const std::range_error& exception) {
+              PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+              throw py::error_already_set();
+            }
+          },
+          py::arg("exponent"), py::is_operator{})
+      .def(
+          "__pow__",
+          [](const Fraction& base, const Fraction& exponent) {
+            if (exponent.denominator().is_one()) {
+              try {
+                return py::cast(base.power(exponent.numerator()));
+              } catch (const std::range_error& exception) {
+                PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+                throw py::error_already_set();
+              }
+            } else {
+              return power(py::float_{double{base}},
+                           py::float_{double{exponent}});
+            }
+          },
+          py::arg("exponent"), py::is_operator{})
       .def("__repr__", &to_repr<Fraction>)
       .def(
           "__rfloordiv__",
@@ -1374,7 +1264,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(
           "__rpow__",
           [](const Fraction& exponent, const Int& base) {
-            return pow(base, exponent);
+            return power(base, exponent);
           },
           py::is_operator{})
       .def("__str__",

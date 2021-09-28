@@ -1,8 +1,10 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include <cinttypes>
 #include <cstddef>
 
+namespace cppbuiltins {
 using undefined = void;
 
 template <class T>
@@ -29,7 +31,7 @@ template <class T>
 using double_precision_t = typename double_precision<T>::type;
 
 template <class T>
-T to_gcd(T first, T second) {
+T gcd(T first, T second) {
   while (second != 0) {
     const T step = second;
     second = first % second;
@@ -50,9 +52,13 @@ std::size_t floor_log2(std::size_t value) {
   return result - 1;
 }
 
-template <class T>
-constexpr T power(const T base, const std::size_t exponent) {
-  return exponent == 0 ? T(1) : T(base) * power<T>(base, exponent - 1);
+template <class Base>
+Base power(const Base base, const Base exponent);
+
+template <class Number>
+constexpr Number const_power(const Number base, const std::size_t exponent) {
+  return exponent == 0 ? Number(1)
+                       : Number(base) * const_power<Number>(base, exponent - 1);
 }
 
 static constexpr std::size_t bit_lengths_table[32] = {
@@ -70,5 +76,6 @@ constexpr std::size_t to_bit_length(const T value) {
   result += bit_lengths_table[step];
   return result;
 }
+}  // namespace cppbuiltins
 
 #endif
