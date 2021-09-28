@@ -111,7 +111,7 @@ static std::string to_repr(const Type& value) {
   return {stream.str()};
 }
 
-using BigInt = cppbuiltins::BigInt<
+using BaseInt = cppbuiltins::BigInt<
     std::conditional_t<sizeof(void*) == 8, std::uint32_t, std::uint16_t>, '_'>;
 
 static int int_to_sign(const py::int_& value) {
@@ -120,12 +120,12 @@ static int int_to_sign(const py::int_& value) {
   return signed_size < 0 ? -1 : signed_size > 0;
 }
 
-static std::vector<BigInt::Digit> int_to_digits(const py::int_& value) {
+static std::vector<BaseInt::Digit> int_to_digits(const py::int_& value) {
   PyLongObject* ptr = (PyLongObject*)value.ptr();
   Py_ssize_t signed_size = Py_SIZE(ptr);
   std::size_t size = Py_ABS(signed_size) + (signed_size == 0);
   return cppbuiltins::binary_digits_to_binary_base<
-      digit, BigInt::Digit, PyLong_SHIFT, BigInt::BINARY_SHIFT>(
+      digit, BaseInt::Digit, PyLong_SHIFT, BaseInt::BINARY_SHIFT>(
       std::vector<digit>(ptr->ob_digit, ptr->ob_digit + size));
 }
 
@@ -146,19 +146,19 @@ static py::int_ object_to_py_long(const py::object& value) {
   return py::reinterpret_steal<py::int_>(result_ptr);
 }
 
-class Int : public BigInt {
+class Int : public BaseInt {
  public:
-  Int() : BigInt() {}
+  Int() : BaseInt() {}
 
-  explicit Int(const BigInt& value) : BigInt(value) {}
+  explicit Int(const BaseInt& value) : BaseInt(value) {}
 
   explicit Int(const py::object& value) : Int(object_to_py_long(value)) {}
 
   explicit Int(const py::int_& value)
-      : BigInt(int_to_sign(value), int_to_digits(value)) {}
+      : BaseInt(int_to_sign(value), int_to_digits(value)) {}
 
   Int(const py::str& value, std::size_t base)
-      : BigInt(pystr_to_ascii_c_str(value), base) {}
+      : BaseInt(pystr_to_ascii_c_str(value), base) {}
 
   operator py::int_() const {
     return py::reinterpret_steal<py::int_>((PyObject*)as_PyLong());
@@ -166,7 +166,7 @@ class Int : public BigInt {
 
   Int operator%(const Int& divisor) const {
     try {
-      return Int(BigInt::operator%(divisor));
+      return Int(BaseInt::operator%(divisor));
     } catch (const std::range_error& exception) {
       PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
       throw py::error_already_set();
@@ -176,37 +176,37 @@ class Int : public BigInt {
   const Int& operator+() const { return *this; }
 
   Int operator+(const Int& other) const {
-    return Int(BigInt::operator+(other));
+    return Int(BaseInt::operator+(other));
   }
 
-  Int operator~() const { return Int(BigInt::operator~()); }
+  Int operator~() const { return Int(BaseInt::operator~()); }
 
   Int operator*(const Int& other) const {
-    return Int(BigInt::operator*(other));
+    return Int(BaseInt::operator*(other));
   }
 
-  Int operator-() const { return Int(BigInt::operator-()); }
+  Int operator-() const { return Int(BaseInt::operator-()); }
 
   Int operator-(const Int& other) const {
-    return Int(BigInt::operator-(other));
+    return Int(BaseInt::operator-(other));
   }
 
   Int operator/(const Int& divisor) const {
     try {
-      return Int(BigInt::operator/(divisor));
+      return Int(BaseInt::operator/(divisor));
     } catch (const std::range_error& exception) {
       PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
       throw py::error_already_set();
     }
   }
 
-  Int abs() const { return Int(BigInt::abs()); }
+  Int abs() const { return Int(BaseInt::abs()); }
 
   PyLongObject* as_PyLong() const {
-    const std::vector<BigInt::Digit>& digits = this->digits();
+    const std::vector<BaseInt::Digit>& digits = this->digits();
     std::vector<digit> result_digits =
         cppbuiltins::binary_digits_to_binary_base<
-            BigInt::Digit, digit, BigInt::BINARY_SHIFT, PyLong_SHIFT>(digits);
+            BaseInt::Digit, digit, BaseInt::BINARY_SHIFT, PyLong_SHIFT>(digits);
     PyLongObject* result = _PyLong_New(result_digits.size());
     std::memcpy(result->ob_digit, result_digits.data(),
                 sizeof(digit) * result_digits.size());
@@ -218,10 +218,10 @@ class Int : public BigInt {
     return result;
   }
 
-  Int gcd(const Int& other) const { return Int(BigInt::gcd(other)); }
+  Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
 
   Py_hash_t hash() const {
-    const std::vector<BigInt::Digit>& digits = this->digits();
+    const std::vector<BaseInt::Digit>& digits = this->digits();
     if (digits.size() == 1) {
       if (is_positive())
         return digits[0];
@@ -233,8 +233,8 @@ class Int : public BigInt {
     Py_uhash_t result = 0;
     for (auto position = digits.rbegin(); position != digits.rend();
          ++position) {
-      result = ((result << BigInt::BINARY_SHIFT) & _PyHASH_MODULUS) |
-               (result >> (_PyHASH_BITS - BigInt::BINARY_SHIFT));
+      result = ((result << BaseInt::BINARY_SHIFT) & _PyHASH_MODULUS) |
+               (result >> (_PyHASH_BITS - BaseInt::BINARY_SHIFT));
       result += *position;
       if (result >= _PyHASH_MODULUS) result -= _PyHASH_MODULUS;
     }
@@ -243,14 +243,14 @@ class Int : public BigInt {
     return static_cast<Py_hash_t>(result);
   }
 
-  Int invmod(const Int& divisor) const { return Int(BigInt::invmod(divisor)); }
+  Int invmod(const Int& divisor) const { return Int(BaseInt::invmod(divisor)); }
 
-  bool is_one() const { return BigInt::is_one(); }
+  bool is_one() const { return BaseInt::is_one(); }
 
-  Int power(const Int& exponent) const { return Int(BigInt::power(exponent)); }
+  Int power(const Int& exponent) const { return Int(BaseInt::power(exponent)); }
 
   Int power_modulo(const Int& exponent, const Int& modulus) const {
-    return Int(BigInt::power_modulo(exponent, modulus));
+    return Int(BaseInt::power_modulo(exponent, modulus));
   }
 };
 
