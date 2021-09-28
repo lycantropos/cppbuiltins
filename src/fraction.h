@@ -148,9 +148,9 @@ class Fraction {
                     std::false_type{});
   }
 
-  int is_negative() const { return _numerator.is_negative(); }
+  bool is_negative() const { return cppbuiltins::is_negative(_numerator); }
 
-  int is_positive() const { return _numerator.is_positive(); }
+  bool is_positive() const { return cppbuiltins::is_positive(_numerator); }
 
  private:
   static inline Gcd gcd = {};
@@ -163,7 +163,7 @@ class Fraction {
     if constexpr (NORMALIZE) {
       if (!_denominator)
         throw std::range_error("Denominator should not be zero.");
-      if (_denominator.is_negative()) {
+      if (cppbuiltins::is_negative(_denominator)) {
         _numerator = -_numerator;
         _denominator = -_denominator;
       }

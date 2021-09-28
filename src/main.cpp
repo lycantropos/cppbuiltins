@@ -284,6 +284,16 @@ template <>
 Int power(const Int base, const Int exponent) {
   return base.power(exponent);
 }
+
+template <>
+bool is_negative(const Int value) {
+  return value.is_negative();
+}
+
+template <>
+bool is_positive(const Int value) {
+  return value.is_positive();
+}
 }  // namespace cppbuiltins
 
 using Fraction = cppbuiltins::Fraction<Int>;
@@ -295,9 +305,16 @@ static py::object power(const py::float_& base, const py::float_& exponent) {
 }
 
 static py::object power(const Int& base, const Fraction& exponent) {
-  return exponent.denominator().is_one()
-             ? py::cast(Fraction(base).power(exponent.numerator()))
-             : power(py::float_(double{base}), py::float_(double{exponent}));
+  if (exponent.denominator().is_one()) {
+    try {
+      return py::cast(Fraction(base).power(exponent.numerator()));
+    } catch (const std::range_error& exception) {
+      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
+      throw py::error_already_set();
+    }
+  } else {
+    return power(py::float_(double{base}), py::float_(double{exponent}));
+  }
 }
 
 Py_hash_t hash_fraction(const Fraction& value) {

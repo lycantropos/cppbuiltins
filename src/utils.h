@@ -52,6 +52,12 @@ std::size_t floor_log2(std::size_t value) {
   return result - 1;
 }
 
+template <class Number>
+bool is_negative(const Number value);
+
+template <class Number>
+bool is_positive(const Number value);
+
 template <class Base>
 Base power(const Base base, const Base exponent);
 
