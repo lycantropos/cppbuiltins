@@ -1,7 +1,6 @@
 #ifndef INT_HPP
 #define INT_HPP
 
-#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
