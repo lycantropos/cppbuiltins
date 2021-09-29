@@ -59,12 +59,8 @@ def year_to_standard(year: int) -> str:
 
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
-    compile_args = defaultdict(list,
-                               {'msvc': ['/EHsc'],
-                                'unix': []})
-    link_args = defaultdict(list,
-                            {'msvc': [],
-                             'unix': []})
+    compile_args = defaultdict(list, {'msvc': ['/EHsc'], 'unix': []})
+    link_args = defaultdict(list, {'msvc': [], 'unix': []})
 
     if sys.platform == 'darwin':
         darwin_args = ['-stdlib=libc++', '-mmacosx-version-min=10.7']
