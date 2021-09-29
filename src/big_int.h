@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "exceptions.h"
 #include "utils.h"
 
 namespace cppbuiltins {
@@ -723,7 +724,7 @@ class BigInt {
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
   double divide_as_double(const BigInt& divisor) const {
-    if (!divisor) throw std::range_error("Division by zero is undefined.");
+    if (!divisor) throw ZeroDivisionError();
     bool negate = is_negative() ^ divisor.is_negative();
     if (!*this) return negate ? -0.0 : 0.0;
     const std::vector<Digit>& dividend_digits = digits();
@@ -1423,7 +1424,7 @@ class BigInt {
     std::size_t digits_count = _digits.size(),
                 divisor_digits_count = divisor._digits.size();
     if (!divisor)
-      throw std::range_error("Division by zero is undefined.");
+      throw ZeroDivisionError();
     else if (!*this) {
       if constexpr (WITH_QUOTIENT) *quotient = BigInt();
       if constexpr (WITH_REMAINDER) *remainder = *this;

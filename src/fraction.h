@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "exceptions.h"
 #include "utils.h"
 
 namespace cppbuiltins {
@@ -140,8 +141,7 @@ class Fraction {
 
   Fraction power(Component exponent) const {
     if (cppbuiltins::is_negative(exponent)) {
-      if (!_numerator)
-        throw std::range_error("Denominator should not be zero.");
+      if (!_numerator) throw ZeroDivisionError();
       Component exponent_modulus = -exponent;
       return cppbuiltins::is_negative(_numerator)
                  ? Fraction(cppbuiltins::power(-_denominator, exponent_modulus),
@@ -169,8 +169,7 @@ class Fraction {
            std::bool_constant<NORMALIZE>)
       : _numerator(numerator), _denominator(denominator) {
     if constexpr (NORMALIZE) {
-      if (!_denominator)
-        throw std::range_error("Denominator should not be zero.");
+      if (!_denominator) throw ZeroDivisionError();
       if (cppbuiltins::is_negative(_denominator)) {
         _numerator = -_numerator;
         _denominator = -_denominator;

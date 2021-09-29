@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "big_int.h"
+#include "exceptions.h"
 #include "fraction.h"
 #include "utils.h"
 
@@ -165,12 +166,7 @@ class Int : public BaseInt {
   }
 
   Int operator%(const Int& divisor) const {
-    try {
-      return Int(BaseInt::operator%(divisor));
-    } catch (const std::range_error& exception) {
-      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-      throw py::error_already_set();
-    }
+    return Int(BaseInt::operator%(divisor));
   }
 
   const Int& operator+() const { return *this; }
@@ -192,12 +188,7 @@ class Int : public BaseInt {
   }
 
   Int operator/(const Int& divisor) const {
-    try {
-      return Int(BaseInt::operator/(divisor));
-    } catch (const std::range_error& exception) {
-      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-      throw py::error_already_set();
-    }
+    return Int(BaseInt::operator/(divisor));
   }
 
   Int abs() const { return Int(BaseInt::abs()); }
@@ -295,6 +286,7 @@ bool is_positive(const Int value) {
 }  // namespace cppbuiltins
 
 using Fraction = cppbuiltins::Fraction<Int>;
+using Fraction32 = cppbuiltins::Fraction<std::int32_t>;
 
 static py::object power(const py::float_& base, const py::float_& exponent) {
   PyObject* result = PyNumber_Power(base.ptr(), exponent.ptr(), Py_None);
@@ -303,16 +295,9 @@ static py::object power(const py::float_& base, const py::float_& exponent) {
 }
 
 static py::object power(const Int& base, const Fraction& exponent) {
-  if (exponent.denominator().is_one()) {
-    try {
-      return py::cast(Fraction(base).power(exponent.numerator()));
-    } catch (const std::range_error& exception) {
-      PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-      throw py::error_already_set();
-    }
-  } else {
-    return power(py::float_(double{base}), py::float_(double{exponent}));
-  }
+  return exponent.denominator().is_one()
+             ? py::cast(Fraction(base).power(exponent.numerator()))
+             : power(py::float_(double{base}), py::float_(double{exponent}));
 }
 
 Py_hash_t hash_fraction(const Fraction& value) {
@@ -1120,6 +1105,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       R"pbdoc(Alternative implementation of python builtins based on C++ `std` library.)pbdoc";
   m.attr("__version__") = C_STR(VERSION_INFO);
 
+  py::register_exception_translator([](std::exception_ptr ptr) {
+    try {
+      if (ptr) std::rethrow_exception(ptr);
+    } catch (const cppbuiltins::ZeroDivisionError& error) {
+      PyErr_SetString(PyExc_ZeroDivisionError, error.what());
+    }
+  });
+
   m.def("gcd", &Int::gcd);
 
   py::class_<Int> PyInt(m, INT_NAME);
@@ -1147,12 +1140,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           "__divmod__",
           [](const Int& dividend, const Int& divisor) {
             Int quotient, remainder;
-            try {
-              dividend.divmod(divisor, quotient, remainder);
-            } catch (const std::range_error& exception) {
-              PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-              throw py::error_already_set();
-            }
+            dividend.divmod(divisor, quotient, remainder);
             return py::make_tuple(quotient, remainder);
           },
           py::is_operator{})
@@ -1222,12 +1210,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           "__divmod__",
           [](const Fraction& dividend, const Fraction& divisor) {
             Fraction quotient, remainder;
-            try {
-              dividend.divmod(divisor, quotient, remainder);
-            } catch (const std::range_error& exception) {
-              PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-              throw py::error_already_set();
-            }
+            dividend.divmod(divisor, quotient, remainder);
             return py::make_tuple(quotient, remainder);
           },
           py::is_operator{})
@@ -1245,28 +1228,16 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(
           "__pow__",
           [](const Fraction& base, const Int& exponent) {
-            try {
-              return base.power(exponent);
-            } catch (const std::range_error& exception) {
-              PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-              throw py::error_already_set();
-            }
+            return base.power(exponent);
           },
           py::arg("exponent"), py::is_operator{})
       .def(
           "__pow__",
           [](const Fraction& base, const Fraction& exponent) {
-            if (exponent.denominator().is_one()) {
-              try {
-                return py::cast(base.power(exponent.numerator()));
-              } catch (const std::range_error& exception) {
-                PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-                throw py::error_already_set();
-              }
-            } else {
-              return power(py::float_{double{base}},
-                           py::float_{double{exponent}});
-            }
+            return exponent.denominator().is_one()
+                       ? py::cast(base.power(exponent.numerator()))
+                       : power(py::float_{double{base}},
+                               py::float_{double{exponent}});
           },
           py::arg("exponent"), py::is_operator{})
       .def("__repr__", &to_repr<Fraction>)
