@@ -2,6 +2,7 @@
 #define DIGITS_HPP
 
 #include <algorithm>
+#include <vector>
 
 #include "utils.h"
 
@@ -286,7 +287,7 @@ static bool digits_lesser_than_or_equal(const std::vector<Digit>& first,
 
 template <class Digit, std::size_t BINARY_SHIFT,
           std::size_t BINARY_BASE = const_power(2, BINARY_SHIFT)>
-static std::vector<Digit> digits_from_binary_base(
+static std::vector<Digit> binary_digits_from_binary_base(
     const std::vector<unsigned char>& source, std::size_t source_shift) {
   if constexpr (BINARY_BASE >= MAX_REPRESENTABLE_BASE) {
     return binary_digits_to_greater_binary_base<unsigned char, Digit,
@@ -305,7 +306,7 @@ static std::vector<Digit> digits_from_binary_base(
 
 template <class Digit, std::size_t BINARY_SHIFT,
           std::size_t BINARY_BASE = const_power(2, BINARY_SHIFT)>
-static std::vector<Digit> digits_from_non_binary_base(
+static std::vector<Digit> binary_digits_from_non_binary_base(
     const std::vector<unsigned char>& source, std::size_t source_base) {
   if constexpr (BINARY_BASE >= MAX_REPRESENTABLE_BASE) {
     return non_binary_digits_to_greater_binary_base<unsigned char, Digit,
@@ -379,18 +380,19 @@ static std::vector<Digit> parse_binary_digits(const char* start,
   while (*cursor != '\0' && is_space(*cursor)) ++cursor;
   if (*cursor != '\0')
     throw std::invalid_argument("Should not end with non-whitespaces.");
-  while (*start == '0' && start + 1 < stop) {
+  while ((*start == '0' && start + 1 < stop) || *start == SEPARATOR) {
     ++start;
   }
   std::vector<unsigned char> digits =
       parse_digits<SEPARATOR>(start, stop, digits_count);
-  std::vector<Digit> _digits =
+  std::vector<Digit> result =
       (base & (base - 1))
-          ? digits_from_non_binary_base<Digit, BINARY_SHIFT>(digits, base)
-          : digits_from_binary_base<Digit, BINARY_SHIFT>(digits,
-                                                         floor_log2(base));
-  trim_leading_zeros(_digits);
-  return _digits;
+          ? binary_digits_from_non_binary_base<Digit, BINARY_SHIFT>(digits,
+                                                                    base)
+          : binary_digits_from_binary_base<Digit, BINARY_SHIFT>(
+                digits, floor_log2(base));
+  trim_leading_zeros(result);
+  return result;
 }
 }  // namespace cppbuiltins
 
