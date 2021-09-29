@@ -161,7 +161,7 @@ class Fraction {
   bool is_positive() const { return cppbuiltins::is_positive(_numerator); }
 
  private:
-  static inline Gcd gcd = {};
+  static Gcd gcd;
   Component _numerator, _denominator;
 
   template <bool NORMALIZE>
@@ -180,6 +180,10 @@ class Fraction {
     }
   }
 };
+
+template <class Component, class Gcd>
+Gcd Fraction<Component, Gcd>::gcd = {};
+
 }  // namespace cppbuiltins
 
 #endif
