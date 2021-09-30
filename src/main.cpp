@@ -286,7 +286,6 @@ bool is_positive(const Int value) {
 }  // namespace cppbuiltins
 
 using Fraction = cppbuiltins::Fraction<Int>;
-using Fraction32 = cppbuiltins::Fraction<std::int32_t>;
 
 static py::object power(const py::float_& base, const py::float_& exponent) {
   PyObject* result = PyNumber_Power(base.ptr(), exponent.ptr(), Py_None);
