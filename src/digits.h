@@ -82,7 +82,7 @@ static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
       accumulator_bits_count -= TARGET_SHIFT;
     }
   }
-  if (accumulator) result.push_back(accumulator);
+  if (accumulator || result.empty()) result.push_back(accumulator);
   return result;
 }
 
