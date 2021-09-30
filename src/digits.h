@@ -391,7 +391,6 @@ static std::vector<Digit> parse_binary_digits(const char* start,
                                                                     base)
           : binary_digits_from_binary_base<Digit, BINARY_SHIFT>(
                 digits, floor_log2(base));
-  trim_leading_zeros(result);
   return result;
 }
 }  // namespace cppbuiltins
