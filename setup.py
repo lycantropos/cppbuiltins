@@ -27,7 +27,7 @@ def has_flag(compiler: CCompiler, name: str) -> bool:
     """
     with tempfile.NamedTemporaryFile('w',
                                      suffix='.cpp') as file:
-        file.write('int main (int argc, char **argv) { return 0; }')
+        file.write('int main(void){ return 0; }')
         try:
             compiler.compile([file.name],
                              extra_postargs=[name])
