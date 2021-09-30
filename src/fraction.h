@@ -141,9 +141,9 @@ class Fraction {
 
   Fraction power(Component exponent) const {
     if (cppbuiltins::is_negative(exponent)) {
-      if (!_numerator) throw ZeroDivisionError();
+      if (!*this) throw ZeroDivisionError();
       Component exponent_modulus = -exponent;
-      return cppbuiltins::is_negative(_numerator)
+      return is_negative()
                  ? Fraction(cppbuiltins::power(-_denominator, exponent_modulus),
                             cppbuiltins::power(-_numerator, exponent_modulus),
                             std::false_type{})
