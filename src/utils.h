@@ -1,6 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include <cassert>
 #include <cinttypes>
 #include <cstddef>
 
@@ -29,6 +30,22 @@ struct double_precision<std::uint32_t> {
 
 template <class T>
 using double_precision_t = typename double_precision<T>::type;
+
+static constexpr std::size_t BIT_LENGTHS_TABLE[32] = {
+    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+
+template <class T>
+constexpr std::size_t bit_length(const T value) {
+  std::size_t result = 0;
+  T step = value;
+  while (step >= 32) {
+    result += 6;
+    step >>= 6;
+  }
+  result += BIT_LENGTHS_TABLE[step];
+  return result;
+}
 
 template <class T>
 T gcd(T first, T second) {
@@ -64,29 +81,25 @@ bool is_positive(const Number value) {
   return value > ZERO;
 }
 
-template <class Base>
-Base power(const Base base, const Base exponent);
-
 template <class Number>
 constexpr Number const_power(const Number base, const std::size_t exponent) {
-  return exponent == 0 ? Number(1)
-                       : Number(base) * const_power<Number>(base, exponent - 1);
+  Number result{1};
+  if (!exponent)
+    return result;
+  std::size_t exponent_mask = 1 << (bit_length(exponent) - 1);
+  while (exponent_mask) {
+      result *= result;
+      if (exponent & exponent_mask)
+        result *= base;
+      exponent_mask >>= 1;
+  }
+  return result;
 }
 
-static constexpr std::size_t bit_lengths_table[32] = {
-    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-
-template <class T>
-constexpr std::size_t to_bit_length(const T value) {
-  std::size_t result = 0;
-  T step = value;
-  while (step >= 32) {
-    result += 6;
-    step >>= 6;
-  }
-  result += bit_lengths_table[step];
-  return result;
+template <class Number>
+Number power(const Number number, const Number exponent) {
+  assert(!is_negative(exponent));
+  return const_power(number, static_cast<std::size_t>(exponent));
 }
 }  // namespace cppbuiltins
 

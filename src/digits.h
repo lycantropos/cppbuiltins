@@ -102,7 +102,7 @@ template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
 static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
     const std::vector<SourceDigit>& source, std::size_t source_shift) {
   const std::size_t result_digits_bits_count =
-      ((source.size() - 1) * source_shift + to_bit_length(source.back()));
+      ((source.size() - 1) * source_shift + bit_length(source.back()));
   const std::size_t result_digits_count = static_cast<std::size_t>(
       (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
   std::vector<TargetDigit> result;

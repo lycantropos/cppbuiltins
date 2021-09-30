@@ -160,7 +160,7 @@ class BigInt {
       if (smallest_digits_count == 1 && smallest_digits[0] == 0)
         return BigInt(1, largest_digits);
       const std::size_t highest_digit_bit_length =
-          to_bit_length(largest_digits.back());
+          bit_length(largest_digits.back());
       SignedDoubleDigit largest_leading_bits =
           (static_cast<SignedDoubleDigit>(
                largest_digits[largest_digits_count - 1])
@@ -436,8 +436,8 @@ class BigInt {
       return negate ? -0.0 : 0.0;
     std::make_signed_t<std::size_t> bit_lengths_difference =
         digits_count_difference * BINARY_SHIFT +
-        (to_bit_length(dividend_digits.back()) -
-         to_bit_length(divisor_digits.back()));
+        (bit_length(dividend_digits.back()) -
+         bit_length(divisor_digits.back()));
     if (bit_lengths_difference > std::numeric_limits<double>::max_exponent)
       throw std::overflow_error(
           "Division result too large to be expressed as floating point.");
@@ -495,7 +495,7 @@ class BigInt {
     }
     std::make_signed_t<std::size_t> quotient_bit_length =
         (quotient_digits.size() - 1) * BINARY_SHIFT +
-        to_bit_length(quotient_digits.back());
+        bit_length(quotient_digits.back());
     std::make_signed_t<std::size_t> extra_bits =
         std::max(quotient_bit_length,
                  std::numeric_limits<double>::min_exponent - shift) -
@@ -607,7 +607,7 @@ class BigInt {
     const std::size_t divisor_digits_count = divisor.size();
     Digit* const dividend_normalized = new Digit[dividend_digits_count + 1]();
     Digit* const divisor_normalized = new Digit[divisor_digits_count]();
-    const std::size_t shift = BINARY_SHIFT - to_bit_length(divisor.back());
+    const std::size_t shift = BINARY_SHIFT - bit_length(divisor.back());
     shift_digits_left(divisor.data(), divisor_digits_count, shift,
                       divisor_normalized);
     Digit accumulator = shift_digits_left(
@@ -707,7 +707,7 @@ class BigInt {
     };
     static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
     std::size_t size = _digits.size();
-    std::size_t bits_count = to_bit_length(_digits.back());
+    std::size_t bits_count = bit_length(_digits.back());
     if (size >=
             (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 &&
         (size >
