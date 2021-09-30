@@ -1137,21 +1137,21 @@ class BigInt {
         result = (base * result) % modulus;
     } else if (exponent_digits_count <= WINDOW_CUTOFF) {
       result = base;
-      Digit bit = 2;
-      for (;; bit <<= 1)
-        if (bit > exponent_digit) {
-          bit >>= 1;
+      Digit exponent_mask = 2;
+      for (;; exponent_mask <<= 1)
+        if (exponent_mask > exponent_digit) {
+          exponent_mask >>= 1;
           break;
         }
-      bit >>= 1;
+      exponent_mask >>= 1;
       for (auto exponent_digit_position = exponent_digits.rbegin();;) {
-        for (; bit != 0; bit >>= 1) {
+        for (; exponent_mask != 0; exponent_mask >>= 1) {
           result = (result * result) % modulus;
-          if (exponent_digit & bit) result = (result * base) % modulus;
+          if (exponent_digit & exponent_mask) result = (result * base) % modulus;
         }
         if (++exponent_digit_position == exponent_digits.rend()) break;
         exponent_digit = *exponent_digit_position;
-        bit = static_cast<Digit>(1) << (BINARY_SHIFT - 1);
+        exponent_mask = static_cast<Digit>(1) << (BINARY_SHIFT - 1);
       }
     } else {
       BigInt cache[WINDOW_BASE];
