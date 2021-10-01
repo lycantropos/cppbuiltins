@@ -56,8 +56,16 @@ class Fraction {
     return _numerator * other._denominator <= _denominator * other._numerator;
   }
 
+  bool operator<=(const Component other) const {
+    return _numerator <= _denominator * other;
+  }
+
   bool operator<(const Fraction& other) const {
     return _numerator * other._denominator < _denominator * other._numerator;
+  }
+
+  bool operator<(const Component other) const {
+    return _numerator < _denominator * other;
   }
 
   Fraction operator%(const Fraction& other) const {
@@ -186,6 +194,16 @@ class Fraction {
 
 template <class Component, class Gcd>
 const Gcd Fraction<Component, Gcd>::gcd{};
+
+template <class Component, class Gcd>
+bool operator<=(const Component left, const Fraction<Component, Gcd>& right) {
+  return left * right.denominator() <= right.numerator();
+}
+
+template <class Component, class Gcd>
+bool operator<(const Component left, const Fraction<Component, Gcd>& right) {
+  return left * right.denominator() < right.numerator();
+}
 
 }  // namespace cppbuiltins
 
