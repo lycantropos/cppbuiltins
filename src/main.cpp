@@ -1165,7 +1165,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::is_operator{})
       .def("__trunc__", &identity<const Int&>)
       .def_property_readonly("numerator", &identity<const Int&>)
-      .def_property_readonly("denominator", [](const Int&) { return ONE; });
+      .def_property_readonly("denominator",
+                             [](const Int&) -> const Int& { return ONE; });
 
   py::class_<Fraction> PyFraction(m, FRACTION_NAME);
   PyFraction.def(py::init<>())
