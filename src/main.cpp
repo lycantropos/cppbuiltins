@@ -236,8 +236,6 @@ class Int : public BaseInt {
 
   Int invmod(const Int& divisor) const { return Int(BaseInt::invmod(divisor)); }
 
-  bool is_one() const { return BaseInt::is_one(); }
-
   Int power(const Int& exponent) const { return Int(BaseInt::power(exponent)); }
 
   Int power_modulo(const Int& exponent, const Int& modulus) const {
@@ -249,26 +247,20 @@ static std::ostream& operator<<(std::ostream& stream, const Int& value) {
   return stream << C_STR(MODULE_NAME) "." INT_NAME "('" << value.repr() << "')";
 }
 
-double divide_as_double(const Int& dividend, const Int& divisor) {
-  try {
-    return dividend.divide_as_double(divisor);
-  } catch (const std::range_error& exception) {
-    PyErr_SetString(PyExc_ZeroDivisionError, exception.what());
-    throw py::error_already_set();
-  }
-}
-
 namespace cppbuiltins {
 template <>
 class Gcd<Int> {
  public:
-  Int operator()(const Int& first, const Int& second) {
+  Int operator()(const Int& first, const Int& second) const {
     return first.gcd(second);
   }
 };
-}  // namespace cppbuiltins
 
-namespace cppbuiltins {
+template <>
+double divide_as_double(const Int dividend, const Int divisor) {
+  return dividend.divide_as_double(divisor);
+}
+
 template <>
 Int power(const Int base, const Int exponent) {
   return base.power(exponent);
@@ -1169,7 +1161,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           py::arg("exponent"), py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>)
-      .def("__truediv__", &divide_as_double, py::is_operator{})
+      .def("__truediv__", &cppbuiltins::divide_as_double<Int>, py::is_operator{})
       .def("__trunc__", &identity<const Int&>)
       .def_property_readonly("numerator", &identity<const Int&>)
       .def_property_readonly("denominator", [](const Int&) { return ONE; });
@@ -1181,6 +1173,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self + py::self)
       .def(py::self + Int{})
       .def(py::self == py::self)
+      .def(py::self == Int{})
       .def(py::self <= py::self)
       .def(py::self < py::self)
       .def(py::self % py::self)
@@ -1211,7 +1204,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(
           "__divmod__",
           [](const Fraction& dividend, const Fraction& divisor) {
-            Fraction quotient, remainder;
+            Int quotient;
+            Fraction remainder;
             dividend.divmod(divisor, quotient, remainder);
             return py::make_tuple(quotient, remainder);
           },

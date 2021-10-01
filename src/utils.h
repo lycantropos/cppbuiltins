@@ -47,14 +47,24 @@ constexpr std::size_t bit_length(const T value) {
   return result;
 }
 
-template <class T>
-T gcd(T first, T second) {
-  while (!!second) {
-    const T step = second;
-    second = first % second;
-    first = step;
+template <class Number>
+constexpr Number const_power(const Number base, const std::size_t exponent) {
+  Number result{1};
+  if (!exponent)
+    return result;
+  std::size_t exponent_mask = 1 << (bit_length(exponent) - 1);
+  while (exponent_mask) {
+      result *= result;
+      if (exponent & exponent_mask)
+        result *= base;
+      exponent_mask >>= 1;
   }
-  return first;
+  return result;
+}
+
+template <class T>
+double divide_as_double(const T dividend, const T divisor) {
+  return dividend / divisor;
 }
 
 template <std::size_t BASE>
@@ -69,6 +79,16 @@ std::size_t floor_log2(std::size_t value) {
   return result - 1;
 }
 
+template <class T>
+T gcd(T first, T second) {
+  while (!!second) {
+    const T step = second;
+    second = first % second;
+    first = step;
+  }
+  return first;
+}
+
 template <class Number>
 bool is_negative(const Number value) {
   static constexpr Number ZERO = Number();
@@ -79,21 +99,6 @@ template <class Number>
 bool is_positive(const Number value) {
   static constexpr Number ZERO = Number();
   return value > ZERO;
-}
-
-template <class Number>
-constexpr Number const_power(const Number base, const std::size_t exponent) {
-  Number result{1};
-  if (!exponent)
-    return result;
-  std::size_t exponent_mask = 1 << (bit_length(exponent) - 1);
-  while (exponent_mask) {
-      result *= result;
-      if (exponent & exponent_mask)
-        result *= base;
-      exponent_mask >>= 1;
-  }
-  return result;
 }
 
 template <class Number>

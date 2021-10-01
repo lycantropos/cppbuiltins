@@ -10,7 +10,7 @@ namespace cppbuiltins {
 template <class Number>
 class Gcd {
  public:
-  Number operator()(const Number& first, const Number& second) {
+  Number operator()(Number first, Number second) const {
     return gcd(first, second);
   }
 };
@@ -18,9 +18,9 @@ class Gcd {
 template <class Component, class Gcd = Gcd<Component>>
 class Fraction {
  public:
-  Fraction() : _numerator(Component()), _denominator(Component(1)) {}
+  Fraction() : _numerator(Component()), _denominator(ONE) {}
 
-  Fraction(Component numerator, Component denominator = Component(1))
+  explicit Fraction(Component numerator, Component denominator = ONE)
       : Fraction(std::move(numerator), std::move(denominator),
                  std::true_type{}) {}
 
@@ -37,7 +37,7 @@ class Fraction {
   explicit operator bool() const { return bool(_numerator); }
 
   explicit operator double() const {
-    return divide_as_double(_numerator, _denominator);
+    return cppbuiltins::divide_as_double(_numerator, _denominator);
   }
 
   explicit operator Component() const {
@@ -46,6 +46,10 @@ class Fraction {
 
   bool operator==(const Fraction& other) const {
     return _numerator == other._numerator && _denominator == other._denominator;
+  }
+
+  bool operator==(const Component other) const {
+    return _denominator == ONE && _numerator == other;
   }
 
   bool operator<=(const Fraction& other) const {
@@ -62,7 +66,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator%(Component other) const {
+  Fraction operator%(const Component other) const {
     return Fraction(_numerator % (other * _denominator), _denominator);
   }
 
@@ -78,7 +82,7 @@ class Fraction {
                     std::false_type{});
   }
 
-  Fraction operator*(Component other) const {
+  Fraction operator*(const Component other) const {
     const Component denominator_other_gcd = gcd(_denominator, other);
     return Fraction(_numerator * (other / denominator_other_gcd),
                     _denominator / denominator_other_gcd, std::false_type{});
@@ -121,7 +125,7 @@ class Fraction {
 
   const Component& denominator() const { return _denominator; }
 
-  void divmod(const Fraction& divisor, Fraction& quotient,
+  void divmod(const Fraction& divisor, Component& quotient,
               Fraction& remainder) const {
     quotient = floor_divide(divisor);
     remainder = operator%(divisor);
@@ -160,7 +164,8 @@ class Fraction {
   bool is_positive() const { return cppbuiltins::is_positive(_numerator); }
 
  private:
-  static Gcd gcd;
+  static const Gcd gcd;
+  static const Component ONE;
   Component _numerator, _denominator;
 
   template <bool NORMALIZE>
@@ -181,7 +186,10 @@ class Fraction {
 };
 
 template <class Component, class Gcd>
-Gcd Fraction<Component, Gcd>::gcd = {};
+const Gcd Fraction<Component, Gcd>::gcd{};
+
+template <class Component, class Gcd>
+const Component Fraction<Component, Gcd>::ONE{1};
 
 }  // namespace cppbuiltins
 
