@@ -1185,6 +1185,20 @@ PYBIND11_MODULE(MODULE_NAME, m) {
   PyFraction.def(py::init<>())
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
            py::arg("denominator") = ONE)
+      .def(py::init<const Fraction&>(), py::arg("value"))
+      .def(
+          py::init([&](const py::object& value) {
+            if (py::isinstance(value, Rational)) {
+              return Fraction(Int(value.attr("numerator").cast<py::int_>()),
+                              Int(value.attr("denominator").cast<py::int_>()));
+            } else {
+              throw py::type_error(
+                  "Value should be a `numbers.Rational` instance but found `" +
+                  py::type::of(value).attr("__qualname__").cast<std::string>() +
+                  "`.");
+            }
+          }),
+          py::arg("value"))
       .def(py::self + py::self)
       .def(py::self + Int{})
       .def(py::self == py::self)
