@@ -1114,6 +1114,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   m.def("gcd", &Int::gcd);
 
+  static const Int ONE{1};
+
   py::class_<Int> PyInt(m, INT_NAME);
   PyInt.def(py::init<>())
       .def(py::init<const py::str&, std::size_t>(), py::arg("string"),
@@ -1168,12 +1170,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>)
       .def("__truediv__", &divide_as_double, py::is_operator{})
-      .def("__trunc__", &identity<const Int&>);
+      .def("__trunc__", &identity<const Int&>)
+      .def_property_readonly("numerator", &identity<const Int&>)
+      .def_property_readonly("denominator", [](const Int&) { return ONE; });
 
   py::class_<Fraction> PyFraction(m, FRACTION_NAME);
   PyFraction.def(py::init<>())
       .def(py::init<const Int&, const Int&>(), py::arg("numerator"),
-           py::arg("denominator") = Int(1))
+           py::arg("denominator") = ONE)
       .def(py::self + py::self)
       .def(py::self + Int{})
       .def(py::self == py::self)
