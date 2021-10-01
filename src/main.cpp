@@ -1278,6 +1278,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def_property_readonly("denominator", &Fraction::denominator)
       .def_property_readonly("numerator", &Fraction::numerator);
 
+  Rational.attr("register")(PyFraction);
+
   py::class_<List> PyList(m, LIST_NAME);
   PyList.def(py::init<py::iterable>(), py::arg("values"))
       .def(py::self == py::self)
