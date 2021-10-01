@@ -52,6 +52,14 @@ class Fraction {
     return _denominator == Component(1) && _numerator == other;
   }
 
+  bool operator<(const Fraction& other) const {
+    return _numerator * other._denominator < _denominator * other._numerator;
+  }
+
+  bool operator<(const Component other) const {
+    return _numerator < _denominator * other;
+  }
+
   bool operator<=(const Fraction& other) const {
     return _numerator * other._denominator <= _denominator * other._numerator;
   }
@@ -60,12 +68,20 @@ class Fraction {
     return _numerator <= _denominator * other;
   }
 
-  bool operator<(const Fraction& other) const {
-    return _numerator * other._denominator < _denominator * other._numerator;
+  bool operator>(const Fraction& other) const {
+    return _numerator * other._denominator > _denominator * other._numerator;
   }
 
-  bool operator<(const Component other) const {
-    return _numerator < _denominator * other;
+  bool operator>(const Component other) const {
+    return _numerator > _denominator * other;
+  }
+
+  bool operator>=(const Fraction& other) const {
+    return _numerator * other._denominator >= _denominator * other._numerator;
+  }
+
+  bool operator>=(const Component other) const {
+    return _numerator >= _denominator * other;
   }
 
   Fraction operator%(const Fraction& other) const {
