@@ -1,13 +1,17 @@
+from typing import Union
+
 from hypothesis import given
 
 from tests.utils import (AlternativeNativeFractionsPair,
+                         AlternativeNativeIntsPair,
                          equivalence)
 from . import strategies
 
 
-@given(strategies.fractions_pairs, strategies.fractions_pairs)
+@given(strategies.fractions_pairs, strategies.fractions_or_ints_pairs)
 def test_basic(first_pair: AlternativeNativeFractionsPair,
-               second_pair: AlternativeNativeFractionsPair) -> None:
+               second_pair: Union[AlternativeNativeFractionsPair,
+                                  AlternativeNativeIntsPair]) -> None:
     alternative_first, native_first = first_pair
     alternative_second, native_second = second_pair
 
