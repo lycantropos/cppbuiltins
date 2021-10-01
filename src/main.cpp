@@ -1174,6 +1174,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self + py::self)
       .def(py::self + Int{})
       .def(py::self == py::self)
+      .def(py::self == Int{})
       .def(py::self <= py::self)
       .def(py::self < py::self)
       .def(py::self % py::self)
