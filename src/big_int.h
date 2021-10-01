@@ -727,7 +727,7 @@ class BigInt {
          bits_count >
              (std::numeric_limits<std::size_t>::max() - 1) % BINARY_SHIFT + 1))
       throw std::overflow_error("Too large to convert to floating point.");
-    bits_count = (size - 1) * BINARY_SHIFT + bits_count;
+    bits_count += (size - 1) * BINARY_SHIFT;
     std::size_t shift_digits, shift_bits, result_size;
     if (bits_count <= MANTISSA_BITS + 2) {
       shift_digits = (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
@@ -766,7 +766,7 @@ class BigInt {
       result_modulus = 0.5;
       bits_count += 1;
     }
-    exponent = bits_count;
+    exponent = static_cast<int>(bits_count);
     if (exponent > std::numeric_limits<double>::max_exponent)
       throw std::overflow_error("Too large to convert to floating point.");
     return _sign * result_modulus;
