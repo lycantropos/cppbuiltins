@@ -1143,7 +1143,6 @@ PYBIND11_MODULE(MODULE_NAME, m) {
             return py::make_tuple(quotient, remainder);
           },
           py::is_operator{})
-      .def("invmod", &Int::invmod)
       .def("__deepcopy__",
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__float__", &Int::operator double)
