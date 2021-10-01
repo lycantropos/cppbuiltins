@@ -18,9 +18,9 @@ class Gcd {
 template <class Component, class Gcd = Gcd<Component>>
 class Fraction {
  public:
-  Fraction() : _numerator(Component()), _denominator(ONE) {}
+  Fraction() : _numerator(Component()), _denominator(Component(1)) {}
 
-  explicit Fraction(Component numerator, Component denominator = ONE)
+  Fraction(Component numerator, Component denominator = Component(1))
       : Fraction(std::move(numerator), std::move(denominator),
                  std::true_type{}) {}
 
@@ -49,7 +49,7 @@ class Fraction {
   }
 
   bool operator==(const Component other) const {
-    return _denominator == ONE && _numerator == other;
+    return _denominator == Component(1) && _numerator == other;
   }
 
   bool operator<=(const Fraction& other) const {
@@ -165,7 +165,6 @@ class Fraction {
 
  private:
   static const Gcd gcd;
-  static const Component ONE;
   Component _numerator, _denominator;
 
   template <bool NORMALIZE>
@@ -187,9 +186,6 @@ class Fraction {
 
 template <class Component, class Gcd>
 const Gcd Fraction<Component, Gcd>::gcd{};
-
-template <class Component, class Gcd>
-const Component Fraction<Component, Gcd>::ONE{1};
 
 }  // namespace cppbuiltins
 
