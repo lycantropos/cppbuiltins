@@ -16,10 +16,6 @@ class Gcd {
   }
 };
 
-template <class T>
-using ConstParameterFrom =
-    std::conditional_t<std::is_arithmetic_v<T>, const T, const T&>;
-
 template <class Component, class Gcd = Gcd<Component>>
 class Fraction {
  public:
@@ -178,16 +174,19 @@ class Fraction {
     if (cppbuiltins::is_negative(exponent)) {
       if (!*this) throw ZeroDivisionError();
       Component exponent_modulus = -exponent;
-      return is_negative()
-                 ? Fraction(cppbuiltins::power(-_denominator, exponent_modulus),
-                            cppbuiltins::power(-_numerator, exponent_modulus),
-                            std::false_type{})
-                 : Fraction(cppbuiltins::power(_denominator, exponent_modulus),
-                            cppbuiltins::power(_numerator, exponent_modulus),
-                            std::false_type{});
+      return is_negative() ? Fraction(cppbuiltins::power<Component>(
+                                          -_denominator, exponent_modulus),
+                                      cppbuiltins::power<Component>(
+                                          -_numerator, exponent_modulus),
+                                      std::false_type{})
+                           : Fraction(cppbuiltins::power<Component>(
+                                          _denominator, exponent_modulus),
+                                      cppbuiltins::power<Component>(
+                                          _numerator, exponent_modulus),
+                                      std::false_type{});
     }
-    return Fraction(cppbuiltins::power(_numerator, exponent),
-                    cppbuiltins::power(_denominator, exponent),
+    return Fraction(cppbuiltins::power<Component>(_numerator, exponent),
+                    cppbuiltins::power<Component>(_denominator, exponent),
                     std::false_type{});
   }
 

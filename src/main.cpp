@@ -277,7 +277,7 @@ bool is_positive(const Int value) {
 }
 
 template <>
-Int power(const Int base, const Int exponent) {
+Int power(const Int& base, const Int& exponent) {
   return base.power(exponent);
 }
 }  // namespace cppbuiltins

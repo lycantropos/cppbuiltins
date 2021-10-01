@@ -31,6 +31,10 @@ struct DoublePrecision<std::uint32_t> {
 template <class T>
 using DoublePrecisionOf = typename DoublePrecision<T>::type;
 
+template <class T>
+using ConstParameterFrom =
+    std::conditional_t<std::is_arithmetic_v<T>, const T, const T&>;
+
 static constexpr std::size_t BIT_LENGTHS_TABLE[32] = {
     0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
@@ -106,7 +110,8 @@ bool is_positive(const Number value) {
 }
 
 template <class Number>
-Number power(const Number number, const Number exponent) {
+Number power(ConstParameterFrom<Number> number,
+             ConstParameterFrom<Number> exponent) {
   assert(!is_negative(exponent));
   return const_power(number, static_cast<std::size_t>(exponent));
 }
