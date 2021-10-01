@@ -1120,6 +1120,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   py::class_<Int> PyInt(m, INT_NAME);
   PyInt.def(py::init<>())
+      .def(py::init<const Int&>(), py::arg("value"))
       .def(py::init<const py::str&, std::size_t>(), py::arg("string"),
            py::arg("base") = 10)
       .def(py::init<const py::object&>(), py::arg("value"))
