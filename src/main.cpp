@@ -384,7 +384,7 @@ class ListIterator {
     auto iterable_state = state[1].cast<IterableState>();
     auto raw = std::make_shared<RawList>();
     raw->reserve(iterable_state.size());
-    for (auto& element : iterable_state)
+    for (const auto& element : iterable_state)
       raw->push_back(py::reinterpret_borrow<Object>(element));
     return {state[0].cast<Size>(), std::move(raw), state[2].cast<bool>()};
   }
@@ -418,7 +418,7 @@ class ListReversedIterator {
     auto iterable_state = state[1].cast<IterableState>();
     auto raw = std::make_shared<RawList>();
     raw->reserve(iterable_state.size());
-    for (auto& element : iterable_state)
+    for (const auto& element : iterable_state)
       raw->push_back(py::reinterpret_borrow<Object>(element));
     return {state[0].cast<Size>(), std::move(raw), state[2].cast<bool>()};
   }
@@ -465,7 +465,7 @@ class List {
   static List from_state(IterableState state) {
     RawList raw;
     raw.reserve(state.size());
-    for (auto& element : state)
+    for (const auto& element : state)
       raw.push_back(py::reinterpret_borrow<Object>(element));
     return {raw};
   }
@@ -847,7 +847,7 @@ class Set {
   static Set from_state(IterableState state) {
     RawSet raw;
     raw.reserve(state.size());
-    for (auto& element : state)
+    for (const auto&& element : state)
       raw.insert(py::reinterpret_borrow<Object>(element));
     return {raw};
   }
@@ -955,7 +955,7 @@ class Set {
 
   Set difference(py::args others) const {
     RawSet raw{*_raw};
-    for (const auto& other : others) {
+    for (const auto&& other : others) {
       RawSet values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw_sets_in_place_difference(raw, values);
@@ -966,7 +966,7 @@ class Set {
   void difference_update(py::args others) {
     auto& raw = *_raw;
     auto size_before = raw.size();
-    for (const auto& other : others) {
+    for (const auto&& other : others) {
       RawSet values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw_sets_in_place_difference(raw, values);
@@ -980,7 +980,7 @@ class Set {
 
   Set intersection(py::args others) const {
     RawSet raw{*_raw};
-    for (const auto& other : others) {
+    for (const auto&& other : others) {
       RawSet values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw_sets_in_place_intersection(raw, values);
@@ -991,7 +991,7 @@ class Set {
   void intersection_update(py::args others) {
     auto& raw = *_raw;
     auto size_before = raw.size();
-    for (const auto& other : others) {
+    for (const auto&& other : others) {
       RawSet values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw_sets_in_place_intersection(raw, values);
@@ -1058,7 +1058,7 @@ class Set {
 
   Set union_(py::args others) const {
     RawSet raw{*_raw};
-    for (const auto& other : others) {
+    for (const auto&& other : others) {
       RawList values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw.insert(values.begin(), values.end());
@@ -1069,7 +1069,7 @@ class Set {
   void update(py::args others) {
     auto& raw = *_raw;
     auto size_before = raw.size();
-    for (const auto& other : others) {
+    for (const auto&& other : others) {
       RawList values;
       fill_from_iterable(values, other.cast<py::iterable>());
       raw.insert(values.begin(), values.end());
