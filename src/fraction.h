@@ -1,7 +1,6 @@
 #ifndef FRACTION_HPP
 #define FRACTION_HPP
 
-#include <stdexcept>
 #include <utility>
 
 #include "exceptions.h"
