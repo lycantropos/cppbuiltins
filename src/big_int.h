@@ -43,7 +43,7 @@ class BigInt {
                 "signed base.");
   static constexpr std::size_t BINARY_SHIFT = _BINARY_SHIFT;
 
-  using DoubleDigit = double_precision_t<Digit>;
+  using DoubleDigit = DoublePrecisionOf<Digit>;
   static_assert(!std::is_same<DoubleDigit, undefined>(),
                 "Double precision version of digit type is undefined.");
   static_assert(std::is_integral<DoubleDigit>(),

@@ -69,10 +69,10 @@ static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
       (source.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
   result.reserve(result_digits_count);
-  double_precision_t<TargetDigit> accumulator = 0;
+  DoublePrecisionOf<TargetDigit> accumulator = 0;
   std::size_t accumulator_bits_count = 0;
   for (const SourceDigit digit : source) {
-    accumulator |= static_cast<double_precision_t<TargetDigit>>(digit)
+    accumulator |= static_cast<DoublePrecisionOf<TargetDigit>>(digit)
                    << accumulator_bits_count;
     accumulator_bits_count += source_shift;
     if (accumulator_bits_count >= TARGET_SHIFT) {
@@ -107,7 +107,7 @@ static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
       (result_digits_bits_count + (TARGET_SHIFT - 1)) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
   result.reserve(result_digits_count);
-  double_precision_t<SourceDigit> accumulator = source[0];
+  DoublePrecisionOf<SourceDigit> accumulator = source[0];
   for (std::size_t accumulator_bits_count = source_shift, index = 1;
        index < source.size(); ++index, accumulator_bits_count += source_shift) {
     do {
@@ -116,7 +116,7 @@ static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
       accumulator >>= TARGET_SHIFT;
       accumulator_bits_count -= TARGET_SHIFT;
     } while (accumulator_bits_count >= TARGET_SHIFT);
-    accumulator |= static_cast<double_precision_t<SourceDigit>>(source[index])
+    accumulator |= static_cast<DoublePrecisionOf<SourceDigit>>(source[index])
                    << accumulator_bits_count;
   }
   do {
@@ -168,14 +168,14 @@ static std::vector<TargetDigit> binary_digits_to_non_binary_base(
   for (auto iterator = source.rbegin(); iterator != source.rend(); ++iterator) {
     Digit digit = *iterator;
     for (std::size_t index = 0; index < result.size(); ++index) {
-      double_precision_t<TargetDigit> step =
-          (static_cast<double_precision_t<TargetDigit>>(result[index])
+      DoublePrecisionOf<TargetDigit> step =
+          (static_cast<DoublePrecisionOf<TargetDigit>>(result[index])
            << SOURCE_SHIFT) |
           digit;
       digit = step / TARGET_BASE;
       result[index] = static_cast<TargetDigit>(
           step -
-          static_cast<double_precision_t<TargetDigit>>(digit) * TARGET_BASE);
+          static_cast<DoublePrecisionOf<TargetDigit>>(digit) * TARGET_BASE);
     }
     while (digit) {
       result.push_back(digit % TARGET_BASE);
@@ -207,19 +207,19 @@ static std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
     ++infimum_base_exponent;
   }
   for (auto position = source.rbegin(); position != source.rend();) {
-    double_precision_t<TargetDigit> digit =
-        static_cast<double_precision_t<TargetDigit>>(*(position++));
+    DoublePrecisionOf<TargetDigit> digit =
+        static_cast<DoublePrecisionOf<TargetDigit>>(*(position++));
     std::size_t base_exponent = 1;
     for (; base_exponent < infimum_base_exponent && position != source.rend();
          ++base_exponent, ++position) {
-      digit = double_precision_t<TargetDigit>(digit * source_base + *position);
+      digit = DoublePrecisionOf<TargetDigit>(digit * source_base + *position);
     }
     std::size_t base_power = infimum_base_power;
     if (base_exponent != infimum_base_exponent)
       for (base_power = source_base; base_exponent > 1; --base_exponent)
         base_power *= source_base;
     for (std::size_t index = 0; index < result.size(); ++index) {
-      digit += static_cast<double_precision_t<TargetDigit>>(result[index]) *
+      digit += static_cast<DoublePrecisionOf<TargetDigit>>(result[index]) *
                base_power;
       result[index] = static_cast<TargetDigit>(digit & TARGET_DIGIT_MASK);
       digit >>= TARGET_SHIFT;
@@ -243,10 +243,10 @@ static std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
   std::vector<TargetDigit> result;
   result.reserve(static_cast<std::size_t>(result_digits_count_upper_bound));
   for (auto position = source.rbegin(); position != source.rend(); ++position) {
-    double_precision_t<TargetDigit> digit =
-        static_cast<double_precision_t<TargetDigit>>(*position);
+    DoublePrecisionOf<TargetDigit> digit =
+        static_cast<DoublePrecisionOf<TargetDigit>>(*position);
     for (std::size_t index = 0; index < result.size(); ++index) {
-      digit += static_cast<double_precision_t<TargetDigit>>(result[index]) *
+      digit += static_cast<DoublePrecisionOf<TargetDigit>>(result[index]) *
                source_base;
       result[index] = static_cast<TargetDigit>(digit & TARGET_DIGIT_MASK);
       digit >>= TARGET_SHIFT;

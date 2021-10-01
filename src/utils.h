@@ -9,27 +9,27 @@ namespace cppbuiltins {
 using undefined = void;
 
 template <class T>
-struct double_precision {
+struct DoublePrecision {
   using type = undefined;
 };
 
 template <>
-struct double_precision<std::uint8_t> {
+struct DoublePrecision<std::uint8_t> {
   using type = std::uint16_t;
 };
 
 template <>
-struct double_precision<std::uint16_t> {
+struct DoublePrecision<std::uint16_t> {
   using type = std::uint32_t;
 };
 
 template <>
-struct double_precision<std::uint32_t> {
+struct DoublePrecision<std::uint32_t> {
   using type = std::uint64_t;
 };
 
 template <class T>
-using double_precision_t = typename double_precision<T>::type;
+using DoublePrecisionOf = typename DoublePrecision<T>::type;
 
 static constexpr std::size_t BIT_LENGTHS_TABLE[32] = {
     0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
