@@ -9,7 +9,7 @@ from tests.utils import (AlternativeNativeFractionsPair,
 from . import strategies
 
 
-@given(strategies.fractions_pairs, strategies.integral_exponents_pairs)
+@given(strategies.fractions_pairs, strategies.fraction_or_int_exponents_pairs)
 def test_basic(bases_pair: AlternativeNativeIntsPair,
                exponents_pair: Union[AlternativeNativeFractionsPair,
                                      AlternativeNativeIntsPair]) -> None:
