@@ -411,6 +411,8 @@ class BigInt {
 
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
+  using SignedSize = std::make_signed_t<std::size_t>;
+
   double divide_as_double(const BigInt& divisor) const {
     if (!divisor) throw ZeroDivisionError();
     bool negate = is_negative() ^ divisor.is_negative();
@@ -435,32 +437,31 @@ class BigInt {
       double result = reduced_dividend / reduced_divisor;
       return negate ? -result : result;
     }
-    std::make_signed_t<std::size_t> digits_count_difference =
+    SignedSize digits_count_difference =
         dividend_digits_count - divisor_digits_count;
     if (digits_count_difference >
-        static_cast<std::make_signed_t<std::size_t>>(
-            std::numeric_limits<std::size_t>::max() / BINARY_SHIFT) -
+        static_cast<SignedSize>(std::numeric_limits<std::size_t>::max() /
+                                BINARY_SHIFT) -
             1)
       throw std::overflow_error(
           "Division result too large to be expressed as floating point.");
     else if (digits_count_difference <
-             1 - static_cast<std::make_signed_t<std::size_t>>(
+             1 - static_cast<SignedSize>(
                      std::numeric_limits<std::size_t>::max() / BINARY_SHIFT))
       return negate ? -0.0 : 0.0;
-    std::make_signed_t<std::size_t> bit_lengths_difference =
-        digits_count_difference * BINARY_SHIFT +
-        (bit_length(dividend_digits.back()) -
-         bit_length(divisor_digits.back()));
+    SignedSize bit_lengths_difference = digits_count_difference * BINARY_SHIFT +
+                                        (bit_length(dividend_digits.back()) -
+                                         bit_length(divisor_digits.back()));
     if (bit_lengths_difference > std::numeric_limits<double>::max_exponent)
       throw std::overflow_error(
           "Division result too large to be expressed as floating point.");
     else if (bit_lengths_difference <
-             static_cast<std::make_signed_t<std::size_t>>(
-                 std::numeric_limits<double>::min_exponent - MANTISSA_BITS - 1))
+             static_cast<SignedSize>(std::numeric_limits<double>::min_exponent -
+                                     MANTISSA_BITS - 1))
       return negate ? -0.0 : 0.0;
-    std::make_signed_t<std::size_t> shift =
+    SignedSize shift =
         std::max(bit_lengths_difference,
-                 static_cast<std::make_signed_t<std::size_t>>(
+                 static_cast<SignedSize>(
                      std::numeric_limits<double>::min_exponent)) -
         MANTISSA_BITS - 2;
     bool inexact = false;
@@ -469,8 +470,7 @@ class BigInt {
     if (shift <= 0) {
       std::size_t shift_digits = (-shift) / BINARY_SHIFT;
       if (dividend_digits_count >=
-          std::numeric_limits<std::make_signed_t<std::size_t>>::max() - 1 -
-              shift_digits)
+          std::numeric_limits<SignedSize>::max() - 1 - shift_digits)
         throw std::overflow_error(
             "Division result too large to be expressed as floating point.");
       quotient_digits_count = dividend_digits_count + shift_digits + 1;
@@ -506,10 +506,10 @@ class BigInt {
       std::swap(quotient_digits, next_quotient_digits);
       if (remainder.size() > 1 || remainder[0] != 0) inexact = true;
     }
-    std::make_signed_t<std::size_t> quotient_bit_length =
+    SignedSize quotient_bit_length =
         (quotient_digits.size() - 1) * BINARY_SHIFT +
         bit_length(quotient_digits.back());
-    std::make_signed_t<std::size_t> extra_bits =
+    SignedSize extra_bits =
         std::max(quotient_bit_length,
                  std::numeric_limits<double>::min_exponent - shift) -
         MANTISSA_BITS;
@@ -603,7 +603,7 @@ class BigInt {
       cppbuiltins::const_power(2.0, MANTISSA_BITS);
   static constexpr std::size_t MANTISSA_BINARY_DIGITS_COUNT =
       MANTISSA_BITS / BINARY_SHIFT;
-  static constexpr std::make_signed_t<std::size_t> MANTISSA_EXTRA_BITS =
+  static constexpr SignedSize MANTISSA_EXTRA_BITS =
       MANTISSA_BITS % BINARY_SHIFT;
   static constexpr std::size_t WINDOW_CUTOFF = 8;
   static constexpr std::size_t WINDOW_SHIFT = 5;
