@@ -1161,7 +1161,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           py::arg("exponent"), py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
       .def("__str__", &Int::repr<10>)
-      .def("__truediv__", &cppbuiltins::divide_as_double<Int>, py::is_operator{})
+      .def("__truediv__", &cppbuiltins::divide_as_double<Int>,
+           py::is_operator{})
       .def("__trunc__", &identity<const Int&>)
       .def_property_readonly("numerator", &identity<const Int&>)
       .def_property_readonly("denominator", [](const Int&) { return ONE; });

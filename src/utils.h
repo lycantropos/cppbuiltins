@@ -50,14 +50,12 @@ constexpr std::size_t bit_length(const T value) {
 template <class Number>
 constexpr Number const_power(const Number base, const std::size_t exponent) {
   Number result{1};
-  if (!exponent)
-    return result;
+  if (!exponent) return result;
   std::size_t exponent_mask = 1 << (bit_length(exponent) - 1);
   while (exponent_mask) {
-      result *= result;
-      if (exponent & exponent_mask)
-        result *= base;
-      exponent_mask >>= 1;
+    result *= result;
+    if (exponent & exponent_mask) result *= base;
+    exponent_mask >>= 1;
   }
   return result;
 }

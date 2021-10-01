@@ -1147,7 +1147,8 @@ class BigInt {
       for (auto exponent_digit_position = exponent_digits.rbegin();;) {
         for (; exponent_mask != 0; exponent_mask >>= 1) {
           result = (result * result) % modulus;
-          if (exponent_digit & exponent_mask) result = (result * base) % modulus;
+          if (exponent_digit & exponent_mask)
+            result = (result * base) % modulus;
         }
         if (++exponent_digit_position == exponent_digits.rend()) break;
         exponent_digit = *exponent_digit_position;
