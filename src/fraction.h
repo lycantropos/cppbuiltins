@@ -11,7 +11,8 @@ namespace cppbuiltins {
 template <class Number>
 class Gcd {
  public:
-  Number operator()(Number first, Number second) const {
+  Number operator()(ConstParameterFrom<Number> first,
+                    ConstParameterFrom<Number> second) const {
     return gcd(first, second);
   }
 };
@@ -38,7 +39,7 @@ class Fraction {
   explicit operator bool() const { return bool(_numerator); }
 
   explicit operator double() const {
-    return cppbuiltins::divide_as_double(_numerator, _denominator);
+    return cppbuiltins::divide_as_double<Component>(_numerator, _denominator);
   }
 
   explicit operator Component() const {
@@ -50,7 +51,7 @@ class Fraction {
   }
 
   bool operator==(ConstParameterFrom<Component> other) const {
-    return cppbuiltins::is_one(_denominator) && _numerator == other;
+    return cppbuiltins::is_one<Component>(_denominator) && _numerator == other;
   }
 
   bool operator<(const Fraction& other) const {
@@ -171,7 +172,7 @@ class Fraction {
   ConstParameterFrom<Component>& numerator() const { return _numerator; }
 
   Fraction power(ConstParameterFrom<Component> exponent) const {
-    if (cppbuiltins::is_negative(exponent)) {
+    if (cppbuiltins::is_negative<Component>(exponent)) {
       if (!*this) throw ZeroDivisionError();
       Component exponent_modulus = -exponent;
       return is_negative() ? Fraction(cppbuiltins::power<Component>(
@@ -190,9 +191,13 @@ class Fraction {
                     std::false_type{});
   }
 
-  bool is_negative() const { return cppbuiltins::is_negative(_numerator); }
+  bool is_negative() const {
+    return cppbuiltins::is_negative<Component>(_numerator);
+  }
 
-  bool is_positive() const { return cppbuiltins::is_positive(_numerator); }
+  bool is_positive() const {
+    return cppbuiltins::is_positive<Component>(_numerator);
+  }
 
  private:
   static const Gcd gcd;
@@ -205,12 +210,12 @@ class Fraction {
       : _numerator(numerator), _denominator(denominator) {
     if constexpr (NORMALIZE) {
       if (!_denominator) throw ZeroDivisionError();
-      if (cppbuiltins::is_negative(_denominator)) {
+      if (cppbuiltins::is_negative<Component>(_denominator)) {
         _numerator = -_numerator;
         _denominator = -_denominator;
       }
       Component components_gcd = gcd(_numerator, _denominator);
-      if (!cppbuiltins::is_one(components_gcd)) {
+      if (!cppbuiltins::is_one<Component>(components_gcd)) {
         _denominator = _denominator / components_gcd;
         _numerator = _numerator / components_gcd;
       }

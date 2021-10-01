@@ -64,8 +64,9 @@ constexpr Number const_power(const Number base, const std::size_t exponent) {
   return result;
 }
 
-template <class T>
-double divide_as_double(const T dividend, const T divisor) {
+template <class Number>
+double divide_as_double(ConstParameterFrom<Number> dividend,
+                        ConstParameterFrom<Number> divisor) {
   return dividend / divisor;
 }
 
@@ -92,19 +93,19 @@ T gcd(T first, T second) {
 }
 
 template <class Number>
-bool is_negative(const Number value) {
+bool is_negative(ConstParameterFrom<Number> value) {
   static const Number ZERO{};
   return value < ZERO;
 }
 
 template <class Number>
-bool is_one(const Number value) {
+bool is_one(ConstParameterFrom<Number> value) {
   static const Number ONE{1};
   return value == ONE;
 }
 
 template <class Number>
-bool is_positive(const Number value) {
+bool is_positive(ConstParameterFrom<Number> value) {
   static const Number ZERO{};
   return value > ZERO;
 }

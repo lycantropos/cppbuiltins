@@ -251,33 +251,35 @@ namespace cppbuiltins {
 template <>
 class Gcd<Int> {
  public:
-  Int operator()(const Int& first, const Int& second) const {
+  Int operator()(ConstParameterFrom<Int> first,
+                 ConstParameterFrom<Int> second) const {
     return first.gcd(second);
   }
 };
 
 template <>
-double divide_as_double(const Int dividend, const Int divisor) {
+double divide_as_double<Int>(ConstParameterFrom<Int> dividend,
+                             ConstParameterFrom<Int> divisor) {
   return dividend.divide_as_double(divisor);
 }
 
 template <>
-bool is_negative(const Int value) {
+bool is_negative<Int>(ConstParameterFrom<Int> value) {
   return value.is_negative();
 }
 
 template <>
-bool is_one(const Int value) {
+bool is_one<Int>(ConstParameterFrom<Int> value) {
   return value.is_one();
 }
 
 template <>
-bool is_positive(const Int value) {
+bool is_positive<Int>(ConstParameterFrom<Int> value) {
   return value.is_positive();
 }
 
 template <>
-Int power(const Int& base, const Int& exponent) {
+Int power<Int>(ConstParameterFrom<Int> base, ConstParameterFrom<Int> exponent) {
   return base.power(exponent);
 }
 }  // namespace cppbuiltins
