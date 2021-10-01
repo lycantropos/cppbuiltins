@@ -6,11 +6,14 @@ from distutils.ccompiler import CCompiler
 from distutils.errors import CompileError
 from glob import glob
 from pathlib import Path
+from typing import Any
 
-from setuptools import (Extension,
+from setuptools import (Command,
+                        Extension,
                         find_packages,
                         setup)
 from setuptools.command.build_ext import build_ext
+from setuptools.command.develop import develop
 
 __version__ = '0.4.4'
 
@@ -77,10 +80,27 @@ class BuildExt(build_ext):
                 compile_args.append('-fvisibility=hidden')
         define_macros = [('VERSION_INFO', self.distribution.get_version())]
         for extension in self.extensions:
-            extension.extra_compile_args = compile_args
-            extension.extra_link_args = link_args
-            extension.define_macros = define_macros
+            extension.extra_compile_args += compile_args
+            extension.extra_link_args += link_args
+            extension.define_macros += define_macros
         super().build_extensions()
+
+
+class Develop(develop):
+    def reinitialize_command(self,
+                             name: str,
+                             reinit_subcommands: int = 0,
+                             **kwargs: Any) -> Command:
+        if name == build_ext.__name__:
+            kwargs.setdefault('debug', 1)
+        command = super().reinitialize_command(name,
+                                               reinit_subcommands=0,
+                                               **kwargs)
+        if name == build_ext.__name__:
+            command.ensure_finalized()
+            for extension in command.extensions:
+                extension.undef_macros.append(('NDEBUG',))
+        return command
 
 
 class LazyPybindInclude:
@@ -113,7 +133,8 @@ setup(name=name,
       download_url=project_base_url + 'archive/master.zip',
       python_requires='>=3.5',
       setup_requires=read_file('requirements-setup.txt'),
-      cmdclass={'build_ext': BuildExt},
+      cmdclass={build_ext.__name__: BuildExt,
+                develop.__name__: Develop},
       ext_modules=[Extension(name,
                              glob('src/*.cpp'),
                              include_dirs=[LazyPybindInclude()],
