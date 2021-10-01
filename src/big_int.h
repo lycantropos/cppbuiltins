@@ -720,7 +720,6 @@ class BigInt {
     Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
         0,
     };
-    static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
     std::size_t size = _digits.size();
     std::size_t bits_count = bit_length(_digits.back());
     if (size >=
@@ -756,7 +755,8 @@ class BigInt {
             break;
           }
     }
-    result_digits[0] += half_even_correction[result_digits[0] & 7];
+    constexpr SignedDigit HALF_EVEN_CORRECTION[8] = {0, -1, -2, 1, 0, -1, 2, 1};
+    result_digits[0] += HALF_EVEN_CORRECTION[result_digits[0] & 7];
     double result_modulus = result_digits[--result_size];
     while (result_size > 0)
       result_modulus =
