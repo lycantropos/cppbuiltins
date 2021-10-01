@@ -93,14 +93,13 @@ class Develop(develop):
                              **kwargs: Any) -> Command:
         if name == build_ext.__name__:
             kwargs.setdefault('debug', 1)
-        command = super().reinitialize_command(name,
-                                               reinit_subcommands=0,
-                                               **kwargs)
+        result = super().reinitialize_command(name, reinit_subcommands,
+                                              **kwargs)
         if name == build_ext.__name__:
-            command.ensure_finalized()
-            for extension in command.extensions:
-                extension.undef_macros.append(('NDEBUG',))
-        return command
+            result.ensure_finalized()
+            for extension in result.extensions:
+                extension.undef_macros.append('NDEBUG')
+        return result
 
 
 class LazyPybindInclude:
