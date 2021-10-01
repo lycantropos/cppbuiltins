@@ -16,7 +16,7 @@ from setuptools import (Command,
 from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
 
-__version__ = '0.4.4'
+__version__ = '0.4.5-alpha'
 
 project_base_url = 'https://github.com/lycantropos/cppbuiltins/'
 
