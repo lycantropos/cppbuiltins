@@ -227,15 +227,34 @@ template <class Component, class Gcd>
 const Gcd Fraction<Component, Gcd>::gcd{};
 
 template <class Component, class Gcd>
+bool operator<(ConstParameterFrom<Component> left,
+               const Fraction<Component, Gcd>& right) {
+  return left * right.denominator() < right.numerator();
+}
+
+template <class Component, class Gcd>
 bool operator<=(ConstParameterFrom<Component> left,
                 const Fraction<Component, Gcd>& right) {
   return left * right.denominator() <= right.numerator();
 }
 
+
 template <class Component, class Gcd>
-bool operator<(ConstParameterFrom<Component> left,
+bool operator==(ConstParameterFrom<Component> left,
+                const Fraction<Component, Gcd>& right) {
+  return is_one<Component>(right.denominator()) && left == right.numerator();
+}
+
+template <class Component, class Gcd>
+bool operator>(ConstParameterFrom<Component> left,
                const Fraction<Component, Gcd>& right) {
-  return left * right.denominator() < right.numerator();
+  return left * right.denominator() > right.numerator();
+}
+
+template <class Component, class Gcd>
+bool operator>=(ConstParameterFrom<Component> left,
+                const Fraction<Component, Gcd>& right) {
+  return left * right.denominator() >= right.numerator();
 }
 
 }  // namespace cppbuiltins
