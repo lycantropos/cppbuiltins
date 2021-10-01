@@ -44,10 +44,7 @@ def cpp_flag(compiler: CCompiler,
              standard_to_flag: Callable[[str], str],
              *,
              min_year: int = 2017) -> str:
-    """
-    Returns the -std=c++[11|...] compiler flag.
-    The newer version is preferred when available.
-    """
+    """Returns the newest C++ standard compiler flag available."""
     flags = [standard_to_flag(year_to_standard(year))
              for year in range(min_year, date.today().year + 1, 3)]
     for flag in reversed(flags):
