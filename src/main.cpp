@@ -1115,6 +1115,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
   static const Int ONE{1};
 
+  static const py::object Rational =
+      py::module::import("numbers").attr("Rational");
+
   py::class_<Int> PyInt(m, INT_NAME);
   PyInt.def(py::init<>())
       .def(py::init<const py::str&, std::size_t>(), py::arg("string"),
@@ -1174,6 +1177,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def_property_readonly("numerator", &identity<const Int&>)
       .def_property_readonly("denominator",
                              [](const Int&) -> const Int& { return ONE; });
+
+  Rational.attr("register")(PyInt);
 
   py::class_<Fraction> PyFraction(m, FRACTION_NAME);
   PyFraction.def(py::init<>())
