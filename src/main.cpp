@@ -262,18 +262,23 @@ double divide_as_double(const Int dividend, const Int divisor) {
 }
 
 template <>
-Int power(const Int base, const Int exponent) {
-  return base.power(exponent);
-}
-
-template <>
 bool is_negative(const Int value) {
   return value.is_negative();
 }
 
 template <>
+bool is_one(const Int value) {
+  return value.is_one();
+}
+
+template <>
 bool is_positive(const Int value) {
   return value.is_positive();
+}
+
+template <>
+Int power(const Int base, const Int exponent) {
+  return base.power(exponent);
 }
 }  // namespace cppbuiltins
 
@@ -1223,7 +1228,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
                                               py::const_),
            py::is_operator{})
       .def("__floordiv__",
-           py::overload_cast<Int>(&Fraction::floor_divide, py::const_),
+           py::overload_cast<const Int&>(&Fraction::floor_divide, py::const_),
            py::is_operator{})
       .def("__hash__", &hash_fraction)
       .def("__int__", [](const Fraction& self) { return py::int_(Int(self)); })

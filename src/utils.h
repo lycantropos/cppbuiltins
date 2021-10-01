@@ -89,13 +89,19 @@ T gcd(T first, T second) {
 
 template <class Number>
 bool is_negative(const Number value) {
-  static constexpr Number ZERO = Number();
+  static const Number ZERO{};
   return value < ZERO;
 }
 
 template <class Number>
+bool is_one(const Number value) {
+  static const Number ONE{1};
+  return value == ONE;
+}
+
+template <class Number>
 bool is_positive(const Number value) {
-  static constexpr Number ZERO = Number();
+  static const Number ZERO{};
   return value > ZERO;
 }
 

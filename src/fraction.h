@@ -1,6 +1,7 @@
 #ifndef FRACTION_HPP
 #define FRACTION_HPP
 
+#include <type_traits>
 #include <utility>
 
 #include "exceptions.h"
@@ -15,14 +16,18 @@ class Gcd {
   }
 };
 
+template <class T>
+using ConstParameterFrom =
+    std::conditional_t<std::is_arithmetic_v<T>, const T, const T&>;
+
 template <class Component, class Gcd = Gcd<Component>>
 class Fraction {
  public:
   Fraction() : _numerator(Component()), _denominator(Component(1)) {}
 
-  Fraction(Component numerator, Component denominator = Component(1))
-      : Fraction(std::move(numerator), std::move(denominator),
-                 std::true_type{}) {}
+  explicit Fraction(ConstParameterFrom<Component> numerator,
+                    ConstParameterFrom<Component> denominator = Component(1))
+      : Fraction(numerator, denominator, std::true_type{}) {}
 
   Fraction operator+(const Fraction& other) const {
     return Fraction(
@@ -30,7 +35,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator+(const Component other) const {
+  Fraction operator+(ConstParameterFrom<Component> other) const {
     return Fraction(_numerator + _denominator * other, _denominator);
   }
 
@@ -48,15 +53,15 @@ class Fraction {
     return _numerator == other._numerator && _denominator == other._denominator;
   }
 
-  bool operator==(const Component other) const {
-    return _denominator == Component(1) && _numerator == other;
+  bool operator==(ConstParameterFrom<Component> other) const {
+    return cppbuiltins::is_one(_denominator) && _numerator == other;
   }
 
   bool operator<(const Fraction& other) const {
     return _numerator * other._denominator < _denominator * other._numerator;
   }
 
-  bool operator<(const Component other) const {
+  bool operator<(ConstParameterFrom<Component> other) const {
     return _numerator < _denominator * other;
   }
 
@@ -64,7 +69,7 @@ class Fraction {
     return _numerator * other._denominator <= _denominator * other._numerator;
   }
 
-  bool operator<=(const Component other) const {
+  bool operator<=(ConstParameterFrom<Component> other) const {
     return _numerator <= _denominator * other;
   }
 
@@ -72,7 +77,7 @@ class Fraction {
     return _numerator * other._denominator > _denominator * other._numerator;
   }
 
-  bool operator>(const Component other) const {
+  bool operator>(ConstParameterFrom<Component> other) const {
     return _numerator > _denominator * other;
   }
 
@@ -80,7 +85,7 @@ class Fraction {
     return _numerator * other._denominator >= _denominator * other._numerator;
   }
 
-  bool operator>=(const Component other) const {
+  bool operator>=(ConstParameterFrom<Component> other) const {
     return _numerator >= _denominator * other;
   }
 
@@ -90,14 +95,14 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator%(const Component other) const {
+  Fraction operator%(ConstParameterFrom<Component> other) const {
     return Fraction(_numerator % (other * _denominator), _denominator);
   }
 
   Fraction operator*(const Fraction& other) const {
-    const Component numerator_other_denominator_gcd =
+    ConstParameterFrom<Component> numerator_other_denominator_gcd =
         gcd(_numerator, other._denominator);
-    const Component other_numerator_denominator_gcd =
+    ConstParameterFrom<Component> other_numerator_denominator_gcd =
         gcd(_denominator, other._numerator);
     return Fraction((_numerator / numerator_other_denominator_gcd) *
                         (other._numerator / other_numerator_denominator_gcd),
@@ -106,8 +111,9 @@ class Fraction {
                     std::false_type{});
   }
 
-  Fraction operator*(const Component other) const {
-    const Component denominator_other_gcd = gcd(_denominator, other);
+  Fraction operator*(ConstParameterFrom<Component> other) const {
+    ConstParameterFrom<Component> denominator_other_gcd =
+        gcd(_denominator, other);
     return Fraction(_numerator * (other / denominator_other_gcd),
                     _denominator / denominator_other_gcd, std::false_type{});
   }
@@ -124,21 +130,23 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator-(const Component other) const {
+  Fraction operator-(ConstParameterFrom<Component> other) const {
     return Fraction(_numerator - _denominator * other, _denominator);
   }
 
   Fraction operator/(const Fraction& other) const {
-    const Component numerators_gcd = gcd(_numerator, other._numerator);
-    const Component denominators_gcd = gcd(_denominator, other._denominator);
+    ConstParameterFrom<Component> numerators_gcd =
+        gcd(_numerator, other._numerator);
+    ConstParameterFrom<Component> denominators_gcd =
+        gcd(_denominator, other._denominator);
     return Fraction(
         (_numerator / numerators_gcd) * (other._denominator / denominators_gcd),
         (other._numerator / numerators_gcd) *
             (_denominator / denominators_gcd));
   }
 
-  Fraction operator/(const Component other) const {
-    const Component numerators_gcd = gcd(_numerator, other);
+  Fraction operator/(ConstParameterFrom<Component> other) const {
+    ConstParameterFrom<Component> numerators_gcd = gcd(_numerator, other);
     return Fraction(_numerator / numerators_gcd,
                     (other / numerators_gcd) * _denominator);
   }
@@ -147,7 +155,7 @@ class Fraction {
 
   Component floor() const { return _numerator / _denominator; }
 
-  const Component& denominator() const { return _denominator; }
+  ConstParameterFrom<Component>& denominator() const { return _denominator; }
 
   void divmod(const Fraction& divisor, Component& quotient,
               Fraction& remainder) const {
@@ -160,13 +168,13 @@ class Fraction {
            (other._numerator * _denominator);
   }
 
-  Component floor_divide(const Component other) const {
+  Component floor_divide(ConstParameterFrom<Component> other) const {
     return _numerator / (other * _denominator);
   }
 
-  const Component& numerator() const { return _numerator; }
+  ConstParameterFrom<Component>& numerator() const { return _numerator; }
 
-  Fraction power(const Component exponent) const {
+  Fraction power(ConstParameterFrom<Component> exponent) const {
     if (cppbuiltins::is_negative(exponent)) {
       if (!*this) throw ZeroDivisionError();
       Component exponent_modulus = -exponent;
@@ -192,7 +200,8 @@ class Fraction {
   Component _numerator, _denominator;
 
   template <bool NORMALIZE>
-  Fraction(const Component& numerator, const Component& denominator,
+  Fraction(ConstParameterFrom<Component>& numerator,
+           ConstParameterFrom<Component>& denominator,
            std::bool_constant<NORMALIZE>)
       : _numerator(numerator), _denominator(denominator) {
     if constexpr (NORMALIZE) {
@@ -202,8 +211,10 @@ class Fraction {
         _denominator = -_denominator;
       }
       Component components_gcd = gcd(_numerator, _denominator);
-      _denominator = _denominator / components_gcd;
-      _numerator = _numerator / components_gcd;
+      if (!cppbuiltins::is_one(components_gcd)) {
+        _denominator = _denominator / components_gcd;
+        _numerator = _numerator / components_gcd;
+      }
     }
   }
 };
@@ -212,12 +223,14 @@ template <class Component, class Gcd>
 const Gcd Fraction<Component, Gcd>::gcd{};
 
 template <class Component, class Gcd>
-bool operator<=(const Component left, const Fraction<Component, Gcd>& right) {
+bool operator<=(ConstParameterFrom<Component> left,
+                const Fraction<Component, Gcd>& right) {
   return left * right.denominator() <= right.numerator();
 }
 
 template <class Component, class Gcd>
-bool operator<(const Component left, const Fraction<Component, Gcd>& right) {
+bool operator<(ConstParameterFrom<Component> left,
+               const Fraction<Component, Gcd>& right) {
   return left * right.denominator() < right.numerator();
 }
 
