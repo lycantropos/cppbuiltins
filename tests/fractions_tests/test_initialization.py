@@ -1,6 +1,7 @@
 from hypothesis import given
 
 from tests.utils import (AlternativeFraction,
+                         AlternativeNativeFractionsPair,
                          AlternativeNativeIntsPair,
                          NativeFraction,
                          are_alternative_native_fractions_equal)
@@ -17,6 +18,16 @@ def test_basic(numerators_pair: AlternativeNativeIntsPair,
                                                alternative_denominator),
                            NativeFraction(native_numerator,
                                           native_denominator))
+
+    assert are_alternative_native_fractions_equal(alternative, native)
+
+
+@given(strategies.fractions_pairs)
+def test_idempotence(fractions_pair: AlternativeNativeFractionsPair) -> None:
+    alternative_fraction, native_fraction = fractions_pair
+
+    alternative, native = (AlternativeFraction(alternative_fraction),
+                           NativeFraction(native_fraction))
 
     assert are_alternative_native_fractions_equal(alternative, native)
 
