@@ -384,6 +384,21 @@ class BigInt {
                  : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
+  bool operator>(const BigInt& other) const {
+    return _sign > other._sign ||
+           (_sign == other._sign &&
+            (is_positive() ? digits_lesser_than(other._digits, _digits)
+                           : digits_lesser_than(_digits, other._digits)));
+  }
+
+  bool operator>=(const BigInt& other) const {
+    return _sign > other._sign ||
+           (_sign == other._sign &&
+            (is_positive()
+                 ? digits_lesser_than_or_equal(other._digits, _digits)
+                 : digits_lesser_than_or_equal(_digits, other._digits)));
+  }
+
   BigInt operator/(const BigInt& divisor) const {
     BigInt result;
     divmod<true, false>(divisor, &result, nullptr);
