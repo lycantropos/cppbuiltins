@@ -383,7 +383,7 @@ class ListIterator {
     auto iterable_state = state[1].cast<IterableState>();
     auto raw = std::make_shared<RawList>();
     raw->reserve(iterable_state.size());
-    for (const auto& element : iterable_state)
+    for (const auto&& element : iterable_state)
       raw->push_back(py::reinterpret_borrow<Object>(element));
     return {state[0].cast<Size>(), std::move(raw), state[2].cast<bool>()};
   }
@@ -417,7 +417,7 @@ class ListReversedIterator {
     auto iterable_state = state[1].cast<IterableState>();
     auto raw = std::make_shared<RawList>();
     raw->reserve(iterable_state.size());
-    for (const auto& element : iterable_state)
+    for (const auto&& element : iterable_state)
       raw->push_back(py::reinterpret_borrow<Object>(element));
     return {state[0].cast<Size>(), std::move(raw), state[2].cast<bool>()};
   }
@@ -464,7 +464,7 @@ class List {
   static List from_state(IterableState state) {
     RawList raw;
     raw.reserve(state.size());
-    for (const auto& element : state)
+    for (const auto&& element : state)
       raw.push_back(py::reinterpret_borrow<Object>(element));
     return {raw};
   }
