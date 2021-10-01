@@ -58,7 +58,7 @@ class BigInt {
 
   BigInt() : _sign(0), _digits({0}) {}
 
-  template <class T, std::enable_if_t<std::is_same<T, Digit>::value, T> = 0>
+  template <class T, std::enable_if_t<std::is_same<T, Digit>::value, int> = 0>
   explicit BigInt(T value) {
     if (value == 0) {
       _sign = 0;
@@ -75,7 +75,7 @@ class BigInt {
   }
 
   template <class T,
-            std::enable_if_t<std::is_same<T, DoubleDigit>::value, T> = 0>
+            std::enable_if_t<std::is_same<T, DoubleDigit>::value, int> = 0>
   explicit BigInt(T value) {
     if (value == 0) {
       _sign = 0;
@@ -90,7 +90,7 @@ class BigInt {
   }
 
   template <class T,
-            std::enable_if_t<std::is_same<T, SignedDigit>::value, T> = 0>
+            std::enable_if_t<std::is_same<T, SignedDigit>::value, int> = 0>
   explicit BigInt(T value) {
     Digit modulus;
     if (value < 0) {
@@ -108,8 +108,8 @@ class BigInt {
       _digits.push_back(modulus);
   }
 
-  template <class T,
-            std::enable_if_t<std::is_same<T, SignedDoubleDigit>::value, T> = 0>
+  template <class T, std::enable_if_t<std::is_same<T, SignedDoubleDigit>::value,
+                                      int> = 0>
   explicit BigInt(T value) {
     DoubleDigit modulus;
     if (value < 0) {
