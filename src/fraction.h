@@ -30,7 +30,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator+(Component other) const {
+  Fraction operator+(const Component other) const {
     return Fraction(_numerator + _denominator * other, _denominator);
   }
 
@@ -108,7 +108,7 @@ class Fraction {
         _denominator * other._denominator);
   }
 
-  Fraction operator-(Component other) const {
+  Fraction operator-(const Component other) const {
     return Fraction(_numerator - _denominator * other, _denominator);
   }
 
@@ -121,7 +121,7 @@ class Fraction {
             (_denominator / denominators_gcd));
   }
 
-  Fraction operator/(Component other) const {
+  Fraction operator/(const Component other) const {
     const Component numerators_gcd = gcd(_numerator, other);
     return Fraction(_numerator / numerators_gcd,
                     (other / numerators_gcd) * _denominator);
@@ -144,13 +144,13 @@ class Fraction {
            (other._numerator * _denominator);
   }
 
-  Component floor_divide(Component other) const {
+  Component floor_divide(const Component other) const {
     return _numerator / (other * _denominator);
   }
 
   const Component& numerator() const { return _numerator; }
 
-  Fraction power(Component exponent) const {
+  Fraction power(const Component exponent) const {
     if (cppbuiltins::is_negative(exponent)) {
       if (!*this) throw ZeroDivisionError();
       Component exponent_modulus = -exponent;
