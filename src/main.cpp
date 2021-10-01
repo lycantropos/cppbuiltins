@@ -140,7 +140,7 @@ static const char* pystr_to_ascii_c_str(const py::str& string) {
 }
 
 static py::int_ object_to_py_long(const py::object& value) {
-  PyObject* result_ptr = PyNumber_Index(value.ptr());
+  PyObject* result_ptr = PyNumber_Long(value.ptr());
   if (!result_ptr) {
     throw py::error_already_set();
   }
