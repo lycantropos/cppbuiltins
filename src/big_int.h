@@ -728,18 +728,20 @@ class BigInt {
              (std::numeric_limits<std::size_t>::max() - 1) % BINARY_SHIFT + 1))
       throw std::overflow_error("Too large to convert to floating point.");
     bits_count += (size - 1) * BINARY_SHIFT;
-    std::size_t shift_digits, shift_bits, result_size;
+    std::size_t result_size;
     if (bits_count <= MANTISSA_BITS + 2) {
-      shift_digits = (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
-      shift_bits = (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
+      std::size_t shift_digits =
+          (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
+      std::size_t shift_bits = (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
       result_size = shift_digits;
       Digit remainder = shift_digits_left(_digits.data(), size, shift_bits,
                                           result_digits + result_size);
       result_size += size;
       result_digits[result_size++] = remainder;
     } else {
-      shift_digits = (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
-      shift_bits = (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
+      std::size_t shift_digits =
+          (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
+      std::size_t shift_bits = (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
       Digit remainder =
           shift_digits_right(_digits.data() + shift_digits, size - shift_digits,
                              shift_bits, result_digits);
