@@ -225,7 +225,7 @@ static std::vector<TargetDigit> non_binary_digits_to_greater_binary_base(
       result[index] = static_cast<TargetDigit>(digit & TARGET_DIGIT_MASK);
       digit >>= TARGET_SHIFT;
     }
-    if (digit) result.push_back(digit);
+    if (digit) result.push_back(static_cast<TargetDigit>(digit));
   }
   if (result.empty()) result.push_back(0);
   return result;
