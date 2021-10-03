@@ -319,7 +319,14 @@ class BigInt {
   explicit operator double() const {
     if (_digits.size() == 1) return static_cast<double>(signed_digit());
     int exponent;
-    double fraction = frexp(exponent);
+    double fraction = frexp<double>(exponent);
+    return std::ldexp(fraction, exponent);
+  }
+
+  explicit operator float() const {
+    if (_digits.size() == 1) return static_cast<float>(signed_digit());
+    int exponent;
+    float fraction = frexp<float>(exponent);
     return std::ldexp(fraction, exponent);
   }
 
@@ -714,7 +721,12 @@ class BigInt {
     return static_cast<Digit>(remainder);
   }
 
-  double frexp(int& exponent) const {
+  template <class Result,
+            std::enable_if_t<std::is_floating_point_v<Result>, int> = 0>
+  Result frexp(int& exponent) const {
+    constexpr std::size_t MANTISSA_BITS = std::numeric_limits<Result>::digits;
+    constexpr Result MANTISSA_BITS_POWER_OF_TWO =
+        cppbuiltins::const_power(static_cast<Result>(2), MANTISSA_BITS);
     Digit result_digits[2 + (MANTISSA_BITS + 1) / BINARY_SHIFT] = {
         0,
     };
@@ -758,8 +770,10 @@ class BigInt {
           }
     }
     constexpr SignedDigit HALF_EVEN_CORRECTION[8] = {0, -1, -2, 1, 0, -1, 2, 1};
-    result_digits[0] += HALF_EVEN_CORRECTION[result_digits[0] & 7];
-    double result_modulus = result_digits[--result_size];
+    result_digits[0] =
+        static_cast<Digit>(static_cast<SignedDigit>(result_digits[0]) +
+                           HALF_EVEN_CORRECTION[result_digits[0] & 7]);
+    Result result_modulus = result_digits[--result_size];
     while (result_size > 0)
       result_modulus =
           result_modulus * BINARY_BASE + result_digits[--result_size];
