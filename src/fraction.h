@@ -238,7 +238,6 @@ bool operator<=(ConstParameterFrom<Component> left,
   return left * right.denominator() <= right.numerator();
 }
 
-
 template <class Component, class Gcd>
 bool operator==(ConstParameterFrom<Component> left,
                 const Fraction<Component, Gcd>& right) {

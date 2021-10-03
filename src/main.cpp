@@ -260,7 +260,7 @@ class Gcd<Int> {
 template <>
 double divide_as_double<Int>(ConstParameterFrom<Int> dividend,
                              ConstParameterFrom<Int> divisor) {
-  return dividend.divide_as_double(divisor);
+  return dividend.divide_approximately(divisor);
 }
 
 template <>
