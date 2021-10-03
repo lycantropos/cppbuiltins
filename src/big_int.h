@@ -730,19 +730,21 @@ class BigInt {
     bits_count += (size - 1) * BINARY_SHIFT;
     std::size_t result_size;
     if (bits_count <= MANTISSA_BITS + 2) {
-      std::size_t shift_digits =
+      const std::size_t shift_digits =
           (MANTISSA_BITS + 2 - bits_count) / BINARY_SHIFT;
-      std::size_t shift_bits = (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
+      const std::size_t shift_bits =
+          (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
       result_size = shift_digits;
-      Digit remainder = shift_digits_left(_digits.data(), size, shift_bits,
-                                          result_digits + result_size);
+      const Digit remainder = shift_digits_left(
+          _digits.data(), size, shift_bits, result_digits + result_size);
       result_size += size;
       result_digits[result_size++] = remainder;
     } else {
       std::size_t shift_digits =
           (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
-      std::size_t shift_bits = (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
-      Digit remainder =
+      const std::size_t shift_bits =
+          (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
+      const Digit remainder =
           shift_digits_right(_digits.data() + shift_digits, size - shift_digits,
                              shift_bits, result_digits);
       result_size = size - shift_digits;
