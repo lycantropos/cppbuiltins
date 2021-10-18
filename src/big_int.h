@@ -158,6 +158,15 @@ class BigInt {
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
 
+  BigInt bit_length() const {
+    return _digits.size() <=
+                   std::numeric_limits<std::size_t>::max() / BINARY_SHIFT
+               ? BigInt((_digits.size() - 1) * BINARY_SHIFT +
+                        cppbuiltins::bit_length(_digits.back()))
+               : BigInt(_digits.size() - 1) * BigInt(BINARY_SHIFT) +
+                     BigInt(cppbuiltins::bit_length(_digits.back()));
+  }
+
   BigInt gcd(const BigInt& other) const {
     std::vector<Digit> largest_digits = _digits,
                        smallest_digits = other._digits;
@@ -169,7 +178,7 @@ class BigInt {
       if (smallest_digits_count == 1 && smallest_digits[0] == 0)
         return BigInt(1, largest_digits);
       const std::size_t highest_digit_bit_length =
-          bit_length(largest_digits.back());
+          cppbuiltins::bit_length(largest_digits.back());
       SignedDoubleDigit largest_leading_bits =
           (static_cast<SignedDoubleDigit>(
                largest_digits[largest_digits_count - 1])
@@ -475,8 +484,10 @@ class BigInt {
       return negate ? -0.0 : 0.0;
     SignedSize bit_lengths_difference =
         digits_count_difference * BINARY_SHIFT +
-        (static_cast<SignedSize>(bit_length(dividend_digits.back())) -
-         static_cast<SignedSize>(bit_length(divisor_digits.back())));
+        (static_cast<SignedSize>(
+             cppbuiltins::bit_length(dividend_digits.back())) -
+         static_cast<SignedSize>(
+             cppbuiltins::bit_length(divisor_digits.back())));
     if (bit_lengths_difference > std::numeric_limits<Result>::max_exponent)
       throw std::overflow_error(
           "Division result too large to be expressed as floating point.");
@@ -533,9 +544,9 @@ class BigInt {
       std::swap(quotient_digits, next_quotient_digits);
       if (remainder.size() > 1 || remainder[0] != 0) inexact = true;
     }
-    SignedSize quotient_bit_length =
-        static_cast<SignedSize>((quotient_digits.size() - 1) * BINARY_SHIFT +
-                                bit_length(quotient_digits.back()));
+    SignedSize quotient_bit_length = static_cast<SignedSize>(
+        (quotient_digits.size() - 1) * BINARY_SHIFT +
+        cppbuiltins::bit_length(quotient_digits.back()));
     SignedSize extra_bits =
         std::max(quotient_bit_length,
                  std::numeric_limits<Result>::min_exponent - shift) -
@@ -640,7 +651,8 @@ class BigInt {
     const std::size_t divisor_digits_count = divisor.size();
     Digit* const dividend_normalized = new Digit[dividend_digits_count + 1]();
     Digit* const divisor_normalized = new Digit[divisor_digits_count]();
-    const std::size_t shift = BINARY_SHIFT - bit_length(divisor.back());
+    const std::size_t shift =
+        BINARY_SHIFT - cppbuiltins::bit_length(divisor.back());
     shift_digits_left(divisor.data(), divisor_digits_count, shift,
                       divisor_normalized);
     Digit accumulator = shift_digits_left(
@@ -744,7 +756,7 @@ class BigInt {
         0,
     };
     std::size_t size = _digits.size();
-    std::size_t bits_count = bit_length(_digits.back());
+    std::size_t bits_count = cppbuiltins::bit_length(_digits.back());
     if (size >=
             (std::numeric_limits<std::size_t>::max() - 1) / BINARY_SHIFT + 1 &&
         (size >
