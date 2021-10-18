@@ -209,6 +209,8 @@ class Int : public BaseInt {
     return result;
   }
 
+  Int bit_length() const { return Int(BaseInt::bit_length()); }
+
   Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
 
   Py_hash_t hash() const {
@@ -1124,6 +1126,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::init<const py::str&, std::size_t>(), py::arg("string"),
            py::arg("base") = 10)
       .def(py::init<const py::object&>(), py::arg("value"))
+      .def("bit_length", &Int::bit_length)
       .def(py::self + py::self)
       .def(py::self == py::self)
       .def(~py::self)
