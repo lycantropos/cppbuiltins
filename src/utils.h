@@ -4,8 +4,22 @@
 #include <cassert>
 #include <cinttypes>
 #include <cstddef>
+#include <limits>
 
 namespace cppbuiltins {
+template <class T, class U>
+struct is_upcastable
+    : std::integral_constant<
+          bool, std::is_arithmetic_v<T> && std::is_arithmetic_v<U> &&
+                    std::is_integral_v<T> == std::is_integral_v<U> &&
+                    std::numeric_limits<T>::is_specialized &&
+                    std::numeric_limits<U>::is_specialized &&
+                    std::numeric_limits<T>::digits <=
+                        std::numeric_limits<U>::digits> {};
+
+template <class T, class U>
+constexpr bool is_upcastable_v = is_upcastable<T, U>::value;
+
 using undefined = void;
 
 template <class T>
