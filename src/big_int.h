@@ -426,7 +426,7 @@ class BigInt {
 
   BigInt operator/(const BigInt& divisor) const {
     BigInt result;
-    divmod<true, false>(divisor, &result, nullptr);
+    divrem<true, false>(divisor, &result, nullptr);
     return result;
   }
 
@@ -1161,6 +1161,53 @@ class BigInt {
         if constexpr (WITH_QUOTIENT)
           *quotient = *quotient - BigInt(1, std::vector<Digit>({1}));
         if constexpr (WITH_REMAINDER) *remainder = *remainder + divisor;
+      }
+    }
+  }
+
+
+  template <bool WITH_QUOTIENT, bool WITH_REMAINDER>
+  void divrem(const BigInt& divisor, BigInt* quotient,
+              BigInt* remainder) const {
+    static_assert(WITH_QUOTIENT || WITH_REMAINDER,
+                  "Quotient or remainder or both should be requested.");
+    std::size_t digits_count = _digits.size(),
+                divisor_digits_count = divisor._digits.size();
+    if (!divisor)
+      throw ZeroDivisionError();
+    else if (!*this) {
+      if constexpr (WITH_QUOTIENT) *quotient = BigInt();
+      if constexpr (WITH_REMAINDER) *remainder = *this;
+    } else if (digits_count < divisor_digits_count ||
+               (digits_count == divisor_digits_count &&
+                _digits.back() < divisor._digits.back())) {
+      if constexpr (WITH_QUOTIENT) *quotient = BigInt();
+      if constexpr (WITH_REMAINDER) *remainder = *this;
+    } else {
+      int remainder_sign = _sign;
+      if (divisor_digits_count == 1) {
+        std::vector<Digit> quotient_digits;
+        Digit remainder_digit = divrem_digits_by_digit(
+            _digits, divisor._digits[0], quotient_digits);
+        remainder_sign *= remainder_digit != 0;
+        if constexpr (WITH_QUOTIENT)
+          *quotient = BigInt(_sign * divisor._sign, quotient_digits);
+        if constexpr (WITH_REMAINDER)
+          *remainder =
+              BigInt(remainder_sign, std::vector<Digit>{remainder_digit});
+      } else {
+        std::vector<Digit> quotient_digits, remainder_digits;
+        divrem_two_or_more_digits(_digits, divisor._digits, quotient_digits,
+                                  remainder_digits);
+        remainder_sign *=
+            remainder_digits.size() > 1 || remainder_digits[0] != 0;
+        if constexpr (WITH_QUOTIENT)
+          *quotient = BigInt(
+              _sign * divisor._sign *
+                  (quotient_digits.size() > 1 || quotient_digits[0] != 0),
+              quotient_digits);
+        if constexpr (WITH_REMAINDER)
+          *remainder = BigInt(remainder_sign, remainder_digits);
       }
     }
   }
