@@ -190,10 +190,10 @@ template <class Dividend, class Divisor = Dividend,
                            int> = 0>
 Dividend mod(ConstParameterFrom<Dividend> dividend,
              ConstParameterFrom<Divisor> divisor) {
-  Dividend result = dividend / divisor, remainder = dividend % divisor;
+  Dividend result = dividend % divisor;
   return result +
-         ((is_negative<Divisor>(divisor) && is_positive<Dividend>(remainder)) ||
-          (is_positive<Divisor>(divisor) && is_negative<Dividend>(remainder))) *
+         ((is_negative<Divisor>(divisor) && is_positive<Dividend>(result)) ||
+          (is_positive<Divisor>(divisor) && is_negative<Dividend>(result))) *
              divisor;
 }
 
