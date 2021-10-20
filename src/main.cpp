@@ -251,15 +251,6 @@ static std::ostream& operator<<(std::ostream& stream, const Int& value) {
 
 namespace cppbuiltins {
 template <>
-class Gcd<Int> {
- public:
-  Int operator()(ConstParameterFrom<Int> first,
-                 ConstParameterFrom<Int> second) const {
-    return first.gcd(second);
-  }
-};
-
-template <>
 double divide_as_double<Int>(ConstParameterFrom<Int> dividend,
                              ConstParameterFrom<Int> divisor) {
   return dividend.divide_approximately(divisor);

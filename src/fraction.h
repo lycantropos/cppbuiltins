@@ -8,12 +8,28 @@
 #include "utils.h"
 
 namespace cppbuiltins {
+template <class, class = int>
+struct has_gcd_method : std::false_type {};
+
+template <class Number>
+struct has_gcd_method <Number, std::enable_if_t<
+              std::is_same_v<std::invoke_result_t<decltype(&Number::gcd),
+                                                  const Number&, const Number&>,
+                             Number>,
+              int>>
+    : std::true_type {};
+
+template <class Number>
+constexpr bool has_gcd_method_v = has_gcd_method<Number>::value;
+
 template <class Number>
 class Gcd {
  public:
-  Number operator()(ConstParameterFrom<Number> first,
-                    ConstParameterFrom<Number> second) const {
-    return gcd(first, second);
+  Number operator()(const Number first, const Number second) const {
+    if constexpr (has_gcd_method_v<Number>)
+      return first.gcd(second);
+    else
+      return gcd(first, second);
   }
 };
 
