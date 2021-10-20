@@ -165,10 +165,6 @@ class Int : public BaseInt {
     return py::reinterpret_steal<py::int_>((PyObject*)as_PyLong());
   }
 
-  Int operator%(const Int& divisor) const {
-    return Int(BaseInt::operator%(divisor));
-  }
-
   const Int& operator+() const { return *this; }
 
   Int operator+(const Int& other) const {
@@ -185,10 +181,6 @@ class Int : public BaseInt {
 
   Int operator-(const Int& other) const {
     return Int(BaseInt::operator-(other));
-  }
-
-  Int operator/(const Int& divisor) const {
-    return Int(BaseInt::operator/(divisor));
   }
 
   Int abs() const { return Int(BaseInt::abs()); }
