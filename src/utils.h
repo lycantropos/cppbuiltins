@@ -161,6 +161,42 @@ Dividend floor_divide(ConstParameterFrom<Dividend> dividend,
           (is_positive<Divisor>(divisor) && is_negative<Dividend>(remainder)));
 }
 
+template <class Dividend, class Divisor = Dividend,
+          std::enable_if_t<std::is_integral_v<Dividend> &&
+                               std::is_integral_v<Divisor> &&
+                               std::is_unsigned_v<Dividend>,
+                           int> = 0>
+Dividend mod(ConstParameterFrom<Dividend> dividend,
+             ConstParameterFrom<Divisor> divisor) {
+  return dividend % divisor;
+}
+
+template <class Dividend, class Divisor = Dividend,
+          std::enable_if_t<
+              std::is_same_v<std::invoke_result_t<decltype(&Dividend::mod),
+                                                  ConstParameterFrom<Dividend>,
+                                                  ConstParameterFrom<Divisor>>,
+                             Dividend>,
+              int> = 0>
+Dividend mod(ConstParameterFrom<Dividend> dividend,
+             ConstParameterFrom<Divisor> divisor) {
+  return dividend.mod(divisor);
+}
+
+template <class Dividend, class Divisor = Dividend,
+          std::enable_if_t<std::is_integral_v<Dividend> &&
+                               std::is_integral_v<Divisor> &&
+                               std::is_signed_v<Dividend>,
+                           int> = 0>
+Dividend mod(ConstParameterFrom<Dividend> dividend,
+             ConstParameterFrom<Divisor> divisor) {
+  Dividend result = dividend / divisor, remainder = dividend % divisor;
+  return result +
+         ((is_negative<Divisor>(divisor) && is_positive<Dividend>(remainder)) ||
+          (is_positive<Divisor>(divisor) && is_negative<Dividend>(remainder))) *
+             divisor;
+}
+
 template <class Number>
 Number power(ConstParameterFrom<Number> number,
              ConstParameterFrom<Number> exponent) {
