@@ -582,6 +582,12 @@ class BigInt {
 
   bool is_positive() const { return _sign > 0; }
 
+  BigInt mod(const BigInt& divisor) const {
+    BigInt result;
+    divmod<false, true>(divisor, nullptr, &result);
+    return result;
+  }
+
   BigInt power(const BigInt& exponent) const {
     return power(exponent, NoModulus{});
   }
