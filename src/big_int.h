@@ -444,11 +444,10 @@ class BigInt {
     return result;
   }
 
-  using SignedSize = std::make_signed_t<std::size_t>;
-
   template <class Result = double,
             std::enable_if_t<std::is_floating_point_v<Result>, int> = 0>
   Result divide_approximately(const BigInt& divisor) const {
+    using SignedSize = std::make_signed_t<std::size_t>;
     constexpr std::size_t MANTISSA_BITS = std::numeric_limits<Result>::digits;
     constexpr std::size_t MANTISSA_BINARY_DIGITS_COUNT =
         MANTISSA_BITS / BINARY_SHIFT;
