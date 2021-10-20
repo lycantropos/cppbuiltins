@@ -183,6 +183,10 @@ class Int : public BaseInt {
     return Int(BaseInt::operator-(other));
   }
 
+  Int operator<<(const Int& other) const {
+    return Int(BaseInt::operator<<(other));
+  }
+
   Int abs() const noexcept { return Int(BaseInt::abs()); }
 
   PyLongObject* as_PyLong() const noexcept {
@@ -1092,6 +1096,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(~py::self)
       .def(py::self <= py::self)
       .def(py::self < py::self)
+      .def(py::self << py::self)
       .def(py::self * py::self)
       .def(-py::self)
       .def(+py::self)
