@@ -314,7 +314,7 @@ class BigInt {
     throw std::invalid_argument("Not invertible.");
   }
 
-  BigInt operator+(const BigInt& other) const {
+  BigInt operator+(const BigInt& other) const noexcept {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt(signed_digit() + other.signed_digit());
     if (is_negative()) {
@@ -357,9 +357,9 @@ class BigInt {
                         multiply_digits(_digits, other._digits));
   }
 
-  BigInt operator-() const { return BigInt(-_sign, _digits); }
+  BigInt operator-() const noexcept { return BigInt(-_sign, _digits); }
 
-  BigInt operator~() const {
+  BigInt operator~() const noexcept {
     if (_digits.size() == 1) return BigInt(-signed_digit() - 1);
     if (is_positive())
       return BigInt(-1, sum_digits(_digits, {1}));
@@ -370,7 +370,7 @@ class BigInt {
     }
   }
 
-  BigInt operator-(const BigInt& other) const {
+  BigInt operator-(const BigInt& other) const noexcept {
     if (_digits.size() == 1 && other._digits.size() == 1)
       return BigInt(signed_digit() - other.signed_digit());
     if (is_negative()) {
@@ -390,18 +390,18 @@ class BigInt {
     }
   }
 
-  bool operator==(const BigInt& other) const {
+  bool operator==(const BigInt& other) const noexcept {
     return _sign == other._sign && _digits == other._digits;
   }
 
-  bool operator<(const BigInt& other) const {
+  bool operator<(const BigInt& other) const noexcept {
     return _sign < other._sign ||
            (_sign == other._sign &&
             (is_positive() ? digits_lesser_than(_digits, other._digits)
                            : digits_lesser_than(other._digits, _digits)));
   }
 
-  bool operator<=(const BigInt& other) const {
+  bool operator<=(const BigInt& other) const noexcept {
     return _sign < other._sign ||
            (_sign == other._sign &&
             (is_positive()
@@ -409,14 +409,14 @@ class BigInt {
                  : digits_lesser_than_or_equal(other._digits, _digits)));
   }
 
-  bool operator>(const BigInt& other) const {
+  bool operator>(const BigInt& other) const noexcept {
     return _sign > other._sign ||
            (_sign == other._sign &&
             (is_positive() ? digits_lesser_than(other._digits, _digits)
                            : digits_lesser_than(_digits, other._digits)));
   }
 
-  bool operator>=(const BigInt& other) const {
+  bool operator>=(const BigInt& other) const noexcept {
     return _sign > other._sign ||
            (_sign == other._sign &&
             (is_positive()

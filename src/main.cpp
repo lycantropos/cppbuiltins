@@ -165,27 +165,27 @@ class Int : public BaseInt {
     return py::reinterpret_steal<py::int_>((PyObject*)as_PyLong());
   }
 
-  const Int& operator+() const { return *this; }
+  const Int& operator+() const noexcept { return *this; }
 
-  Int operator+(const Int& other) const {
+  Int operator+(const Int& other) const noexcept {
     return Int(BaseInt::operator+(other));
   }
 
-  Int operator~() const { return Int(BaseInt::operator~()); }
+  Int operator~() const noexcept { return Int(BaseInt::operator~()); }
 
-  Int operator*(const Int& other) const {
+  Int operator*(const Int& other) const noexcept {
     return Int(BaseInt::operator*(other));
   }
 
-  Int operator-() const { return Int(BaseInt::operator-()); }
+  Int operator-() const noexcept { return Int(BaseInt::operator-()); }
 
-  Int operator-(const Int& other) const {
+  Int operator-(const Int& other) const noexcept {
     return Int(BaseInt::operator-(other));
   }
 
-  Int abs() const { return Int(BaseInt::abs()); }
+  Int abs() const noexcept { return Int(BaseInt::abs()); }
 
-  PyLongObject* as_PyLong() const {
+  PyLongObject* as_PyLong() const noexcept {
     const std::vector<BaseInt::Digit>& digits = this->digits();
     std::vector<digit> result_digits =
         cppbuiltins::binary_digits_to_binary_base<
@@ -201,7 +201,7 @@ class Int : public BaseInt {
     return result;
   }
 
-  Int bit_length() const { return Int(BaseInt::bit_length()); }
+  Int bit_length() const noexcept { return Int(BaseInt::bit_length()); }
 
   Int floor_divide(const Int& divisor) const {
     return Int(BaseInt::floor_divide(divisor));
@@ -209,7 +209,7 @@ class Int : public BaseInt {
 
   Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
 
-  Py_hash_t hash() const {
+  Py_hash_t hash() const noexcept {
     const std::vector<BaseInt::Digit>& digits = this->digits();
     if (digits.size() == 1) {
       if (is_positive())
@@ -241,6 +241,8 @@ class Int : public BaseInt {
   Int power_modulo(const Int& exponent, const Int& modulus) const {
     return Int(BaseInt::power_modulo(exponent, modulus));
   }
+
+  std::string repr() const noexcept { return BaseInt::repr<10>(); }
 };
 
 static std::ostream& operator<<(std::ostream& stream, const Int& value) {
@@ -1132,7 +1134,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           },
           py::arg("exponent"), py::arg("modulus") = nullptr, py::is_operator{})
       .def("__repr__", &to_repr<Int>)
-      .def("__str__", &Int::repr<10>)
+      .def("__str__", &Int::repr)
       .def("__truediv__", &cppbuiltins::divide_as_double<Int>,
            py::is_operator{})
       .def("__trunc__", &identity<const Int&>)
