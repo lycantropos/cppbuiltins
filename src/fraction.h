@@ -314,15 +314,6 @@ Fraction<Component, Gcd> operator-(ConstParameterFrom<Component> self,
 }
 
 template <class Component, class Gcd>
-Fraction<Component, Gcd> mod(ConstParameterFrom<Component> self,
-                             const Fraction<Component, Gcd>& other) {
-  return Fraction<Component, Gcd>(
-      cppbuiltins::mod<Component>(self * other.denominator(),
-                                  other.numerator()),
-      other.denominator());
-}
-
-template <class Component, class Gcd>
 Fraction<Component, Gcd> operator*(ConstParameterFrom<Component> self,
                                    const Fraction<Component, Gcd>& other) {
   const Component self_other_denominator_gcd = self.gcd(other.denominator());
@@ -348,6 +339,15 @@ template <class Component, class Gcd>
 Component floor_divide(ConstParameterFrom<Component> self,
                        const Fraction<Component, Gcd>& other) {
   return floor_divide<Component>(self * other.denominator(), other.numerator());
+}
+
+template <class Component, class Gcd>
+Fraction<Component, Gcd> mod(ConstParameterFrom<Component> self,
+                             const Fraction<Component, Gcd>& other) {
+  return Fraction<Component, Gcd>(
+      cppbuiltins::mod<Component>(self * other.denominator(),
+                                  other.numerator()),
+      other.denominator());
 }
 
 }  // namespace cppbuiltins
