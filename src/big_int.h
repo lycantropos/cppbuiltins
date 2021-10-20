@@ -432,7 +432,7 @@ class BigInt {
 
   BigInt operator%(const BigInt& divisor) const {
     BigInt result;
-    divmod<false, true>(divisor, nullptr, &result);
+    divrem<false, true>(divisor, nullptr, &result);
     return result;
   }
 
@@ -1219,7 +1219,7 @@ class BigInt {
 
   using NoModulus = nullptr_t;
 
-  const BigInt& operator%(NoModulus) const { return *this; }
+  const BigInt& mod(NoModulus) const { return *this; }
 
   template <class Modulus>
   BigInt power(BigInt exponent, Modulus modulus) const {
@@ -1235,7 +1235,7 @@ class BigInt {
         base = base.invmod(modulus);
       }
       if (base.is_negative() || base.digits().size() > modulus.digits().size())
-        base = base % modulus;
+        base = base.mod(modulus);
     } else if (exponent.is_negative())
       throw std::range_error(
           "Either exponent should be positive or modulus should be specified.");
@@ -1245,10 +1245,10 @@ class BigInt {
     BigInt result = BigInt(1u);
     if (exponent_digits_count == 1 && exponent_digit <= 3) {
       if (exponent_digit >= 2) {
-        result = (base * base) % modulus;
-        if (exponent_digit == 3) result = (result * base) % modulus;
+        result = (base * base).mod(modulus);
+        if (exponent_digit == 3) result = (result * base).mod(modulus);
       } else if (exponent_digit == 1)
-        result = (base * result) % modulus;
+        result = (base * result).mod(modulus);
     } else if (exponent_digits_count <= WINDOW_CUTOFF) {
       result = base;
       Digit exponent_mask = 2;
@@ -1260,9 +1260,9 @@ class BigInt {
       exponent_mask >>= 1;
       for (auto exponent_digit_position = exponent_digits.rbegin();;) {
         for (; exponent_mask != 0; exponent_mask >>= 1) {
-          result = (result * result) % modulus;
+          result = (result * result).mod(modulus);
           if (exponent_digit & exponent_mask)
-            result = (result * base) % modulus;
+            result = (result * base).mod(modulus);
         }
         if (++exponent_digit_position == exponent_digits.rend()) break;
         exponent_digit = *exponent_digit_position;
@@ -1272,7 +1272,7 @@ class BigInt {
       BigInt cache[WINDOW_BASE];
       cache[0] = result;
       for (std::size_t index = 1; index < WINDOW_BASE; ++index)
-        cache[index] = (cache[index - 1] * base) % modulus;
+        cache[index] = (cache[index - 1] * base).mod(modulus);
       std::vector<WindowDigit> exponent_window_digits =
           binary_digits_to_binary_base<Digit, WindowDigit, BINARY_SHIFT,
                                        WINDOW_SHIFT>(exponent_digits);
@@ -1281,8 +1281,8 @@ class BigInt {
            ++exponent_digit_position) {
         const WindowDigit digit = *exponent_digit_position;
         for (std::size_t iteration = 0; iteration < WINDOW_SHIFT; ++iteration)
-          result = (result * result) % modulus;
-        if (digit) result = (result * cache[digit]) % modulus;
+          result = (result * result).mod(modulus);
+        if (digit) result = (result * cache[digit]).mod(modulus);
       }
     }
     if constexpr (!std::is_same<Modulus, NoModulus>()) {
