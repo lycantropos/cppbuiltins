@@ -119,18 +119,26 @@ class Fraction {
         gcd(_numerator, other._denominator);
     ConstParameterFrom<Component> other_numerator_denominator_gcd =
         gcd(_denominator, other._numerator);
-    return Fraction((_numerator / numerator_other_denominator_gcd) *
-                        (other._numerator / other_numerator_denominator_gcd),
-                    (_denominator / other_numerator_denominator_gcd) *
-                        (other._denominator / numerator_other_denominator_gcd),
-                    std::false_type{});
+    return Fraction(
+        cppbuiltins::floor_divide<Component>(_numerator,
+                                             numerator_other_denominator_gcd) *
+            cppbuiltins::floor_divide<Component>(
+                other._numerator, other_numerator_denominator_gcd),
+        cppbuiltins::floor_divide<Component>(_denominator,
+                                             other_numerator_denominator_gcd) *
+            cppbuiltins::floor_divide<Component>(
+                other._denominator, numerator_other_denominator_gcd),
+        std::false_type{});
   }
 
   Fraction operator*(ConstParameterFrom<Component> other) const {
     ConstParameterFrom<Component> denominator_other_gcd =
         gcd(_denominator, other);
-    return Fraction(_numerator * (other / denominator_other_gcd),
-                    _denominator / denominator_other_gcd, std::false_type{});
+    return Fraction(_numerator * cppbuiltins::floor_divide<Component>(
+                                     other, denominator_other_gcd),
+                    cppbuiltins::floor_divide<Component>(_denominator,
+                                                         denominator_other_gcd),
+                    std::false_type{});
   }
 
   Fraction operator-() const {
@@ -155,18 +163,25 @@ class Fraction {
     ConstParameterFrom<Component> denominators_gcd =
         gcd(_denominator, other._denominator);
     return Fraction(
-        (_numerator / numerators_gcd) * (other._denominator / denominators_gcd),
-        (other._numerator / numerators_gcd) *
-            (_denominator / denominators_gcd));
+        cppbuiltins::floor_divide<Component>(_numerator, numerators_gcd) *
+            cppbuiltins::floor_divide<Component>(other._denominator,
+                                                 denominators_gcd),
+        cppbuiltins::floor_divide<Component>(other._numerator, numerators_gcd) *
+            cppbuiltins::floor_divide<Component>(_denominator,
+                                                 denominators_gcd));
   }
 
   Fraction operator/(ConstParameterFrom<Component> other) const {
     ConstParameterFrom<Component> numerators_gcd = gcd(_numerator, other);
-    return Fraction(_numerator / numerators_gcd,
-                    (other / numerators_gcd) * _denominator);
+    return Fraction(
+        cppbuiltins::floor_divide<Component>(_numerator, numerators_gcd),
+        cppbuiltins::floor_divide<Component>(other, numerators_gcd) *
+            _denominator);
   }
 
-  Component ceil() const { return -((-_numerator) / _denominator); }
+  Component ceil() const {
+    return -cppbuiltins::floor_divide<Component>(-_numerator, _denominator);
+  }
 
   ConstParameterFrom<Component>& denominator() const { return _denominator; }
 
@@ -176,15 +191,18 @@ class Fraction {
     remainder = operator%(divisor);
   }
 
-  Component floor() const { return _numerator / _denominator; }
+  Component floor() const {
+    return cppbuiltins::floor_divide<Component>(_numerator, _denominator);
+  }
 
   Component floor_divide(const Fraction& other) const {
-    return (_numerator * other._denominator) /
-           (other._numerator * _denominator);
+    return cppbuiltins::floor_divide<Component>(
+        _numerator * other._denominator, other._numerator * _denominator);
   }
 
   Component floor_divide(ConstParameterFrom<Component> other) const {
-    return _numerator / (other * _denominator);
+    return cppbuiltins::floor_divide<Component>(_numerator,
+                                                other * _denominator);
   }
 
   ConstParameterFrom<Component>& numerator() const { return _numerator; }
@@ -234,8 +252,10 @@ class Fraction {
       }
       Component components_gcd = gcd(_numerator, _denominator);
       if (!cppbuiltins::is_one<Component>(components_gcd)) {
-        _denominator = _denominator / components_gcd;
-        _numerator = _numerator / components_gcd;
+        _denominator =
+            cppbuiltins::floor_divide<Component>(_denominator, components_gcd);
+        _numerator =
+            cppbuiltins::floor_divide<Component>(_numerator, components_gcd);
       }
     }
   }
@@ -300,8 +320,10 @@ Fraction<Component, Gcd> operator*(ConstParameterFrom<Component> self,
                                    const Fraction<Component, Gcd>& other) {
   const Component self_other_denominator_gcd = self.gcd(other.denominator());
   return Fraction<Component, Gcd>(
-      (self / self_other_denominator_gcd) * other.numerator(),
-      other.denominator() / self_other_denominator_gcd);
+      cppbuiltins::floor_divide<Component>(self, self_other_denominator_gcd) *
+          other.numerator(),
+      cppbuiltins::floor_divide<Component>(other.denominator(),
+                                           self_other_denominator_gcd));
 }
 
 template <class Component, class Gcd>
@@ -309,8 +331,10 @@ Fraction<Component, Gcd> operator/(ConstParameterFrom<Component> self,
                                    const Fraction<Component, Gcd>& other) {
   const Component self_other_numerator_gcd = self.gcd(other.numerator());
   return Fraction<Component, Gcd>(
-      (self / self_other_numerator_gcd) * other.denominator(),
-      other.numerator() / self_other_numerator_gcd);
+      cppbuiltins::floor_divide<Component>(self, self_other_numerator_gcd) *
+          other.denominator(),
+      cppbuiltins::floor_divide<Component>(other.numerator(),
+                                           self_other_numerator_gcd));
 }
 
 template <class Component, class Gcd>
