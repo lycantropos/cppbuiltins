@@ -144,11 +144,11 @@ class Fraction {
                     std::false_type{});
   }
 
-  Fraction operator-() const {
+  Fraction operator-() const noexcept {
     return Fraction(-_numerator, _denominator, std::false_type{});
   }
 
-  const Fraction& operator+() const { return *this; }
+  const Fraction& operator+() const noexcept { return *this; }
 
   Fraction operator-(const Fraction& other) const {
     return Fraction(
@@ -208,7 +208,9 @@ class Fraction {
                                                 other * _denominator);
   }
 
-  ConstParameterFrom<Component>& numerator() const { return _numerator; }
+  ConstParameterFrom<Component>& numerator() const noexcept {
+    return _numerator;
+  }
 
   Fraction power(ConstParameterFrom<Component> exponent) const {
     if (cppbuiltins::is_negative<Component>(exponent)) {
@@ -230,11 +232,11 @@ class Fraction {
                     std::false_type{});
   }
 
-  bool is_negative() const {
+  bool is_negative() const noexcept {
     return cppbuiltins::is_negative<Component>(_numerator);
   }
 
-  bool is_positive() const {
+  bool is_positive() const noexcept {
     return cppbuiltins::is_positive<Component>(_numerator);
   }
 
