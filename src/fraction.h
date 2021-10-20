@@ -104,14 +104,17 @@ class Fraction {
     return _numerator >= _denominator * other;
   }
 
-  Fraction operator%(const Fraction& other) const {
+  Fraction mod(const Fraction& other) const {
     return Fraction(
-        (_numerator * other._denominator) % (other._numerator * _denominator),
+        cppbuiltins::mod<Component>(_numerator * other._denominator,
+                                    other._numerator * _denominator),
         _denominator * other._denominator);
   }
 
-  Fraction operator%(ConstParameterFrom<Component> other) const {
-    return Fraction(_numerator % (other * _denominator), _denominator);
+  Fraction mod(ConstParameterFrom<Component> other) const {
+    return Fraction(
+        cppbuiltins::mod<Component>(_numerator, other * _denominator),
+        _denominator);
   }
 
   Fraction operator*(const Fraction& other) const {
@@ -188,7 +191,7 @@ class Fraction {
   void divmod(const Fraction& divisor, Component& quotient,
               Fraction& remainder) const {
     quotient = floor_divide(divisor);
-    remainder = operator%(divisor);
+    remainder = mod(divisor);
   }
 
   Component floor() const {
@@ -309,10 +312,12 @@ Fraction<Component, Gcd> operator-(ConstParameterFrom<Component> self,
 }
 
 template <class Component, class Gcd>
-Fraction<Component, Gcd> operator%(ConstParameterFrom<Component> self,
-                                   const Fraction<Component, Gcd>& other) {
+Fraction<Component, Gcd> mod(ConstParameterFrom<Component> self,
+                             const Fraction<Component, Gcd>& other) {
   return Fraction<Component, Gcd>(
-      (self * other.denominator()) % other.numerator(), other.denominator());
+      cppbuiltins::mod<Component>(self * other.denominator(),
+                                  other.numerator()),
+      other.denominator());
 }
 
 template <class Component, class Gcd>

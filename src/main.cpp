@@ -1178,14 +1178,11 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(py::self < py::self)
       .def(py::self < Int{})
       .def(Int{} < py::self)
-      .def(py::self % py::self)
-      .def(py::self % Int{})
       .def(py::self * py::self)
       .def(py::self * Int{})
       .def(-py::self)
       .def(+py::self)
       .def(Int{} + py::self)
-      .def(Int{} % py::self)
       .def(Int{} * py::self)
       .def(Int{} - py::self)
       .def(Int{} / py::self)
@@ -1223,6 +1220,11 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            py::is_operator{})
       .def("__hash__", &hash_fraction)
       .def("__int__", [](const Fraction& self) { return py::int_(Int(self)); })
+      .def("__mod__",
+           py::overload_cast<const Fraction&>(&Fraction::mod, py::const_),
+           py::is_operator{})
+      .def("__mod__", py::overload_cast<const Int&>(&Fraction::mod, py::const_),
+           py::is_operator{})
       .def(
           "__pow__",
           [](const Fraction& base, const Int& exponent) {
@@ -1243,6 +1245,12 @@ PYBIND11_MODULE(MODULE_NAME, m) {
           "__rfloordiv__",
           [](const Fraction& divisor, const Int& dividend) {
             return cppbuiltins::floor_divide(dividend, divisor);
+          },
+          py::is_operator{})
+      .def(
+          "__rmod__",
+          [](const Fraction& divisor, const Int& dividend) {
+            return cppbuiltins::mod(dividend, divisor);
           },
           py::is_operator{})
       .def(
