@@ -26,7 +26,8 @@ constexpr bool has_gcd_method_v = has_gcd_method<Number>::value;
 template <class Number>
 class Gcd {
  public:
-  Number operator()(const Number first, const Number second) const {
+  Number operator()(ConstParameterFrom<Number> first,
+                    ConstParameterFrom<Number> second) const {
     if constexpr (has_gcd_method_v<Number>)
       return first.gcd(second);
     else
@@ -214,6 +215,38 @@ class Fraction {
 
   bool is_positive() const {
     return cppbuiltins::is_positive<Component>(_numerator);
+  }
+
+  friend Fraction operator+(ConstParameterFrom<Component> self,
+                            const Fraction& other) {
+    return Fraction(self * other.denominator() + other.numerator(),
+                    other.denominator());
+  }
+
+  friend Fraction operator-(ConstParameterFrom<Component> self,
+                            const Fraction& other) {
+    return Fraction(self * other.denominator() - other.numerator(),
+                    other.denominator());
+  }
+
+  friend Fraction operator%(ConstParameterFrom<Component> self,
+                            const Fraction& other) {
+    return Fraction((self * other.denominator()) % other.numerator(),
+                    other.denominator());
+  }
+
+  friend Fraction operator*(ConstParameterFrom<Component> self,
+                            const Fraction& other) {
+    const Component self_other_denominator_gcd = self.gcd(other.denominator());
+    return Fraction((self / self_other_denominator_gcd) * other.numerator(),
+                    other.denominator() / self_other_denominator_gcd);
+  }
+
+  friend Fraction operator/(ConstParameterFrom<Component> self,
+                            const Fraction& other) {
+    const Component self_other_numerator_gcd = self.gcd(other.numerator());
+    return Fraction((self / self_other_numerator_gcd) * other.denominator(),
+                    other.numerator() / self_other_numerator_gcd);
   }
 
  private:

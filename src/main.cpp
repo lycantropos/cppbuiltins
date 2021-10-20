@@ -305,33 +305,6 @@ Py_hash_t hash_fraction(const Fraction& value) {
   return result - (result == -1);
 }
 
-static Fraction operator+(const Int& self, const Fraction& other) {
-  return Fraction(self * other.denominator() + other.numerator(),
-                  other.denominator());
-}
-
-static Fraction operator-(const Int& self, const Fraction& other) {
-  return Fraction(self * other.denominator() - other.numerator(),
-                  other.denominator());
-}
-
-static Fraction operator%(const Int& self, const Fraction& other) {
-  return Fraction((self * other.denominator()) % other.numerator(),
-                  other.denominator());
-}
-
-static Fraction operator*(const Int& self, const Fraction& other) {
-  const Int self_other_denominator_gcd = self.gcd(other.denominator());
-  return Fraction((self / self_other_denominator_gcd) * other.numerator(),
-                  other.denominator() / self_other_denominator_gcd);
-}
-
-static Fraction operator/(const Int& self, const Fraction& other) {
-  const Int self_other_numerator_gcd = self.gcd(other.numerator());
-  return Fraction((self / self_other_numerator_gcd) * other.denominator(),
-                  other.numerator() / self_other_numerator_gcd);
-}
-
 Int floor_divide(const Int& self, const Fraction& other) {
   return (self * other.denominator()) / other.numerator();
 }
