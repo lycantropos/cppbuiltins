@@ -185,10 +185,6 @@ class Int : public BaseInt {
 
   Int abs() const { return Int(BaseInt::abs()); }
 
-  Int floor_divide(const Int& divisor) const {
-    return Int(BaseInt::floor_divide(divisor));
-  }
-
   PyLongObject* as_PyLong() const {
     const std::vector<BaseInt::Digit>& digits = this->digits();
     std::vector<digit> result_digits =
@@ -206,6 +202,10 @@ class Int : public BaseInt {
   }
 
   Int bit_length() const { return Int(BaseInt::bit_length()); }
+
+  Int floor_divide(const Int& divisor) const {
+    return Int(BaseInt::floor_divide(divisor));
+  }
 
   Int gcd(const Int& other) const { return Int(BaseInt::gcd(other)); }
 
