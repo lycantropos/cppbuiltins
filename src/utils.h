@@ -5,6 +5,7 @@
 #include <cinttypes>
 #include <cstddef>
 #include <limits>
+#include <type_traits>
 
 namespace cppbuiltins {
 template <class T, class U>
@@ -82,6 +83,25 @@ template <class Number>
 double divide_as_double(ConstParameterFrom<Number> dividend,
                         ConstParameterFrom<Number> divisor) {
   return dividend / divisor;
+}
+
+template <class Number, std::enable_if_t<std::is_integral_v<Number>, int> = 0>
+Number floor_divide(ConstParameterFrom<Number> dividend,
+                    ConstParameterFrom<Number> divisor) {
+  return dividend / divisor;
+}
+
+template <
+    class Number,
+    std::enable_if_t<
+        std::is_same_v<std::invoke_result_t<decltype(&Number::floor_divide),
+                                            ConstParameterFrom<Number>,
+                                            ConstParameterFrom<Number>>,
+                       Number>,
+        int> = 0>
+Number floor_divide(ConstParameterFrom<Number> dividend,
+                    ConstParameterFrom<Number> divisor) {
+  return dividend.floor_divide(divisor);
 }
 
 template <std::size_t BASE>
