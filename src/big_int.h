@@ -438,6 +438,12 @@ class BigInt {
 
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
+  BigInt floor_divide(const BigInt& divisor) const {
+    BigInt result;
+    divmod<true, false>(divisor, &result, nullptr);
+    return result;
+  }
+
   using SignedSize = std::make_signed_t<std::size_t>;
 
   template <class Result = double,
