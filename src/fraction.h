@@ -13,12 +13,12 @@ struct has_gcd_method : std::false_type {};
 
 template <class Number>
 struct has_gcd_method<
-    Number,
-    std::enable_if_t<
-        std::is_same_v<std::invoke_result_t<decltype(&Number::gcd),
-                                            const Number&, const Number&>,
-                       Number>,
-        int>> : std::true_type {};
+    Number, std::enable_if_t<
+                std::is_same_v<std::invoke_result_t<decltype(&Number::gcd),
+                                                    ConstParameterFrom<Number>,
+                                                    ConstParameterFrom<Number>>,
+                               Number>,
+                int>> : std::true_type {};
 
 template <class Number>
 constexpr bool has_gcd_method_v = has_gcd_method<Number>::value;
