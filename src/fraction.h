@@ -217,38 +217,6 @@ class Fraction {
     return cppbuiltins::is_positive<Component>(_numerator);
   }
 
-  friend Fraction operator+(ConstParameterFrom<Component> self,
-                            const Fraction& other) {
-    return Fraction(self * other.denominator() + other.numerator(),
-                    other.denominator());
-  }
-
-  friend Fraction operator-(ConstParameterFrom<Component> self,
-                            const Fraction& other) {
-    return Fraction(self * other.denominator() - other.numerator(),
-                    other.denominator());
-  }
-
-  friend Fraction operator%(ConstParameterFrom<Component> self,
-                            const Fraction& other) {
-    return Fraction((self * other.denominator()) % other.numerator(),
-                    other.denominator());
-  }
-
-  friend Fraction operator*(ConstParameterFrom<Component> self,
-                            const Fraction& other) {
-    const Component self_other_denominator_gcd = self.gcd(other.denominator());
-    return Fraction((self / self_other_denominator_gcd) * other.numerator(),
-                    other.denominator() / self_other_denominator_gcd);
-  }
-
-  friend Fraction operator/(ConstParameterFrom<Component> self,
-                            const Fraction& other) {
-    const Component self_other_numerator_gcd = self.gcd(other.numerator());
-    return Fraction((self / self_other_numerator_gcd) * other.denominator(),
-                    other.numerator() / self_other_numerator_gcd);
-  }
-
  private:
   static const Gcd gcd;
   Component _numerator, _denominator;
@@ -304,6 +272,51 @@ template <class Component, class Gcd>
 bool operator>=(ConstParameterFrom<Component> left,
                 const Fraction<Component, Gcd>& right) {
   return left * right.denominator() >= right.numerator();
+}
+
+template <class Component, class Gcd>
+Fraction<Component, Gcd> operator+(ConstParameterFrom<Component> self,
+                                   const Fraction<Component, Gcd>& other) {
+  return Fraction<Component, Gcd>(
+      self * other.denominator() + other.numerator(), other.denominator());
+}
+
+template <class Component, class Gcd>
+Fraction<Component, Gcd> operator-(ConstParameterFrom<Component> self,
+                                   const Fraction<Component, Gcd>& other) {
+  return Fraction<Component, Gcd>(
+      self * other.denominator() - other.numerator(), other.denominator());
+}
+
+template <class Component, class Gcd>
+Fraction<Component, Gcd> operator%(ConstParameterFrom<Component> self,
+                                   const Fraction<Component, Gcd>& other) {
+  return Fraction<Component, Gcd>(
+      (self * other.denominator()) % other.numerator(), other.denominator());
+}
+
+template <class Component, class Gcd>
+Fraction<Component, Gcd> operator*(ConstParameterFrom<Component> self,
+                                   const Fraction<Component, Gcd>& other) {
+  const Component self_other_denominator_gcd = self.gcd(other.denominator());
+  return Fraction<Component, Gcd>(
+      (self / self_other_denominator_gcd) * other.numerator(),
+      other.denominator() / self_other_denominator_gcd);
+}
+
+template <class Component, class Gcd>
+Fraction<Component, Gcd> operator/(ConstParameterFrom<Component> self,
+                                   const Fraction<Component, Gcd>& other) {
+  const Component self_other_numerator_gcd = self.gcd(other.numerator());
+  return Fraction<Component, Gcd>(
+      (self / self_other_numerator_gcd) * other.denominator(),
+      other.numerator() / self_other_numerator_gcd);
+}
+
+template <class Component, class Gcd>
+Component floor_divide(ConstParameterFrom<Component> self,
+                       const Fraction<Component, Gcd>& other) {
+  return floor_divide<Component>(self * other.denominator(), other.numerator());
 }
 
 }  // namespace cppbuiltins

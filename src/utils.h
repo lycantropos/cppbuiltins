@@ -85,22 +85,25 @@ double divide_as_double(ConstParameterFrom<Number> dividend,
   return dividend / divisor;
 }
 
-template <class Number, std::enable_if_t<std::is_integral_v<Number>, int> = 0>
-Number floor_divide(ConstParameterFrom<Number> dividend,
-                    ConstParameterFrom<Number> divisor) {
+template <
+    class Dividend, class Divisor = Dividend,
+    std::enable_if_t<
+        std::is_integral_v<Dividend> && std::is_integral_v<Divisor>, int> = 0>
+Dividend floor_divide(ConstParameterFrom<Dividend> dividend,
+                      ConstParameterFrom<Divisor> divisor) {
   return dividend / divisor;
 }
 
 template <
-    class Number,
+    class Dividend, class Divisor = Dividend,
     std::enable_if_t<
-        std::is_same_v<std::invoke_result_t<decltype(&Number::floor_divide),
-                                            ConstParameterFrom<Number>,
-                                            ConstParameterFrom<Number>>,
-                       Number>,
+        std::is_same_v<std::invoke_result_t<decltype(&Dividend::floor_divide),
+                                            ConstParameterFrom<Dividend>,
+                                            ConstParameterFrom<Divisor>>,
+                       Dividend>,
         int> = 0>
-Number floor_divide(ConstParameterFrom<Number> dividend,
-                    ConstParameterFrom<Number> divisor) {
+Dividend floor_divide(ConstParameterFrom<Dividend> dividend,
+                      ConstParameterFrom<Divisor> divisor) {
   return dividend.floor_divide(divisor);
 }
 

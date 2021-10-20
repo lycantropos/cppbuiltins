@@ -309,10 +309,6 @@ Py_hash_t hash_fraction(const Fraction& value) {
   return result - (result == -1);
 }
 
-Int floor_divide(const Int& self, const Fraction& other) {
-  return (self * other.denominator()) / other.numerator();
-}
-
 static std::ostream& operator<<(std::ostream& stream, const Fraction& value) {
   return stream << C_STR(MODULE_NAME) "." FRACTION_NAME "(" << value.numerator()
                 << ", " << value.denominator() << ")";
@@ -1244,7 +1240,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(
           "__rfloordiv__",
           [](const Fraction& divisor, const Int& dividend) {
-            return floor_divide(dividend, divisor);
+            return cppbuiltins::floor_divide(dividend, divisor);
           },
           py::is_operator{})
       .def(
