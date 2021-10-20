@@ -242,6 +242,8 @@ class Int : public BaseInt {
 
   Int invmod(const Int& divisor) const { return Int(BaseInt::invmod(divisor)); }
 
+  Int mod(const Int& divisor) const { return Int(BaseInt::mod(divisor)); }
+
   Int power(const Int& exponent) const { return Int(BaseInt::power(exponent)); }
 
   Int power_modulo(const Int& exponent, const Int& modulus) const {
@@ -1096,7 +1098,6 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(~py::self)
       .def(py::self <= py::self)
       .def(py::self < py::self)
-      .def(py::self % py::self)
       .def(py::self * py::self)
       .def(-py::self)
       .def(+py::self)
@@ -1122,6 +1123,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__hash__", &Int::hash)
       .def("__int__", &Int::operator py::int_)
+      .def("__mod__", &Int::mod, py::is_operator{})
       .def(
           "__pow__",
           [](const Int& base, const Int& exponent, const Int* maybe_modulus) {
