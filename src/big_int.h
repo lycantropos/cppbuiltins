@@ -436,6 +436,27 @@ class BigInt {
     return result;
   }
 
+  BigInt operator<<(const BigInt& shift) const {
+    if (shift.is_negative()) {
+      throw std::invalid_argument("Shift by negative step is undefined.");
+    } else if (!*this) {
+      return *this;
+    } else {
+      std::vector<Digit> shift_quotient_digits;
+      Digit shift_remainder = divrem_digits_by_digit(
+          shift._digits, static_cast<Digit>(BINARY_SHIFT),
+          shift_quotient_digits);
+      const std::size_t shift_quotient =
+          reduce_digits<std::size_t, true>(shift_quotient_digits);
+      if (shift_quotient >=
+          std::numeric_limits<std::size_t>::max() / sizeof(Digit))
+        throw std::overflow_error("Too large shift step.");
+      else
+        return BigInt(
+            _sign, shift_digits_left(_digits, shift_quotient, shift_remainder));
+    }
+  }
+
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
   template <class Result = double,
@@ -511,16 +532,16 @@ class BigInt {
             "Division result too large to be expressed as floating point.");
       quotient_digits_count = dividend_digits_count + shift_digits + 1;
       quotient_data = new Digit[quotient_digits_count]();
-      Digit remainder =
-          shift_digits_left(dividend_digits.data(), dividend_digits_count,
-                            static_cast<std::size_t>(-shift) % BINARY_SHIFT,
-                            quotient_data + shift_digits);
+      Digit remainder = shift_digits_left_in_place(
+          dividend_digits.data(), dividend_digits_count,
+          static_cast<std::size_t>(-shift) % BINARY_SHIFT,
+          quotient_data + shift_digits);
       quotient_data[dividend_digits_count + shift_digits] = remainder;
     } else {
       std::size_t shift_digits = static_cast<std::size_t>(shift) / BINARY_SHIFT;
       quotient_digits_count = dividend_digits_count - shift_digits;
       quotient_data = new Digit[quotient_digits_count]();
-      Digit remainder = shift_digits_right(
+      Digit remainder = shift_digits_right_in_place(
           dividend_digits.data() + shift_digits, quotient_digits_count,
           static_cast<std::size_t>(shift) % BINARY_SHIFT, quotient_data);
       if (remainder) inexact = true;
@@ -663,9 +684,9 @@ class BigInt {
     Digit* const divisor_normalized = new Digit[divisor_digits_count]();
     const std::size_t shift =
         BINARY_SHIFT - cppbuiltins::bit_length(divisor.back());
-    shift_digits_left(divisor.data(), divisor_digits_count, shift,
-                      divisor_normalized);
-    Digit accumulator = shift_digits_left(
+    shift_digits_left_in_place(divisor.data(), divisor_digits_count, shift,
+                               divisor_normalized);
+    Digit accumulator = shift_digits_left_in_place(
         dividend.data(), dividend_digits_count, shift, dividend_normalized);
     if (accumulator != 0 || dividend_normalized[dividend_digits_count - 1] >=
                                 divisor_normalized[divisor_digits_count - 1])
@@ -728,8 +749,8 @@ class BigInt {
                              : std::vector<Digit>({0});
     delete[] quotient_data;
     trim_leading_zeros(quotient);
-    shift_digits_right(dividend_normalized, divisor_digits_count, shift,
-                       divisor_normalized);
+    shift_digits_right_in_place(dividend_normalized, divisor_digits_count,
+                                shift, divisor_normalized);
     delete[] dividend_normalized;
     remainder = std::vector<Digit>(divisor_normalized,
                                    divisor_normalized + divisor_digits_count);
@@ -782,7 +803,7 @@ class BigInt {
       const std::size_t shift_bits =
           (MANTISSA_BITS + 2 - bits_count) % BINARY_SHIFT;
       result_size = shift_digits;
-      const Digit remainder = shift_digits_left(
+      const Digit remainder = shift_digits_left_in_place(
           _digits.data(), size, shift_bits, result_digits + result_size);
       result_size += size;
       result_digits[result_size++] = remainder;
@@ -791,9 +812,9 @@ class BigInt {
           (bits_count - MANTISSA_BITS - 2) / BINARY_SHIFT;
       const std::size_t shift_bits =
           (bits_count - MANTISSA_BITS - 2) % BINARY_SHIFT;
-      const Digit remainder =
-          shift_digits_right(_digits.data() + shift_digits, size - shift_digits,
-                             shift_bits, result_digits);
+      const Digit remainder = shift_digits_right_in_place(
+          _digits.data() + shift_digits, size - shift_digits, shift_bits,
+          result_digits);
       result_size = size - shift_digits;
       if (remainder)
         result_digits[0] |= 1;
@@ -825,13 +846,20 @@ class BigInt {
     return _sign * result_modulus;
   }
 
-  template <class Result>
-  static Result reduce_digits(const std::vector<Digit>& digits) noexcept {
+  template <class Result, bool CHECKED = false,
+            std::enable_if_t<std::is_arithmetic_v<Result>, int> = 0>
+  static Result reduce_digits(const std::vector<Digit>& digits) noexcept(!CHECKED) {
     Result result = 0;
     for (auto position = digits.rbegin(); position != digits.rend(); ++position)
-      if constexpr (std::is_integral<Result>())
-        result = (result << BINARY_SHIFT) | *position;
-      else
+      if constexpr (std::is_integral_v<Result>) {
+        if constexpr (CHECKED) {
+          const auto shifted = result << BINARY_SHIFT;
+          if (shifted < result)
+            throw std::invalid_argument("Shift overflow.");
+          result = shifted | *position;
+        } else
+          result = (result << BINARY_SHIFT) | *position;
+      } else
         result = (result * BINARY_BASE) + *position;
     return result;
   }
@@ -1089,10 +1117,28 @@ class BigInt {
     return result;
   }
 
-  static Digit shift_digits_left(const Digit* input_digits,
-                                 std::size_t input_digits_count,
-                                 std::size_t shift,
-                                 Digit* output_digits) noexcept {
+  static std::vector<Digit> shift_digits_left(
+      const std::vector<Digit>& digits, const std::size_t shift_quotient,
+      const std::size_t shift_remainder) {
+    std::vector<Digit> result;
+    result.reserve(shift_quotient + !!(shift_remainder) + digits.size());
+    for (std::size_t index = 0; index < shift_quotient; ++index)
+      result.push_back(0);
+    DoubleDigit accumulator = 0;
+    for (const auto digit : digits) {
+      accumulator |= static_cast<DoubleDigit>(digit) << shift_remainder;
+      result.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
+      accumulator >>= BINARY_SHIFT;
+    }
+    if (!!shift_remainder) result.push_back(static_cast<Digit>(accumulator));
+    trim_leading_zeros(result);
+    return result;
+  }
+
+  static Digit shift_digits_left_in_place(const Digit* input_digits,
+                                          std::size_t input_digits_count,
+                                          std::size_t shift,
+                                          Digit* output_digits) noexcept {
     Digit accumulator = 0;
     for (std::size_t index = 0; index < input_digits_count; index++) {
       DoubleDigit step =
@@ -1104,10 +1150,10 @@ class BigInt {
     return accumulator;
   }
 
-  static Digit shift_digits_right(const Digit* input_digits,
-                                  std::size_t input_digits_count,
-                                  std::size_t shift,
-                                  Digit* output_digits) noexcept {
+  static Digit shift_digits_right_in_place(const Digit* input_digits,
+                                           std::size_t input_digits_count,
+                                           std::size_t shift,
+                                           Digit* output_digits) noexcept {
     Digit accumulator = 0;
     DoubleDigit mask = (static_cast<DoubleDigit>(1) << shift) - 1;
     for (std::size_t index = input_digits_count; index-- > 0;) {
