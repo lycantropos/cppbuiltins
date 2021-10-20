@@ -574,13 +574,13 @@ class BigInt {
     return result;
   }
 
-  bool is_negative() const { return _sign < 0; }
+  bool is_negative() const noexcept { return _sign < 0; }
 
-  bool is_one() const {
+  bool is_one() const noexcept {
     return is_positive() && _digits.size() == 1 && _digits[0] == 1;
   }
 
-  bool is_positive() const { return _sign > 0; }
+  bool is_positive() const noexcept { return _sign > 0; }
 
   BigInt mod(const BigInt& divisor) const {
     BigInt result;
@@ -601,7 +601,7 @@ class BigInt {
                 (BINARY_BASE < BASE ? 1 : floor_log<BASE>(BINARY_BASE)),
             std::size_t TARGET_BASE = cppbuiltins::const_power(BASE,
                                                                TARGET_SHIFT)>
-  std::string repr() const {
+  std::string repr() const noexcept {
     static_assert(1 < BASE && BASE <= MAX_REPRESENTABLE_BASE,
                   "Base should be range from 2 to 36.");
     const std::vector<Digit> base_digits = to_base_digits<TARGET_BASE>();
@@ -633,13 +633,13 @@ class BigInt {
   BigInt(int sign, const std::vector<Digit>& digits)
       : _sign(sign), _digits(digits) {}
 
-  const std::vector<Digit>& digits() const { return _digits; }
+  const std::vector<Digit>& digits() const noexcept { return _digits; }
 
-  SignedDigit signed_digit() const {
+  SignedDigit signed_digit() const noexcept {
     return _sign * static_cast<SignedDigit>(_digits[0]);
   }
 
-  SignedDoubleDigit signed_double_digit() const {
+  SignedDoubleDigit signed_double_digit() const noexcept {
     return _sign * static_cast<SignedDoubleDigit>(_digits[0]);
   }
 
@@ -654,10 +654,9 @@ class BigInt {
   static_assert(WINDOW_SHIFT <= std::numeric_limits<WindowDigit>::digits,
                 "Window digit type should be able to contain window digits.");
 
-  static void divrem_two_or_more_digits(const std::vector<Digit>& dividend,
-                                        const std::vector<Digit>& divisor,
-                                        std::vector<Digit>& quotient,
-                                        std::vector<Digit>& remainder) {
+  static void divrem_two_or_more_digits(
+      const std::vector<Digit>& dividend, const std::vector<Digit>& divisor,
+      std::vector<Digit>& quotient, std::vector<Digit>& remainder) noexcept {
     std::size_t dividend_digits_count = dividend.size();
     const std::size_t divisor_digits_count = divisor.size();
     Digit* const dividend_normalized = new Digit[dividend_digits_count + 1]();
@@ -740,7 +739,7 @@ class BigInt {
 
   static Digit divrem_digits_by_digit(const std::vector<Digit>& dividend,
                                       Digit divisor,
-                                      std::vector<Digit>& quotient) {
+                                      std::vector<Digit>& quotient) noexcept {
     DoubleDigit remainder = 0;
     std::size_t digits_count = dividend.size();
     Digit* const quotient_data = new Digit[digits_count]();
@@ -827,7 +826,7 @@ class BigInt {
   }
 
   template <class Result>
-  static Result reduce_digits(const std::vector<Digit>& digits) {
+  static Result reduce_digits(const std::vector<Digit>& digits) noexcept {
     Result result = 0;
     for (auto position = digits.rbegin(); position != digits.rend(); ++position)
       if constexpr (std::is_integral<Result>())
@@ -837,9 +836,9 @@ class BigInt {
     return result;
   }
 
-  static Digit subtract_digits_in_place(Digit* longest,
-                                        std::size_t size_longest,
-                                        const std::vector<Digit>& shortest) {
+  static Digit subtract_digits_in_place(
+      Digit* longest, std::size_t size_longest,
+      const std::vector<Digit>& shortest) noexcept {
     Digit accumulator = 0;
     std::size_t index = 0;
     for (; index < shortest.size(); ++index) {
@@ -859,7 +858,7 @@ class BigInt {
 
   static std::vector<Digit> subtract_digits(const std::vector<Digit>& first,
                                             const std::vector<Digit>& second,
-                                            int& sign) {
+                                            int& sign) noexcept {
     const std::vector<Digit>*longest = &first, *shortest = &second;
     std::size_t size_longest = longest->size(),
                 size_shortest = shortest->size();
@@ -901,8 +900,9 @@ class BigInt {
     return result;
   }
 
-  static Digit sum_digits_in_place(Digit* longest, std::size_t size_longest,
-                                   const std::vector<Digit>& shortest) {
+  static Digit sum_digits_in_place(
+      Digit* longest, std::size_t size_longest,
+      const std::vector<Digit>& shortest) noexcept {
     Digit accumulator = 0;
     std::size_t index = 0;
     for (; index < shortest.size(); ++index) {
@@ -918,8 +918,9 @@ class BigInt {
     return accumulator;
   }
 
-  static std::vector<Digit> sum_digits(const std::vector<Digit>& first,
-                                       const std::vector<Digit>& second) {
+  static std::vector<Digit> sum_digits(
+      const std::vector<Digit>& first,
+      const std::vector<Digit>& second) noexcept {
     const std::vector<Digit>*longest = &first, *shortest = &second;
     std::size_t size_longest = longest->size(),
                 size_shortest = shortest->size();
@@ -947,7 +948,8 @@ class BigInt {
   }
 
   static void split_digits(const std::vector<Digit>& digits, std::size_t size,
-                           std::vector<Digit>& high, std::vector<Digit>& low) {
+                           std::vector<Digit>& high,
+                           std::vector<Digit>& low) noexcept {
     const std::size_t size_low = std::min<std::size_t>(digits.size(), size);
     const typename std::vector<Digit>::const_iterator mid =
         digits.begin() + size_low;
@@ -957,8 +959,9 @@ class BigInt {
     trim_leading_zeros(low);
   }
 
-  static std::vector<Digit> multiply_digits(const std::vector<Digit>& first,
-                                            const std::vector<Digit>& second) {
+  static std::vector<Digit> multiply_digits(
+      const std::vector<Digit>& first,
+      const std::vector<Digit>& second) noexcept {
     const std::vector<Digit>*shortest = &first, *longest = &second;
     std::size_t size_shortest = shortest->size(),
                 size_longest = longest->size();
@@ -1012,7 +1015,8 @@ class BigInt {
   }
 
   static std::vector<Digit> multiply_digits_lopsided(
-      const std::vector<Digit>& shortest, const std::vector<Digit>& longest) {
+      const std::vector<Digit>& shortest,
+      const std::vector<Digit>& longest) noexcept {
     const std::size_t size_shortest = shortest.size();
     std::size_t size_longest = longest.size();
     std::vector<Digit> result(size_shortest + size_longest, 0);
@@ -1035,7 +1039,8 @@ class BigInt {
   }
 
   static std::vector<Digit> multiply_digits_plain(
-      const std::vector<Digit>& first, const std::vector<Digit>& second) {
+      const std::vector<Digit>& first,
+      const std::vector<Digit>& second) noexcept {
     std::size_t first_size = first.size(), second_size = second.size();
     std::vector<Digit> result(first_size + second_size, 0);
     if (&first == &second)
@@ -1086,7 +1091,8 @@ class BigInt {
 
   static Digit shift_digits_left(const Digit* input_digits,
                                  std::size_t input_digits_count,
-                                 std::size_t shift, Digit* output_digits) {
+                                 std::size_t shift,
+                                 Digit* output_digits) noexcept {
     Digit accumulator = 0;
     for (std::size_t index = 0; index < input_digits_count; index++) {
       DoubleDigit step =
@@ -1100,7 +1106,8 @@ class BigInt {
 
   static Digit shift_digits_right(const Digit* input_digits,
                                   std::size_t input_digits_count,
-                                  std::size_t shift, Digit* output_digits) {
+                                  std::size_t shift,
+                                  Digit* output_digits) noexcept {
     Digit accumulator = 0;
     DoubleDigit mask = (static_cast<DoubleDigit>(1) << shift) - 1;
     for (std::size_t index = input_digits_count; index-- > 0;) {
@@ -1170,7 +1177,6 @@ class BigInt {
     }
   }
 
-
   template <bool WITH_QUOTIENT, bool WITH_REMAINDER>
   void divrem(const BigInt& divisor, BigInt* quotient,
               BigInt* remainder) const {
@@ -1219,7 +1225,7 @@ class BigInt {
 
   using NoModulus = nullptr_t;
 
-  const BigInt& mod(NoModulus) const { return *this; }
+  const BigInt& mod(NoModulus) const noexcept { return *this; }
 
   template <class Modulus>
   BigInt power(BigInt exponent, Modulus modulus) const {
@@ -1292,7 +1298,7 @@ class BigInt {
   }
 
   template <std::size_t BASE>
-  std::vector<Digit> to_base_digits() const {
+  std::vector<Digit> to_base_digits() const noexcept {
     if constexpr ((BASE & (BASE - 1)) == 0)
       return binary_digits_to_binary_base<Digit, Digit, BINARY_SHIFT,
                                           floor_log<2>(BASE)>(_digits);

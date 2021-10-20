@@ -52,11 +52,11 @@ constexpr bool ASCII_CODES_WHITESPACE_FLAGS[256] = {
 };
 constexpr std::size_t MAX_REPRESENTABLE_BASE = 36;
 
-static constexpr unsigned char mask_char(char character) {
+static constexpr unsigned char mask_char(char character) noexcept {
   return static_cast<unsigned char>(character & 0xff);
 }
 
-static constexpr bool is_space(char character) {
+static constexpr bool is_space(char character) noexcept {
   return ASCII_CODES_WHITESPACE_FLAGS[mask_char(character)];
 }
 
@@ -64,7 +64,7 @@ template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
           TargetDigit TARGET_DIGIT_MASK =
               cppbuiltins::const_power(TargetDigit(2), TARGET_SHIFT) - 1>
 static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
-    const std::vector<SourceDigit>& source, std::size_t source_shift) {
+    const std::vector<SourceDigit>& source, std::size_t source_shift) noexcept {
   const std::size_t result_digits_count = static_cast<std::size_t>(
       (source.size() * TARGET_SHIFT + TARGET_SHIFT - 1) / TARGET_SHIFT);
   std::vector<TargetDigit> result;
@@ -90,7 +90,7 @@ static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT>
 static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
-    const std::vector<SourceDigit>& source) {
+    const std::vector<SourceDigit>& source) noexcept {
   static_assert(SOURCE_SHIFT < TARGET_SHIFT,
                 "Target base should be greater than a source one.");
   return binary_digits_to_greater_binary_base<SourceDigit, TargetDigit,
@@ -101,7 +101,7 @@ static std::vector<TargetDigit> binary_digits_to_greater_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t TARGET_SHIFT,
           std::size_t TARGET_DIGIT_MASK = (TargetDigit(1) << TARGET_SHIFT) - 1>
 static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
-    const std::vector<SourceDigit>& source, std::size_t source_shift) {
+    const std::vector<SourceDigit>& source, std::size_t source_shift) noexcept {
   const std::size_t result_digits_bits_count =
       ((source.size() - 1) * source_shift + bit_length(source.back()));
   const std::size_t result_digits_count = static_cast<std::size_t>(
@@ -130,7 +130,7 @@ static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT>
 static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
-    const std::vector<SourceDigit>& source) {
+    const std::vector<SourceDigit>& source) noexcept {
   static_assert(SOURCE_SHIFT > TARGET_SHIFT,
                 "Target base should be lesser than a source one.");
   return binary_digits_to_lesser_binary_base<SourceDigit, TargetDigit,
@@ -141,7 +141,7 @@ static std::vector<TargetDigit> binary_digits_to_lesser_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_SHIFT>
 std::vector<TargetDigit> binary_digits_to_binary_base(
-    const std::vector<SourceDigit>& source) {
+    const std::vector<SourceDigit>& source) noexcept {
   if constexpr (SOURCE_SHIFT < TARGET_SHIFT)
     return binary_digits_to_greater_binary_base<SourceDigit, TargetDigit,
                                                 SOURCE_SHIFT, TARGET_SHIFT>(
@@ -157,7 +157,7 @@ std::vector<TargetDigit> binary_digits_to_binary_base(
 template <class SourceDigit, class TargetDigit, std::size_t SOURCE_SHIFT,
           std::size_t TARGET_BASE>
 static std::vector<TargetDigit> binary_digits_to_non_binary_base(
-    const std::vector<SourceDigit>& source) {
+    const std::vector<SourceDigit>& source) noexcept {
   std::size_t result_max_digits_count =
       1 + static_cast<std::size_t>(source.size() * SOURCE_SHIFT /
                                    std::log2(TARGET_BASE));
@@ -262,7 +262,7 @@ static std::vector<TargetDigit> non_binary_digits_to_lesser_binary_base(
 }
 
 template <class Digit>
-static void trim_leading_zeros(std::vector<Digit>& digits) {
+static void trim_leading_zeros(std::vector<Digit>& digits) noexcept {
   std::size_t digits_count = digits.size();
   while (digits_count > 1 && digits[digits_count - 1] == 0) --digits_count;
   if (digits_count != digits.size()) digits.resize(digits_count);
@@ -270,7 +270,7 @@ static void trim_leading_zeros(std::vector<Digit>& digits) {
 
 template <typename Digit>
 static bool digits_lesser_than(const std::vector<Digit>& first,
-                               const std::vector<Digit>& second) {
+                               const std::vector<Digit>& second) noexcept {
   return first.size() < second.size() ||
          (first.size() == second.size() &&
           std::lexicographical_compare(first.rbegin(), first.rend(),
@@ -278,8 +278,9 @@ static bool digits_lesser_than(const std::vector<Digit>& first,
 }
 
 template <typename Digit>
-static bool digits_lesser_than_or_equal(const std::vector<Digit>& first,
-                                        const std::vector<Digit>& second) {
+static bool digits_lesser_than_or_equal(
+    const std::vector<Digit>& first,
+    const std::vector<Digit>& second) noexcept {
   return first.size() < second.size() ||
          (first.size() == second.size() &&
           !std::lexicographical_compare(second.rbegin(), second.rend(),
@@ -289,7 +290,8 @@ static bool digits_lesser_than_or_equal(const std::vector<Digit>& first,
 template <class Digit, std::size_t BINARY_SHIFT,
           std::size_t BINARY_BASE = const_power(2, BINARY_SHIFT)>
 static std::vector<Digit> binary_digits_from_binary_base(
-    const std::vector<unsigned char>& source, std::size_t source_shift) {
+    const std::vector<unsigned char>& source,
+    std::size_t source_shift) noexcept {
   if constexpr (BINARY_BASE >= MAX_REPRESENTABLE_BASE) {
     return binary_digits_to_greater_binary_base<unsigned char, Digit,
                                                 BINARY_SHIFT>(source,
@@ -325,9 +327,9 @@ static std::vector<Digit> binary_digits_from_non_binary_base(
 }
 
 template <char SEPARATOR>
-static std::vector<unsigned char> parse_digits(const char* const start,
-                                               const char* stop,
-                                               std::size_t digits_count) {
+static std::vector<unsigned char> parse_digits(
+    const char* const start, const char* stop,
+    std::size_t digits_count) noexcept {
   std::vector<unsigned char> result;
   result.reserve(digits_count);
   while (start < stop--) {
