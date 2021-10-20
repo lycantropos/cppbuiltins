@@ -438,12 +438,6 @@ class BigInt {
 
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
-  BigInt floor_divide(const BigInt& divisor) const {
-    BigInt result;
-    divmod<true, false>(divisor, &result, nullptr);
-    return result;
-  }
-
   template <class Result = double,
             std::enable_if_t<std::is_floating_point_v<Result>, int> = 0>
   Result divide_approximately(const BigInt& divisor) const {
@@ -572,6 +566,12 @@ class BigInt {
           "Division result too large to be expressed as floating point.");
     Result result = std::ldexp(reduced_quotient, static_cast<int>(shift));
     return negate ? -result : result;
+  }
+
+  BigInt floor_divide(const BigInt& divisor) const {
+    BigInt result;
+    divmod<true, false>(divisor, &result, nullptr);
+    return result;
   }
 
   bool is_negative() const { return _sign < 0; }
