@@ -11,9 +11,10 @@ int_strings_with_bases = int_strings_with_bases
 ints_pairs = strategies.integers().map(to_alternative_native_ints_pair)
 non_zero_ints_pairs = (strategies.integers().filter(bool)
                        .map(to_alternative_native_ints_pair))
+single_byte_ints_pairs = (strategies.integers(-128, 127)
+                          .map(to_alternative_native_ints_pair))
 exponents_with_moduli_pairs = (
-        strategies.tuples(strategies.integers(-100, 100)
-                          .map(to_alternative_native_ints_pair),
+        strategies.tuples(single_byte_ints_pairs,
                           strategies.tuples(strategies.none(),
                                             strategies.none()))
         | strategies.tuples((strategies.integers(0)
