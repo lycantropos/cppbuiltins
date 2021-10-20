@@ -193,6 +193,10 @@ class Int : public BaseInt {
 
   Int abs() const { return Int(BaseInt::abs()); }
 
+  Int floor_divide(const Int& divisor) const {
+    return Int(BaseInt::floor_divide(divisor));
+  }
+
   PyLongObject* as_PyLong() const {
     const std::vector<BaseInt::Digit>& digits = this->digits();
     std::vector<digit> result_digits =
@@ -1119,7 +1123,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
            [](const Int& self, const py::dict&) -> Int { return self; })
       .def("__float__", &Int::operator double)
       .def("__floor__", &identity<const Int&>)
-      .def("__floordiv__", &Int::operator/, py::is_operator{})
+      .def("__floordiv__", &Int::floor_divide, py::is_operator{})
       .def("__hash__", &Int::hash)
       .def("__int__", &Int::operator py::int_)
       .def(
