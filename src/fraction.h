@@ -166,8 +166,6 @@ class Fraction {
 
   Component ceil() const { return -((-_numerator) / _denominator); }
 
-  Component floor() const { return _numerator / _denominator; }
-
   ConstParameterFrom<Component>& denominator() const { return _denominator; }
 
   void divmod(const Fraction& divisor, Component& quotient,
@@ -175,6 +173,8 @@ class Fraction {
     quotient = floor_divide(divisor);
     remainder = operator%(divisor);
   }
+
+  Component floor() const { return _numerator / _denominator; }
 
   Component floor_divide(const Fraction& other) const {
     return (_numerator * other._denominator) /
