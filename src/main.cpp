@@ -255,17 +255,17 @@ double divide_as_double<Int>(ConstParameterFrom<Int> dividend,
 }
 
 template <>
-bool is_negative<Int>(ConstParameterFrom<Int> value) {
+bool is_negative<Int>(ConstParameterFrom<Int> value) noexcept {
   return value.is_negative();
 }
 
 template <>
-bool is_one<Int>(ConstParameterFrom<Int> value) {
+bool is_one<Int>(ConstParameterFrom<Int> value) noexcept {
   return value.is_one();
 }
 
 template <>
-bool is_positive<Int>(ConstParameterFrom<Int> value) {
+bool is_positive<Int>(ConstParameterFrom<Int> value) noexcept {
   return value.is_positive();
 }
 

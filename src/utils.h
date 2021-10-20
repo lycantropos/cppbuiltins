@@ -109,11 +109,11 @@ Dividend floor_divide(ConstParameterFrom<Dividend> dividend,
 }
 
 template <std::size_t BASE>
-constexpr std::size_t floor_log(const std::size_t value) {
+constexpr std::size_t floor_log(const std::size_t value) noexcept {
   return value < BASE ? 0 : floor_log<BASE>(value / BASE) + 1;
 }
 
-std::size_t floor_log2(std::size_t value) {
+std::size_t floor_log2(std::size_t value) noexcept {
   std::size_t result = 0;
   for (; value; ++result, value >>= 1)
     ;
@@ -121,7 +121,7 @@ std::size_t floor_log2(std::size_t value) {
 }
 
 template <class T>
-T gcd(T first, T second) {
+T gcd(T first, T second) noexcept {
   while (!!second) {
     const T step = second;
     second = first % second;
@@ -131,19 +131,19 @@ T gcd(T first, T second) {
 }
 
 template <class Number>
-bool is_negative(ConstParameterFrom<Number> value) {
+bool is_negative(ConstParameterFrom<Number> value) noexcept {
   static const Number ZERO{};
   return value < ZERO;
 }
 
 template <class Number>
-bool is_one(ConstParameterFrom<Number> value) {
+bool is_one(ConstParameterFrom<Number> value) noexcept {
   static const Number ONE{1};
   return value == ONE;
 }
 
 template <class Number>
-bool is_positive(ConstParameterFrom<Number> value) {
+bool is_positive(ConstParameterFrom<Number> value) noexcept {
   static const Number ZERO{};
   return value > ZERO;
 }
