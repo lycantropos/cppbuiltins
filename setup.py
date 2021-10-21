@@ -46,10 +46,10 @@ def to_first_supported_flag(flags: Iterable[str], compiler: CCompiler) -> str:
                     if is_flag_supported(flag, compiler))
     except StopIteration:
         quote = '"{}"'.format
-        raise ValueError('None of {flags} flags are supported '
-                         'by {compiler} compiler.'
-                         .format(flags=', '.join(map(quote, flags)),
-                                 compiler=quote(compiler.compiler_type)))
+        raise CompileError('None of {flags} flags are supported '
+                           'by {compiler} compiler.'
+                           .format(flags=', '.join(map(quote, flags)),
+                                   compiler=quote(compiler.compiler_type)))
 
 
 def year_to_standard(year: int) -> str:
@@ -83,10 +83,10 @@ class BuildExt(build_ext):
         elif compiler_type == 'msvc':
             try:
                 standard_flag = to_first_supported_flag(
-                    ['/std={}'.format(standard) for standard in cpp_standards],
+                    ['/std:{}'.format(standard) for standard in cpp_standards],
                     self.compiler)
-            except ValueError:
-                compile_args.append('/std=c++latest')
+            except CompileError:
+                compile_args.append('/std:c++latest')
             else:
                 compile_args.append(standard_flag)
         define_macros = [('VERSION_INFO', self.distribution.get_version())]
