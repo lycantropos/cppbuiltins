@@ -321,13 +321,13 @@ class BigInt {
       if (other.is_negative())
         return BigInt(-1, sum_digits(_digits, other._digits));
       else {
-        int sign = 1;
+        Sign sign{1};
         std::vector<Digit> digits =
             subtract_digits(other._digits, _digits, sign);
         return BigInt(sign, digits);
       }
     } else if (other.is_negative()) {
-      int sign = 1;
+      Sign sign{1};
       std::vector<Digit> digits = subtract_digits(_digits, other._digits, sign);
       return BigInt(sign, digits);
     } else
@@ -364,7 +364,7 @@ class BigInt {
     if (is_positive())
       return BigInt(-1, sum_digits(_digits, {1}));
     else {
-      int sign = 1;
+      Sign sign{1};
       std::vector<Digit> digits = subtract_digits(_digits, {1}, sign);
       return BigInt(sign, digits);
     }
@@ -375,7 +375,7 @@ class BigInt {
       return BigInt(signed_digit() - other.signed_digit());
     if (is_negative()) {
       if (other.is_negative()) {
-        int sign = 1;
+        Sign sign{1};
         std::vector<Digit> digits =
             subtract_digits(other._digits, _digits, sign);
         return BigInt(sign, digits);
@@ -384,7 +384,7 @@ class BigInt {
     } else if (other.is_negative())
       return BigInt(1, sum_digits(_digits, other._digits));
     else {
-      int sign = _sign | other._sign;
+      Sign sign = _sign | other._sign;
       std::vector<Digit> digits = subtract_digits(_digits, other._digits, sign);
       return BigInt(sign, digits);
     }
@@ -678,7 +678,7 @@ class BigInt {
   }
 
  protected:
-  BigInt(int sign, const std::vector<Digit>& digits)
+  BigInt(Sign sign, const std::vector<Digit>& digits)
       : _sign(sign), _digits(digits) {}
 
   const std::vector<Digit>& digits() const noexcept { return _digits; }
@@ -692,7 +692,7 @@ class BigInt {
   }
 
  private:
-  int _sign;
+  Sign _sign;
   std::vector<Digit> _digits;
 
   static constexpr std::size_t MAX_DIGITS_COUNT =
@@ -922,7 +922,7 @@ class BigInt {
 
   static std::vector<Digit> subtract_digits(const std::vector<Digit>& first,
                                             const std::vector<Digit>& second,
-                                            int& sign) noexcept {
+                                            Sign& sign) noexcept {
     const std::vector<Digit>*longest = &first, *shortest = &second;
     std::size_t size_longest = longest->size(),
                 size_shortest = shortest->size();
@@ -1246,7 +1246,7 @@ class BigInt {
         if constexpr (WITH_REMAINDER) *remainder = *this;
       }
     } else {
-      int remainder_sign = _sign;
+      Sign remainder_sign = _sign;
       if (divisor_digits_count == 1) {
         std::vector<Digit> quotient_digits;
         Digit remainder_digit = divrem_digits_by_digit(
@@ -1298,7 +1298,7 @@ class BigInt {
       if constexpr (WITH_QUOTIENT) *quotient = BigInt();
       if constexpr (WITH_REMAINDER) *remainder = *this;
     } else {
-      int remainder_sign = _sign;
+      Sign remainder_sign = _sign;
       if (divisor_digits_count == 1) {
         std::vector<Digit> quotient_digits;
         Digit remainder_digit = divrem_digits_by_digit(

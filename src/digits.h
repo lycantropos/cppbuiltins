@@ -7,6 +7,7 @@
 #include "utils.h"
 
 namespace cppbuiltins {
+using Sign = int;
 
 constexpr unsigned char ASCII_CODES_DIGIT_VALUES[256] = {
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
