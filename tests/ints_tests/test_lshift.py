@@ -7,18 +7,18 @@ from . import strategies
 
 
 @given(strategies.ints_pairs, strategies.single_byte_ints_pairs)
-def test_basic(dividends_pair: AlternativeNativeIntsPair,
-               divisors_pair: AlternativeNativeIntsPair) -> None:
-    alternative_dividend, native_dividend = dividends_pair
-    alternative_divisor, native_divisor = divisors_pair
+def test_basic(bases_pair: AlternativeNativeIntsPair,
+               steps_pair: AlternativeNativeIntsPair) -> None:
+    alternative_base, native_base = bases_pair
+    alternative_step, native_step = steps_pair
 
     try:
-        alternative_result = alternative_dividend << alternative_divisor
+        alternative_result = alternative_base << alternative_step
     except (MemoryError, OverflowError, ValueError) as error:
         with pytest.raises(type(error)):
-            native_dividend << native_divisor
+            native_base << native_step
     else:
-        native_result = native_dividend << native_divisor
+        native_result = native_base << native_step
 
         assert are_alternative_native_ints_equal(alternative_result,
                                                  native_result)
