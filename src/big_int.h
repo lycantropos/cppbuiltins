@@ -334,7 +334,7 @@ class BigInt {
       return BigInt(_sign | other._sign, sum_digits(_digits, other._digits));
   }
 
-  explicit operator bool() const { return bool(_sign); }
+  explicit operator bool() const noexcept { return bool(_sign); }
 
   explicit operator double() const {
     if (_digits.size() == 1) return static_cast<double>(signed_digit());
@@ -350,7 +350,7 @@ class BigInt {
     return std::ldexp(fraction, exponent);
   }
 
-  BigInt operator*(const BigInt& other) const {
+  BigInt operator*(const BigInt& other) const noexcept {
     return _digits.size() == 1 && other._digits.size() == 1
                ? BigInt(signed_double_digit() * other.signed_double_digit())
                : BigInt(_sign * other._sign,
