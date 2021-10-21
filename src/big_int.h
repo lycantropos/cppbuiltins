@@ -446,11 +446,11 @@ class BigInt {
       Digit shift_remainder = divrem_digits_by_digit(
           shift._digits, static_cast<Digit>(BINARY_SHIFT),
           shift_quotient_digits);
-      const std::optional<std::size_t> maybe_shift_quotient =
-          reduce_digits<std::size_t, true>(shift_quotient_digits);
+      const std::size_t* maybe_shift_quotient =
+          maybe_reduce_digits<std::size_t>(shift_quotient_digits);
       if (!maybe_shift_quotient)
         throw std::invalid_argument("Too large shift step.");
-      const std::size_t shift_quotient = maybe_shift_quotient.value();
+      const std::size_t shift_quotient = *maybe_shift_quotient;
       if (shift_quotient >= MAX_DIGITS_COUNT)
         throw std::overflow_error("Too large shift step.");
       else
@@ -850,25 +850,29 @@ class BigInt {
     return _sign * result_modulus;
   }
 
-  template <class Result, bool CHECKED = false,
+  template <class Result,
             std::enable_if_t<std::is_arithmetic_v<Result>, int> = 0>
-  static std::conditional_t<CHECKED, std::optional<Result>, Result>
-  reduce_digits(const std::vector<Digit>& digits) noexcept(!CHECKED) {
+  static Result reduce_digits(const std::vector<Digit>& digits) noexcept {
     Result result = 0;
     for (auto position = digits.rbegin(); position != digits.rend(); ++position)
-      if constexpr (std::is_integral_v<Result>) {
-        if constexpr (CHECKED) {
-          const auto shifted = result << BINARY_SHIFT;
-          if (shifted < result) return std::nullopt;
-          result = shifted | *position;
-        } else
-          result = (result << BINARY_SHIFT) | *position;
-      } else
+      if constexpr (std::is_integral_v<Result>)
+        result = (result << BINARY_SHIFT) | *position;
+      else
         result = (result * BINARY_BASE) + *position;
-    if constexpr (CHECKED)
-      return std::optional<Result>{result};
-    else
-      return result;
+    return result;
+  }
+
+  template <class Result, std::enable_if_t<std::is_integral_v<Result>, int> = 0>
+  static Result* maybe_reduce_digits(
+      const std::vector<Digit>& digits) noexcept {
+    Result result = 0;
+    for (auto position = digits.rbegin(); position != digits.rend();
+         ++position) {
+      const auto shifted = result << BINARY_SHIFT;
+      if (shifted < result) return nullptr;
+      result = shifted | *position;
+    }
+    return new Result(result);
   }
 
   static Digit subtract_digits_in_place(
