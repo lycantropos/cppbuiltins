@@ -459,6 +459,37 @@ class BigInt {
     }
   }
 
+  BigInt operator>>(const BigInt& shift) const {
+    if (shift.is_negative()) {
+      throw std::invalid_argument("Shift by negative step is undefined.");
+    } else if (!*this) {
+      return *this;
+    } else {
+      std::vector<Digit> shift_quotient_digits;
+      Digit shift_remainder = divrem_digits_by_digit(
+          shift._digits, static_cast<Digit>(BINARY_SHIFT),
+          shift_quotient_digits);
+      const std::size_t* maybe_shift_quotient =
+          maybe_reduce_digits<std::size_t>(shift_quotient_digits);
+      const std::size_t shift_quotient = maybe_shift_quotient == nullptr
+                                             ? MAX_DIGITS_COUNT
+                                             : *maybe_shift_quotient;
+      if (shift_quotient >= MAX_DIGITS_COUNT)
+        return this->is_negative() ? BigInt() : ~BigInt();
+      else if (this->is_negative()) {
+        const auto inverted = ~*this;
+        const auto digits =
+            shift_digits_right(_digits, shift_quotient, shift_remainder);
+        return BigInt(inverted._sign * (digits.size() > 1 || digits[0] != 0),
+                      digits);
+      } else {
+        const auto digits =
+            shift_digits_right(_digits, shift_quotient, shift_remainder);
+        return BigInt(_sign * (digits.size() > 1 || digits[0] != 0), digits);
+      }
+    }
+  }
+
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
   template <class Result = double,
@@ -1159,6 +1190,27 @@ class BigInt {
       accumulator = static_cast<Digit>(step >> BINARY_SHIFT);
     }
     return accumulator;
+  }
+
+  static std::vector<Digit> shift_digits_right(
+      const std::vector<Digit>& digits, std::size_t shift_quotient,
+      const Digit shift_remainder) noexcept {
+    if (digits.size() <= shift_quotient) return std::vector<Digit>({0});
+    const std::size_t result_digits_count = digits.size() - shift_quotient;
+    const std::size_t high_shift =
+        BINARY_SHIFT - static_cast<std::size_t>(shift_remainder);
+    const Digit low_mask = (1 << high_shift) - 1;
+    const Digit high_mask = BINARY_DIGIT_MASK ^ low_mask;
+    std::vector<Digit> result(result_digits_count);
+    std::size_t position = shift_quotient;
+    for (std::size_t index = 0; index < result_digits_count; ++index) {
+      result[index] = (digits[position] >> shift_remainder) & low_mask;
+      if (index + 1 < result_digits_count)
+        result[index] |= (digits[position + 1] << high_shift) & high_mask;
+      position += 1;
+    }
+    trim_leading_zeros(result);
+    return result;
   }
 
   static Digit shift_digits_right_in_place(const Digit* input_digits,
