@@ -446,11 +446,8 @@ class BigInt {
       Digit shift_remainder = divrem_digits_by_digit(
           shift._digits, static_cast<Digit>(BINARY_SHIFT),
           shift_quotient_digits);
-      const std::size_t* maybe_shift_quotient =
-          maybe_reduce_digits<std::size_t>(shift_quotient_digits);
-      if (!maybe_shift_quotient)
-        throw std::invalid_argument("Too large shift step.");
-      const std::size_t shift_quotient = *maybe_shift_quotient;
+      const std::size_t shift_quotient = safe_reduce_digits<std::size_t>(
+          shift_quotient_digits, MAX_DIGITS_COUNT);
       if (shift_quotient >= MAX_DIGITS_COUNT)
         throw std::overflow_error("Too large shift step.");
       else
@@ -469,19 +466,16 @@ class BigInt {
       Digit shift_remainder = divrem_digits_by_digit(
           shift._digits, static_cast<Digit>(BINARY_SHIFT),
           shift_quotient_digits);
-      const std::size_t* maybe_shift_quotient =
-          maybe_reduce_digits<std::size_t>(shift_quotient_digits);
-      const std::size_t shift_quotient = maybe_shift_quotient == nullptr
-                                             ? MAX_DIGITS_COUNT
-                                             : *maybe_shift_quotient;
+      const std::size_t shift_quotient = safe_reduce_digits<std::size_t>(
+          shift_quotient_digits, MAX_DIGITS_COUNT);
       if (shift_quotient >= MAX_DIGITS_COUNT)
-        return this->is_negative() ? BigInt() : ~BigInt();
+        return this->is_negative() ? ~BigInt() : BigInt();
       else if (this->is_negative()) {
         const auto inverted = ~*this;
-        const auto digits =
-            shift_digits_right(_digits, shift_quotient, shift_remainder);
-        return BigInt(inverted._sign * (digits.size() > 1 || digits[0] != 0),
-                      digits);
+        const auto digits = shift_digits_right(inverted._digits, shift_quotient,
+                                               shift_remainder);
+        return ~BigInt(inverted._sign * (digits.size() > 1 || digits[0] != 0),
+                       digits);
       } else {
         const auto digits =
             shift_digits_right(_digits, shift_quotient, shift_remainder);
@@ -894,16 +888,16 @@ class BigInt {
   }
 
   template <class Result, std::enable_if_t<std::is_integral_v<Result>, int> = 0>
-  static Result* maybe_reduce_digits(
-      const std::vector<Digit>& digits) noexcept {
-    Result result = 0;
+  static Result safe_reduce_digits(const std::vector<Digit>& digits,
+                                   const Result fallback) noexcept {
+    Result candidate = 0;
     for (auto position = digits.rbegin(); position != digits.rend();
          ++position) {
-      const auto shifted = result << BINARY_SHIFT;
-      if (shifted < result) return nullptr;
-      result = shifted | *position;
+      const auto shifted = candidate << BINARY_SHIFT;
+      if (shifted < candidate) return fallback;
+      candidate = shifted | *position;
     }
-    return new Result(result);
+    return candidate;
   }
 
   static Digit subtract_digits_in_place(
