@@ -791,16 +791,12 @@ class BigInt {
                                                Sign& sign) noexcept {
     if (longest_sign < 0) longest = complement_digits(std::move(longest));
     if (shortest_sign < 0) shortest = complement_digits(std::move(shortest));
-    std::vector<Digit> result;
-    result.reserve(longest.size());
+    std::vector<Digit> result = std::move(longest);
     for (std::size_t index = 0; index < shortest.size(); ++index)
-      result.push_back(longest[index] ^ shortest[index]);
+      result[index] ^= shortest[index];
     if (shortest_sign < 0)
-      for (std::size_t index = shortest.size(); index < longest.size(); ++index)
-        result.push_back(longest[index] ^ BINARY_DIGIT_MASK);
-    else
-      for (std::size_t index = shortest.size(); index < longest.size(); ++index)
-        result.push_back(longest[index]);
+      for (std::size_t index = shortest.size(); index < result.size(); ++index)
+        result[index] ^= BINARY_DIGIT_MASK;
     const bool sign_is_negative = (longest_sign < 0) ^ (shortest_sign < 0);
     if (sign_is_negative) {
       result.push_back(BINARY_DIGIT_MASK);
