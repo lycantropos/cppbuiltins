@@ -1119,7 +1119,7 @@ class BigInt {
 
   static std::vector<Digit> shift_digits_left(
       const std::vector<Digit>& digits, const std::size_t shift_quotient,
-      const std::size_t shift_remainder) {
+      const std::size_t shift_remainder) noexcept {
     std::vector<Digit> result;
     result.reserve(shift_quotient + !!(shift_remainder) + digits.size());
     for (std::size_t index = 0; index < shift_quotient; ++index)
@@ -1130,7 +1130,7 @@ class BigInt {
       result.push_back(static_cast<Digit>(accumulator & BINARY_DIGIT_MASK));
       accumulator >>= BINARY_SHIFT;
     }
-    if (!!shift_remainder) result.push_back(static_cast<Digit>(accumulator));
+    if (shift_remainder != 0) result.push_back(static_cast<Digit>(accumulator));
     trim_leading_zeros(result);
     return result;
   }
