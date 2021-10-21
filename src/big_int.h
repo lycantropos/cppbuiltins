@@ -1,6 +1,7 @@
 #ifndef INT_HPP
 #define INT_HPP
 
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -332,6 +333,16 @@ class BigInt {
       return BigInt(sign, digits);
     } else
       return BigInt(_sign | other._sign, sum_digits(_digits, other._digits));
+  }
+
+  BigInt operator&(const BigInt& other) const noexcept {
+    Sign sign;
+    const auto digits = _digits.size() > other._digits.size()
+                            ? bitwise_and_digits(_digits, _sign, other._digits,
+                                                 other._sign, sign)
+                            : bitwise_and_digits(other._digits, other._sign,
+                                                 _digits, _sign, sign);
+    return BigInt(sign, digits);
   }
 
   explicit operator bool() const noexcept { return bool(_sign); }
@@ -703,6 +714,45 @@ class BigInt {
   using WindowDigit = std::uint8_t;
   static_assert(WINDOW_SHIFT <= std::numeric_limits<WindowDigit>::digits,
                 "Window digit type should be able to contain window digits.");
+
+  static std::vector<Digit> bitwise_and_digits(std::vector<Digit> longest,
+                                               const Sign longest_sign,
+                                               std::vector<Digit> shortest,
+                                               const Sign shortest_sign,
+                                               Sign& sign) noexcept {
+    if (longest_sign < 0) longest = complement_digits(std::move(longest));
+    if (shortest_sign < 0) shortest = complement_digits(std::move(shortest));
+    const std::size_t result_size =
+        shortest_sign < 0 ? longest.size() : shortest.size();
+    std::vector<Digit> result;
+    result.reserve(result_size);
+    for (std::size_t index = 0; index < shortest.size(); ++index)
+      result.push_back(longest[index] & shortest[index]);
+    for (std::size_t index = shortest.size(); index < result_size; ++index)
+      result.push_back(longest[index]);
+    sign = longest_sign & shortest_sign;
+    if (sign < 0) {
+      result.push_back(BINARY_DIGIT_MASK);
+      result = complement_digits(std::move(result));
+    }
+    trim_leading_zeros(result);
+    sign *= (result.size() > 1 || result[0] != 0);
+    return result;
+  }
+
+  static std::vector<Digit> complement_digits(
+      const std::vector<Digit>& digits) noexcept {
+    std::vector<Digit> result;
+    result.reserve(digits.size());
+    Digit accumulator = 1;
+    for (const auto digit : digits) {
+      accumulator += digit ^ BINARY_DIGIT_MASK;
+      result.push_back(accumulator & BINARY_DIGIT_MASK);
+      accumulator >>= BINARY_SHIFT;
+    }
+    assert(accumulator == 0);
+    return result;
+  }
 
   static void divrem_two_or_more_digits(
       const std::vector<Digit>& dividend, const std::vector<Digit>& divisor,
