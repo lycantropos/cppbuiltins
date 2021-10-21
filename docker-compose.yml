@@ -7,7 +7,7 @@ services:
       args:
         - IMAGE_NAME=${IMAGE_NAME}
         - IMAGE_VERSION=${IMAGE_VERSION}
-    image: lycantropos/cppbuiltins:0.4.5
+    image: lycantropos/cppbuiltins:0.5.0-alpha
     volumes:
       - ./pytest.ini:/opt/cppbuiltins/pytest.ini
       - ./README.md:/opt/cppbuiltins/README.md
