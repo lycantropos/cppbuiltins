@@ -161,6 +161,8 @@ class Int : public BaseInt {
   Int(const py::str& value, std::size_t base)
       : BaseInt(pystr_to_ascii_c_str(value), base) {}
 
+  operator bool() const noexcept { return BaseInt::operator bool(); }
+
   operator py::int_() const {
     return py::reinterpret_steal<py::int_>((PyObject*)as_PyLong());
   }
