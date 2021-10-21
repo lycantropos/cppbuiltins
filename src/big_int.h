@@ -159,7 +159,6 @@ class BigInt {
     _sign *= (_digits.size() > 1 || _digits[0] != 0);
   }
 
-
   BigInt abs() const { return is_negative() ? BigInt(1, _digits) : *this; }
 
   BigInt bit_length() const {
@@ -688,6 +687,7 @@ class BigInt {
       }
     }
   }
+
  protected:
   BigInt(Sign sign, const std::vector<Digit>& digits)
       : _sign(sign), _digits(digits) {}
