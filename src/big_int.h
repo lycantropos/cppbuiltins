@@ -604,6 +604,16 @@ class BigInt {
     return BigInt(sign, digits);
   }
 
+  BigInt operator^(const BigInt& other) const noexcept {
+    Sign sign;
+    const auto digits = _digits.size() > other._digits.size()
+                            ? bitwise_xor_digits(_digits, _sign, other._digits,
+                                                 other._sign, sign)
+                            : bitwise_xor_digits(other._digits, other._sign,
+                                                 _digits, _sign, sign);
+    return BigInt(sign, digits);
+  }
+
   bool operator==(const BigInt& other) const noexcept {
     return _sign == other._sign && _digits == other._digits;
   }
@@ -766,6 +776,32 @@ class BigInt {
     for (std::size_t index = shortest.size(); index < result_size; ++index)
       result.push_back(longest[index]);
     sign = longest_sign | shortest_sign;
+    if (sign < 0) {
+      result.push_back(BINARY_DIGIT_MASK);
+      result = complement_digits(std::move(result));
+    }
+    trim_leading_zeros(result);
+    return result;
+  }
+
+  static std::vector<Digit> bitwise_xor_digits(std::vector<Digit> longest,
+                                               const Sign longest_sign,
+                                               std::vector<Digit> shortest,
+                                               const Sign shortest_sign,
+                                               Sign& sign) noexcept {
+    if (longest_sign < 0) longest = complement_digits(std::move(longest));
+    if (shortest_sign < 0) shortest = complement_digits(std::move(shortest));
+    std::vector<Digit> result;
+    result.reserve(longest.size());
+    for (std::size_t index = 0; index < shortest.size(); ++index)
+      result.push_back(longest[index] | shortest[index]);
+    if (shortest_sign < 0)
+      for (std::size_t index = shortest.size(); index < longest.size(); ++index)
+        result.push_back(longest[index] ^ BINARY_DIGIT_MASK);
+    else
+      for (std::size_t index = shortest.size(); index < longest.size(); ++index)
+        result.push_back(longest[index]);
+    sign = longest_sign ^ shortest_sign;
     if (sign < 0) {
       result.push_back(BINARY_DIGIT_MASK);
       result = complement_digits(std::move(result));
