@@ -193,6 +193,10 @@ class Int : public BaseInt {
     return Int(BaseInt::operator|(other));
   }
 
+  Int operator^(const Int& other) const noexcept {
+    return Int(BaseInt::operator^(other));
+  }
+
   Int operator<<(const Int& other) const {
     return Int(BaseInt::operator<<(other));
   }
@@ -1116,6 +1120,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
       .def(+py::self)
       .def(py::self - py::self)
       .def(py::self | py::self)
+      .def(py::self ^ py::self)
       .def(py::self << py::self)
       .def(py::self >> py::self)
       .def(py::pickle([](const Int& self) { return py::int_(self); },
