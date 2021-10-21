@@ -446,10 +446,12 @@ class BigInt {
       Digit shift_remainder = divrem_digits_by_digit(
           shift._digits, static_cast<Digit>(BINARY_SHIFT),
           shift_quotient_digits);
-      const std::size_t shift_quotient =
+      const std::optional<std::size_t> maybe_shift_quotient =
           reduce_digits<std::size_t, true>(shift_quotient_digits);
-      if (shift_quotient >=
-          std::numeric_limits<std::size_t>::max() / sizeof(Digit))
+      if (!maybe_shift_quotient)
+        throw std::invalid_argument("Too large shift step.");
+      const std::size_t shift_quotient = maybe_shift_quotient.value();
+      if (shift_quotient >= MAX_DIGITS_COUNT)
         throw std::overflow_error("Too large shift step.");
       else
         return BigInt(
@@ -668,6 +670,8 @@ class BigInt {
   int _sign;
   std::vector<Digit> _digits;
 
+  static constexpr std::size_t MAX_DIGITS_COUNT =
+      std::numeric_limits<std::size_t>::max() / sizeof(Digit);
   static constexpr std::size_t WINDOW_CUTOFF = 8;
   static constexpr std::size_t WINDOW_SHIFT = 5;
   static constexpr std::size_t WINDOW_BASE = 1 << WINDOW_SHIFT;
@@ -848,20 +852,23 @@ class BigInt {
 
   template <class Result, bool CHECKED = false,
             std::enable_if_t<std::is_arithmetic_v<Result>, int> = 0>
-  static Result reduce_digits(const std::vector<Digit>& digits) noexcept(!CHECKED) {
+  static std::conditional_t<CHECKED, std::optional<Result>, Result>
+  reduce_digits(const std::vector<Digit>& digits) noexcept(!CHECKED) {
     Result result = 0;
     for (auto position = digits.rbegin(); position != digits.rend(); ++position)
       if constexpr (std::is_integral_v<Result>) {
         if constexpr (CHECKED) {
           const auto shifted = result << BINARY_SHIFT;
-          if (shifted < result)
-            throw std::invalid_argument("Shift overflow.");
+          if (shifted < result) return std::nullopt;
           result = shifted | *position;
         } else
           result = (result << BINARY_SHIFT) | *position;
       } else
         result = (result * BINARY_BASE) + *position;
-    return result;
+    if constexpr (CHECKED)
+      return std::optional<Result>{result};
+    else
+      return result;
   }
 
   static Digit subtract_digits_in_place(
