@@ -7,7 +7,7 @@ from distutils.errors import CompileError
 from glob import glob
 from pathlib import Path
 from typing import (Any,
-                    Callable)
+                    Iterable)
 
 from setuptools import (Command,
                         Extension,
@@ -25,34 +25,30 @@ def read_file(path_string: str) -> str:
     return Path(path_string).read_text(encoding='utf-8')
 
 
-def has_flag(compiler: CCompiler, name: str) -> bool:
-    """
-    Detects whether a flag name is supported on the specified compiler.
-    """
+def is_flag_supported(flag: str, compiler: CCompiler) -> bool:
     with tempfile.NamedTemporaryFile('w',
                                      suffix='.cpp') as file:
         file.write('int main(void){ return 0; }')
         try:
             compiler.compile([file.name],
-                             extra_postargs=[name])
+                             extra_postargs=[flag])
         except CompileError:
             return False
     return True
 
 
-def cpp_flag(compiler: CCompiler,
-             standard_to_flag: Callable[[str], str],
-             *,
-             min_year: int = 2017) -> str:
-    """Returns the newest C++ standard compiler flag available."""
-    flags = [standard_to_flag(year_to_standard(year))
-             for year in range(min_year, date.today().year + 1, 3)]
-    for flag in reversed(flags):
-        if has_flag(compiler, flag):
-            return flag
-    raise RuntimeError('Unsupported compiler: '
-                       'at least {} support is needed.'
-                       .format(year_to_standard(min_year)))
+def to_first_supported_flag(flags: Iterable[str], compiler: CCompiler) -> str:
+    flags = list(flags)
+    try:
+        return next(flag
+                    for flag in flags
+                    if is_flag_supported(flag, compiler))
+    except StopIteration:
+        quote = '"{}"'.format
+        raise RuntimeError('None of {flags} flags are supported '
+                           'by {compiler} compiler.'
+                           .format(flags=', '.join(map(quote, flags)),
+                                   compiler=quote(compiler.compiler_type)))
 
 
 def year_to_standard(year: int) -> str:
@@ -74,11 +70,18 @@ class BuildExt(build_ext):
         compile_args = self.compile_args[compiler_type]
         link_args = self.link_args[compiler_type]
         if compiler_type == 'unix':
-            compile_args.append(cpp_flag(self.compiler, '-std={}'.format))
-            if has_flag(self.compiler, '-fvisibility=hidden'):
+            compile_args.append(to_first_supported_flag(
+                ['-std={}'.format(year_to_standard(year))
+                 for year in reversed(range(2017, date.today().year + 1, 3))],
+                self.compiler))
+            if is_flag_supported('-fvisibility=hidden', self.compiler):
                 compile_args.append('-fvisibility=hidden')
         elif compiler_type == 'msvc':
-            compile_args.append('/std:c++latest')
+            compile_args.append(to_first_supported_flag(
+                ['/std={}'.format(year_to_standard(year))
+                 for year in reversed(range(2017, date.today().year + 1, 3))]
+                + ['/std:c++latest'],
+                self.compiler))
         define_macros = [('VERSION_INFO', self.distribution.get_version())]
         for extension in self.extensions:
             extension.extra_compile_args += compile_args
