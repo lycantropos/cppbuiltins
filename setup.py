@@ -1,6 +1,7 @@
 import sys
 import tempfile
 from collections import defaultdict
+from contextlib import suppress
 from datetime import date
 from distutils.ccompiler import CCompiler
 from distutils.errors import CompileError
@@ -45,10 +46,10 @@ def to_first_supported_flag(flags: Iterable[str], compiler: CCompiler) -> str:
                     if is_flag_supported(flag, compiler))
     except StopIteration:
         quote = '"{}"'.format
-        raise RuntimeError('None of {flags} flags are supported '
-                           'by {compiler} compiler.'
-                           .format(flags=', '.join(map(quote, flags)),
-                                   compiler=quote(compiler.compiler_type)))
+        raise ValueError('None of {flags} flags are supported '
+                         'by {compiler} compiler.'
+                         .format(flags=', '.join(map(quote, flags)),
+                                 compiler=quote(compiler.compiler_type)))
 
 
 def year_to_standard(year: int) -> str:
@@ -69,19 +70,22 @@ class BuildExt(build_ext):
         compiler_type = self.compiler.compiler_type
         compile_args = self.compile_args[compiler_type]
         link_args = self.link_args[compiler_type]
+        cpp_standards = [
+            year_to_standard(year)
+            for year in reversed(range(2017, date.today().year + 1, 3))]
         if compiler_type == 'unix':
-            compile_args.append(to_first_supported_flag(
-                ['-std={}'.format(year_to_standard(year))
-                 for year in reversed(range(2017, date.today().year + 1, 3))],
-                self.compiler))
+            compile_args.append(
+                to_first_supported_flag(['-std={}'.format(standard)
+                                         for standard in cpp_standards],
+                                        self.compiler))
             if is_flag_supported('-fvisibility=hidden', self.compiler):
                 compile_args.append('-fvisibility=hidden')
         elif compiler_type == 'msvc':
-            compile_args.append(to_first_supported_flag(
-                ['/std={}'.format(year_to_standard(year))
-                 for year in reversed(range(2017, date.today().year + 1, 3))]
-                + ['/std:c++latest'],
-                self.compiler))
+            with suppress(ValueError):
+                compile_args.append(
+                    to_first_supported_flag(['/std={}'.format(standard)
+                                             for standard in cpp_standards],
+                                            self.compiler))
         define_macros = [('VERSION_INFO', self.distribution.get_version())]
         for extension in self.extensions:
             extension.extra_compile_args += compile_args
