@@ -81,11 +81,14 @@ class BuildExt(build_ext):
             if is_flag_supported('-fvisibility=hidden', self.compiler):
                 compile_args.append('-fvisibility=hidden')
         elif compiler_type == 'msvc':
-            with suppress(ValueError):
-                compile_args.append(
-                    to_first_supported_flag(['/std={}'.format(standard)
-                                             for standard in cpp_standards],
-                                            self.compiler))
+            try:
+                standard_flag = to_first_supported_flag(
+                    ['/std={}'.format(standard) for standard in cpp_standards],
+                    self.compiler)
+            except ValueError:
+                compile_args.append('/std=c++latest')
+            else:
+                compile_args.append(standard_flag)
         define_macros = [('VERSION_INFO', self.distribution.get_version())]
         for extension in self.extensions:
             extension.extra_compile_args += compile_args
