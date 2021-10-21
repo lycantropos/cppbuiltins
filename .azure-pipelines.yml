@@ -49,43 +49,43 @@ strategy:
       python.version: '3.9'
       python.architecture: 'x64'
     Windows CPython3.5 (x86):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.5'
       python.architecture: 'x86'
     Windows CPython3.5 (x64):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.5'
       python.architecture: 'x64'
     Windows CPython3.6 (x86):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.6'
       python.architecture: 'x86'
     Windows CPython3.6 (x64):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.6'
       python.architecture: 'x64'
     Windows CPython3.7 (x86):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.7'
       python.architecture: 'x86'
     Windows CPython3.7 (x64):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.7'
       python.architecture: 'x64'
     Windows CPython3.8 (x86):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.8'
       python.architecture: 'x86'
     Windows CPython3.8 (x64):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.8'
       python.architecture: 'x64'
     Windows CPython3.9 (x86):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.9'
       python.architecture: 'x86'
     Windows CPython3.9 (x64):
-      image: 'windows-2022'
+      image: 'windows-latest'
       python.version: '3.9'
       python.architecture: 'x64'
 
