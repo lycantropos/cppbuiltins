@@ -794,19 +794,20 @@ class BigInt {
     std::vector<Digit> result;
     result.reserve(longest.size());
     for (std::size_t index = 0; index < shortest.size(); ++index)
-      result.push_back(longest[index] | shortest[index]);
+      result.push_back(longest[index] ^ shortest[index]);
     if (shortest_sign < 0)
       for (std::size_t index = shortest.size(); index < longest.size(); ++index)
         result.push_back(longest[index] ^ BINARY_DIGIT_MASK);
     else
       for (std::size_t index = shortest.size(); index < longest.size(); ++index)
         result.push_back(longest[index]);
-    sign = longest_sign ^ shortest_sign;
-    if (sign < 0) {
+    const bool sign_is_negative = (longest_sign < 0) ^ (shortest_sign < 0);
+    if (sign_is_negative) {
       result.push_back(BINARY_DIGIT_MASK);
       result = complement_digits(std::move(result));
     }
     trim_leading_zeros(result);
+    sign = (sign_is_negative ? -1 : 1) * (result.size() > 1 || result[0] != 0);
     return result;
   }
 
