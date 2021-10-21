@@ -594,6 +594,16 @@ class BigInt {
     }
   }
 
+  BigInt operator|(const BigInt& other) const noexcept {
+    Sign sign;
+    const auto digits = _digits.size() > other._digits.size()
+                            ? bitwise_or_digits(_digits, _sign, other._digits,
+                                                other._sign, sign)
+                            : bitwise_or_digits(other._digits, other._sign,
+                                                _digits, _sign, sign);
+    return BigInt(sign, digits);
+  }
+
   bool operator==(const BigInt& other) const noexcept {
     return _sign == other._sign && _digits == other._digits;
   }
@@ -737,6 +747,30 @@ class BigInt {
     }
     trim_leading_zeros(result);
     sign *= (result.size() > 1 || result[0] != 0);
+    return result;
+  }
+
+  static std::vector<Digit> bitwise_or_digits(std::vector<Digit> longest,
+                                              const Sign longest_sign,
+                                              std::vector<Digit> shortest,
+                                              const Sign shortest_sign,
+                                              Sign& sign) noexcept {
+    if (longest_sign < 0) longest = complement_digits(std::move(longest));
+    if (shortest_sign < 0) shortest = complement_digits(std::move(shortest));
+    const std::size_t result_size =
+        shortest_sign < 0 ? shortest.size() : longest.size();
+    std::vector<Digit> result;
+    result.reserve(result_size);
+    for (std::size_t index = 0; index < shortest.size(); ++index)
+      result.push_back(longest[index] | shortest[index]);
+    for (std::size_t index = shortest.size(); index < result_size; ++index)
+      result.push_back(longest[index]);
+    sign = longest_sign | shortest_sign;
+    if (sign < 0) {
+      result.push_back(BINARY_DIGIT_MASK);
+      result = complement_digits(std::move(result));
+    }
+    trim_leading_zeros(result);
     return result;
   }
 
