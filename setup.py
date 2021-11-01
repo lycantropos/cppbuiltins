@@ -1,7 +1,6 @@
 import sys
 import tempfile
 from collections import defaultdict
-from contextlib import suppress
 from datetime import date
 from distutils.ccompiler import CCompiler
 from distutils.errors import CompileError
@@ -29,7 +28,7 @@ def read_file(path_string: str) -> str:
 def is_flag_supported(flag: str, compiler: CCompiler) -> bool:
     with tempfile.NamedTemporaryFile('w',
                                      suffix='.cpp') as file:
-        file.write('int main(void){ return 0; }')
+        file.write('int main(void) { return 0; }')
         try:
             compiler.compile([file.name],
                              extra_postargs=[flag])
